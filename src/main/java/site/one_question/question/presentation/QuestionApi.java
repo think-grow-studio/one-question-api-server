@@ -17,7 +17,7 @@ import java.time.LocalDate;
 public interface QuestionApi {
 
     @Operation(
-            summary = "날짜별 질문 제공",
+            summary = "일별 질문 제공",
             description = "지정한 날짜의 일일 질문을 제공합니다. 매일 하나의 질문이 제공됩니다."
     )
     @ApiResponses({
@@ -62,7 +62,7 @@ public interface QuestionApi {
 
                     상태:
                     - ANSWERED: 질문 받음 + 답변 완료
-                    - UNANSWERED: 질문 받음 + 답변 없음
+                    - UNANSWERED: 질문 받음
                     - NO_QUESTION: 해당 날짜에 질문 없음
                     """
     )
