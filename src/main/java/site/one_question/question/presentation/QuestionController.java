@@ -3,20 +3,27 @@ package site.one_question.question.presentation;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import site.one_question.question.presentation.response.GetDailyQuestionResponse;
+import site.one_question.question.presentation.response.ServeDailyQuestionResponse;
+import site.one_question.question.presentation.response.GetQuestionHistoryResponse;
+import site.one_question.question.presentation.response.QuestionHistoryItemDto;
+import site.one_question.question.presentation.response.QuestionHistoryItemDto.AnswerInfoDto;
+import site.one_question.question.presentation.response.QuestionHistoryItemDto.QuestionInfoDto;
+import site.one_question.question.presentation.response.QuestionHistoryItemDto.Status;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/questions")
 public class QuestionController implements QuestionApi {
 
     @Override
-    @GetMapping("/{date}")
-    public GetDailyQuestionResponse getQuestionByDate(@PathVariable LocalDate date) {
+    @GetMapping("/daily/{date}")
+    public ServeDailyQuestionResponse serveDailyQuestion(@PathVariable LocalDate date) {
         // TODO: 실제 구현
-        return new GetDailyQuestionResponse(
+        return new ServeDailyQuestionResponse(
                 1L,
                 "오늘 가장 감사했던 순간은?",
                 1L,

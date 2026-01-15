@@ -8,7 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import site.one_question.question.presentation.response.GetDailyQuestionResponse;
+import site.one_question.question.presentation.response.ServeDailyQuestionResponse;
+import site.one_question.question.presentation.response.GetQuestionHistoryResponse;
 
 import java.time.LocalDate;
 
@@ -16,16 +17,16 @@ import java.time.LocalDate;
 public interface QuestionApi {
 
     @Operation(
-            summary = "날짜별 질문 조회",
-            description = "특정 날짜에 해당하는 오늘의 질문을 조회합니다. 매일 하나의 질문이 제공됩니다."
+            summary = "날짜별 질문 제공",
+            description = "지정한 날짜의 일일 질문을 제공합니다. 매일 하나의 질문이 제공됩니다."
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "질문 조회 성공",
+                    description = "질문 제공 성공",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = GetDailyQuestionResponse.class)
+                            schema = @Schema(implementation = ServeDailyQuestionResponse.class)
                     )
             ),
             @ApiResponse(

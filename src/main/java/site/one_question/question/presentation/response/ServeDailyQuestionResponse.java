@@ -3,7 +3,7 @@ package site.one_question.question.presentation.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "오늘의 질문 응답")
-public record GetDailyQuestionResponse(
+public record ServeDailyQuestionResponse(
         @Schema(description = "질문 ID", example = "43")
         Long id,
 
