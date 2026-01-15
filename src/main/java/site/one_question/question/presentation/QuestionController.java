@@ -23,4 +23,46 @@ public class QuestionController implements QuestionApi {
                 1L
         );
     }
+
+    @Override
+    @GetMapping("/histories")
+    public GetQuestionHistoryResponse getQuestionHistory(
+            @RequestParam LocalDate baseDate,
+            @RequestParam(defaultValue = "BOTH") String direction,
+            @RequestParam(defaultValue = "5") Integer size
+    ) {
+        // TODO: 실제 구현
+        // 더미 데이터로 3가지 상태를 보여주는 예시
+        List<QuestionHistoryItemDto> items = List.of(
+                // 상태 1: 질문 받음 + 답변 완료
+                new QuestionHistoryItemDto(
+                        baseDate,
+                        Status.ANSWERED,
+                        new QuestionInfoDto(1L, "오늘 하루에 제목을 붙인다면?",2L,3L),
+                        new AnswerInfoDto(101L, "새로운 시작의 날", "2024-01-15T14:30:00")
+                ),
+                // 상태 2: 질문 받음 + 답변 없음
+                new QuestionHistoryItemDto(
+                        baseDate.minusDays(1),
+                        Status.UNANSWERED,
+                        new QuestionInfoDto(2L, "오늘 가장 감사했던 순간은?",1L,2L),
+                        null
+                ),
+                // 상태 3: 질문 없음
+                new QuestionHistoryItemDto(
+                        baseDate.minusDays(2),
+                        Status.NO_QUESTION,
+                        null,
+                        null
+                )
+        );
+
+        return new GetQuestionHistoryResponse(
+                items,
+                true,  // hasPrevious
+                true,  // hasNext
+                baseDate.minusDays(2),
+                baseDate
+        );
+    }
 }
