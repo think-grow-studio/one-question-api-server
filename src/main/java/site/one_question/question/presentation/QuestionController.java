@@ -2,9 +2,11 @@ package site.one_question.question.presentation;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import site.one_question.question.presentation.response.ReloadDailyQuestionResponse;
 import site.one_question.question.presentation.response.ServeDailyQuestionResponse;
 import site.one_question.question.presentation.response.GetQuestionHistoryResponse;
 import site.one_question.question.presentation.response.QuestionHistoryItemDto;
@@ -70,6 +72,18 @@ public class QuestionController implements QuestionApi {
                 true,  // hasNext
                 baseDate.minusDays(2),
                 baseDate
+        );
+    }
+
+    @Override
+    @PostMapping("/daily/{date}/reload")
+    public ReloadDailyQuestionResponse reloadDailyQuestion(@PathVariable LocalDate date) {
+        // TODO: 실제 구현
+        return new ReloadDailyQuestionResponse(
+                2L,
+                "오늘 가장 행복했던 순간은?",
+                1L,
+                1L
         );
     }
 }

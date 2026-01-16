@@ -8,8 +8,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import site.one_question.question.presentation.response.ServeDailyQuestionResponse;
 import site.one_question.question.presentation.response.GetQuestionHistoryResponse;
+import site.one_question.question.presentation.response.ReloadDailyQuestionResponse;
+import site.one_question.question.presentation.response.ServeDailyQuestionResponse;
 
 import java.time.LocalDate;
 
@@ -141,5 +142,61 @@ public interface QuestionApi {
                     example = "5"
             )
             Integer size
+    );
+
+    @Operation(
+            summary = "일일 질문 재할당",
+            description = """
+                    지정한 날짜의 일일 질문을 새로운 질문으로 재할당합니다.
+                    기존 질문이 마음에 들지 않을 때 사용할 수 있습니다.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "질문 재할당 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ReloadDailyQuestionResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "재할당 횟수 초과",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "RELOAD_LIMIT_EXCEEDED",
+                                                "message": "일일 질문 재할당 횟수를 초과했습니다."
+                                            }
+                                            """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "해당 날짜의 질문이 존재하지 않음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "QUESTION_NOT_FOUND",
+                                                "message": "해당 날짜의 질문을 찾을 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    ReloadDailyQuestionResponse reloadDailyQuestion(
+            @Parameter(
+                    description = "질문을 재할당할 날짜 (yyyy-MM-dd 형식)",
+                    example = "2024-01-15",
+                    required = true
+            )
+            LocalDate date
     );
 }
