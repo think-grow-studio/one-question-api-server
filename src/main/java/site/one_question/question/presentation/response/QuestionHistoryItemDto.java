@@ -32,11 +32,14 @@ public record QuestionHistoryItemDto(
 
     @Schema(description = "질문 정보")
     public record QuestionInfoDto(
-        @Schema(description = "질문 ID", example = "43")
-        Long id,
+        @Schema(description = "일일 질문 ID", example = "43")
+        Long dailyQuestionId,
 
         @Schema(description = "질문 내용", example = "오늘 하루에 제목을 붙인다면?")
-        String question,
+        String content,
+
+        @Schema(description = "질문 보충 설명", example = "ex) 폭풍 전야", nullable = true)
+        String description,
 
         @Schema(description = "질문 주기 (며칠마다 반복되는지)", example = "1")
         Long questionCycle,
@@ -47,11 +50,11 @@ public record QuestionHistoryItemDto(
 
     @Schema(description = "답변 정보")
     public record AnswerInfoDto(
-            @Schema(description = "답변 ID", example = "156")
-            Long id,
+            @Schema(description = "일일 질문에 대한 답변 ID", example = "156")
+            Long dailyAnswerId,
 
             @Schema(description = "답변 내용", example = "새로운 시작의 날")
-            String answer,
+            String content,
 
             @Schema(description = "답변 작성 시간", example = "2024-01-15T14:30:00")
             String answeredAt

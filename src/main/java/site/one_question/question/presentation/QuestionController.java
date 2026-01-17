@@ -3,9 +3,12 @@ package site.one_question.question.presentation;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import site.one_question.question.presentation.request.CreateAnswerRequest;
+import site.one_question.question.presentation.response.CreateAnswerResponse;
 import site.one_question.question.presentation.response.ReloadDailyQuestionResponse;
 import site.one_question.question.presentation.response.ServeDailyQuestionResponse;
 import site.one_question.question.presentation.response.GetQuestionHistoryResponse;
@@ -28,6 +31,7 @@ public class QuestionController implements QuestionApi {
         return new ServeDailyQuestionResponse(
                 1L,
                 "오늘 가장 감사했던 순간은?",
+                "보충 설명",
                 1L,
                 1L
         );
@@ -47,14 +51,14 @@ public class QuestionController implements QuestionApi {
                 new QuestionHistoryItemDto(
                         baseDate,
                         Status.ANSWERED,
-                        new QuestionInfoDto(1L, "오늘 하루에 제목을 붙인다면?",2L,3L),
+                        new QuestionInfoDto(1L, "오늘 하루에 제목을 붙인다면?", "ex) 폭풍 전야", 2L, 3L),
                         new AnswerInfoDto(101L, "새로운 시작의 날", "2024-01-15T14:30:00")
                 ),
                 // 상태 2: 질문 받음 + 답변 없음
                 new QuestionHistoryItemDto(
                         baseDate.minusDays(1),
                         Status.UNANSWERED,
-                        new QuestionInfoDto(2L, "오늘 가장 감사했던 순간은?",1L,2L),
+                        new QuestionInfoDto(2L, "오늘 가장 감사했던 순간은?", null, 1L, 2L),
                         null
                 ),
                 // 상태 3: 질문 없음
@@ -82,6 +86,7 @@ public class QuestionController implements QuestionApi {
         return new ReloadDailyQuestionResponse(
                 2L,
                 "오늘 가장 행복했던 순간은?",
+                "ex) 점심 먹을 때",
                 1L,
                 1L
         );

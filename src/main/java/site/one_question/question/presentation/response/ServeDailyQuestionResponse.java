@@ -8,7 +8,10 @@ public record ServeDailyQuestionResponse(
         Long id,
 
         @Schema(description = "질문 내용", example = "오늘 하루에 제목을 붙인다면?")
-        String question,
+        String content,
+
+        @Schema(description = "질문 보충 설명", example = "ex) 폭풍 전야", nullable = true)
+        String description,
 
         @Schema(description = "질문 1년 사이클 횟수", example = "1")
         Long questionCycle,

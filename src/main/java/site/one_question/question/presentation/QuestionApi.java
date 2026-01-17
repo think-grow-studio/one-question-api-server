@@ -7,7 +7,10 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import site.one_question.question.presentation.request.CreateAnswerRequest;
+import site.one_question.question.presentation.response.CreateAnswerResponse;
 import site.one_question.question.presentation.response.GetQuestionHistoryResponse;
 import site.one_question.question.presentation.response.ReloadDailyQuestionResponse;
 import site.one_question.question.presentation.response.ServeDailyQuestionResponse;
@@ -84,13 +87,14 @@ public interface QuestionApi {
                                                         "status": "ANSWERED",
                                                         "question": {
                                                             "id": 43,
-                                                            "question": "오늘 하루에 제목을 붙인다면?",
+                                                            "content": "오늘 하루에 제목을 붙인다면?",
+                                                            "description": "ex) 폭풍 전야",
                                                             "questionCycle": 1,
                                                             "changeCount": 2
                                                         },
                                                         "answer": {
                                                             "id": 156,
-                                                            "answer": "새로운 시작의 날",
+                                                            "content": "새로운 시작의 날",
                                                             "answeredAt": "2024-01-15T14:30:00"
                                                         }
                                                     },
@@ -99,7 +103,8 @@ public interface QuestionApi {
                                                         "status": "UNANSWERED",
                                                         "question": {
                                                             "id": 42,
-                                                            "question": "오늘 가장 감사했던 순간은?",
+                                                            "content": "오늘 가장 감사했던 순간은?",
+                                                            "description": null,
                                                             "questionCycle": 1,
                                                             "changeCount": 0
                                                         },
@@ -198,5 +203,67 @@ public interface QuestionApi {
                     required = true
             )
             LocalDate date
+    );
+
+    @Operation(
+            summary = "답변 작성",
+            description = "지정한 날짜의 질문에 대한 답변을 작성합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "답변 작성 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CreateAnswerResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "이미 답변이 존재함",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "ANSWER_ALREADY_EXISTS",
+                                                "message": "해당 날짜의 질문에 이미 답변이 존재합니다."
+                                            }
+                                            """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "해당 날짜의 질문이 존재하지 않음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "QUESTION_NOT_FOUND",
+                                                "message": "해당 날짜의 질문을 찾을 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    CreateAnswerResponse createAnswer(
+            @Parameter(
+                    description = "답변할 질문의 날짜 (yyyy-MM-dd 형식)",
+                    example = "2024-01-15",
+                    required = true
+            )
+            LocalDate date,
+
+            @RequestBody(
+                    description = "답변 작성 요청",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CreateAnswerRequest.class)
+                    )
+            )
+            CreateAnswerRequest request
     );
 }
