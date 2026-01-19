@@ -1,6 +1,7 @@
 package site.one_question.question.presentation;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -9,9 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import site.one_question.question.presentation.request.CreateAnswerRequest;
+import site.one_question.question.presentation.request.UpdateAnswerRequest;
 import site.one_question.question.presentation.response.CreateAnswerResponse;
 import site.one_question.question.presentation.response.ServeDailyQuestionResponse;
 import site.one_question.question.presentation.response.GetQuestionHistoryResponse;
+import site.one_question.question.presentation.response.UpdateAnswerResponse;
 
 import java.time.LocalDate;
 
@@ -49,6 +52,16 @@ public class QuestionController implements QuestionApi {
     public CreateAnswerResponse createAnswer(
             @PathVariable Long dailyQuestionId,
             @RequestBody CreateAnswerRequest request
+    ) {
+        // TODO: 실제 구현
+        return null;
+    }
+
+    @Override
+    @PatchMapping("/{dailyQuestionId}/answer")
+    public UpdateAnswerResponse updateAnswer(
+            @PathVariable Long dailyQuestionId,
+            @RequestBody UpdateAnswerRequest request
     ) {
         // TODO: 실제 구현
         return null;

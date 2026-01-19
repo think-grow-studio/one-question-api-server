@@ -11,9 +11,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import site.one_question.question.presentation.request.CreateAnswerRequest;
+import site.one_question.question.presentation.request.UpdateAnswerRequest;
 import site.one_question.question.presentation.response.CreateAnswerResponse;
 import site.one_question.question.presentation.response.GetQuestionHistoryResponse;
 import site.one_question.question.presentation.response.ServeDailyQuestionResponse;
+import site.one_question.question.presentation.response.UpdateAnswerResponse;
 
 import java.time.LocalDate;
 
@@ -277,5 +279,52 @@ public interface QuestionApi {
                     )
             )
             CreateAnswerRequest request
+    );
+
+    @Operation(
+            summary = "답변 수정",
+            description = "지정한 질문에 대한 답변을 수정합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "답변 수정 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = UpdateAnswerResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "해당 질문 또는 답변이 존재하지 않음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "ANSWER_NOT_FOUND",
+                                                "message": "해당 질문에 대한 답변을 찾을 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    UpdateAnswerResponse updateAnswer(
+            @Parameter(
+                    description = "답변을 수정할 일일 질문 ID",
+                    example = "43",
+                    required = true
+            )
+            Long dailyQuestionId,
+
+            @RequestBody(
+                    description = "답변 수정 요청",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = UpdateAnswerRequest.class)
+                    )
+            )
+            UpdateAnswerRequest request
     );
 }
