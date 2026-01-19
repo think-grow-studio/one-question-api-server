@@ -7,7 +7,7 @@ import java.util.List;
 
 @Schema(description = "질문 히스토리 응답")
 public record GetQuestionHistoryResponse(
-        @Schema(description = "히스토리 목록")
+        @Schema(description = "질문 히스토리 목록")
         List<QuestionHistoryItemDto> histories,
 
         @Schema(description = "이전 날짜가 더 있는지 여부", example = "true")

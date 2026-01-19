@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "오늘의 질문 응답")
 public record ServeDailyQuestionResponse(
         @Schema(description = "질문 ID", example = "43")
-        Long id,
+        Long dailyQuestionId,
 
         @Schema(description = "질문 내용", example = "오늘 하루에 제목을 붙인다면?")
         String content,

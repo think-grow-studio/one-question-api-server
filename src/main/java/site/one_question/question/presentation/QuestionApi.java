@@ -2,6 +2,7 @@ package site.one_question.question.presentation;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -12,7 +13,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import site.one_question.question.presentation.request.CreateAnswerRequest;
 import site.one_question.question.presentation.response.CreateAnswerResponse;
 import site.one_question.question.presentation.response.GetQuestionHistoryResponse;
-import site.one_question.question.presentation.response.ReloadDailyQuestionResponse;
 import site.one_question.question.presentation.response.ServeDailyQuestionResponse;
 
 import java.time.LocalDate;
@@ -21,8 +21,12 @@ import java.time.LocalDate;
 public interface QuestionApi {
 
     @Operation(
-            summary = "일별 질문 제공",
-            description = "지정한 날짜의 일일 질문을 제공합니다. 매일 하나의 질문이 제공됩니다."
+            summary = "오늘의 질문 제공",
+            description = """
+                    클라이언트의 타임존을 기반으로 '오늘'의 질문을 제공합니다.
+                    서버는 UTC 현재 시간에 클라이언트 타임존을 적용하여 오늘 날짜를 계산합니다.
+                    매일 하나의 질문이 제공됩니다.
+                    """
     )
     @ApiResponses({
             @ApiResponse(
@@ -51,11 +55,13 @@ public interface QuestionApi {
     })
     ServeDailyQuestionResponse serveDailyQuestion(
             @Parameter(
-                    description = "질문을 제공받을 날짜 (yyyy-MM-dd 형식)",
-                    example = "2024-01-15",
-                    required = true
+                    name = "Timezone",
+                    description = "클라이언트의 타임존 (IANA 타임존 형식)",
+                    example = "Asia/Seoul",
+                    required = true,
+                    in = ParameterIn.HEADER
             )
-            LocalDate date
+            String timezone
     );
 
     @Operation(
@@ -63,6 +69,9 @@ public interface QuestionApi {
             description = """
                     질문/답변 히스토리를 조회합니다.
                     기준 날짜를 중심으로 이전/이후 날짜의 기록을 가져옵니다.
+
+                    **중요**: baseDate는 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.
+                    서버는 전달받은 날짜를 그대로 사용하여 히스토리를 조회합니다.
 
                     상태:
                     - ANSWERED: 질문 받음 + 답변 완료
@@ -81,19 +90,19 @@ public interface QuestionApi {
                                     name = "3가지 상태 예시",
                                     value = """
                                             {
-                                                "questions": [
+                                                "histories": [
                                                     {
                                                         "date": "2024-01-15",
                                                         "status": "ANSWERED",
                                                         "question": {
-                                                            "id": 43,
+                                                            "dailyQuestionId": 43,
                                                             "content": "오늘 하루에 제목을 붙인다면?",
                                                             "description": "ex) 폭풍 전야",
                                                             "questionCycle": 1,
                                                             "changeCount": 2
                                                         },
                                                         "answer": {
-                                                            "id": 156,
+                                                            "dailyAnswerId": 156,
                                                             "content": "새로운 시작의 날",
                                                             "answeredAt": "2024-01-15T14:30:00"
                                                         }
@@ -102,7 +111,7 @@ public interface QuestionApi {
                                                         "date": "2024-01-14",
                                                         "status": "UNANSWERED",
                                                         "question": {
-                                                            "id": 42,
+                                                            "dailyQuestionId": 42,
                                                             "content": "오늘 가장 감사했던 순간은?",
                                                             "description": null,
                                                             "questionCycle": 1,
@@ -129,7 +138,7 @@ public interface QuestionApi {
     })
     GetQuestionHistoryResponse getQuestionHistory(
             @Parameter(
-                    description = "기준 날짜 (yyyy-MM-dd 형식). 이 날짜를 중심으로 조회합니다.",
+                    description = "기준 날짜 (yyyy-MM-dd 형식). 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.",
                     example = "2024-01-15",
                     required = true
             )
@@ -150,9 +159,10 @@ public interface QuestionApi {
     );
 
     @Operation(
-            summary = "일일 질문 재할당",
+            summary = "오늘의 질문 재할당",
             description = """
-                    지정한 날짜의 일일 질문을 새로운 질문으로 재할당합니다.
+                    클라이언트의 타임존을 기반으로 '오늘'의 질문을 새로운 질문으로 재할당합니다.
+                    서버는 UTC 현재 시간에 클라이언트 타임존을 적용하여 오늘 날짜를 계산합니다.
                     기존 질문이 마음에 들지 않을 때 사용할 수 있습니다.
                     """
     )
@@ -162,7 +172,7 @@ public interface QuestionApi {
                     description = "질문 재할당 성공",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = ReloadDailyQuestionResponse.class)
+                            schema = @Schema(implementation = ServeDailyQuestionResponse.class)
                     )
             ),
             @ApiResponse(
@@ -196,18 +206,20 @@ public interface QuestionApi {
                     )
             )
     })
-    ReloadDailyQuestionResponse reloadDailyQuestion(
+    ServeDailyQuestionResponse reloadDailyQuestion(
             @Parameter(
-                    description = "질문을 재할당할 날짜 (yyyy-MM-dd 형식)",
-                    example = "2024-01-15",
-                    required = true
+                    name = "Timezone",
+                    description = "클라이언트의 타임존 (IANA 타임존 형식)",
+                    example = "Asia/Seoul",
+                    required = true,
+                    in = ParameterIn.HEADER
             )
-            LocalDate date
+            String timezone
     );
 
     @Operation(
             summary = "답변 작성",
-            description = "지정한 날짜의 질문에 대한 답변을 작성합니다."
+            description = "지정한 질문에 대한 답변을 작성합니다."
     )
     @ApiResponses({
             @ApiResponse(
@@ -227,7 +239,7 @@ public interface QuestionApi {
                                     value = """
                                             {
                                                 "code": "ANSWER_ALREADY_EXISTS",
-                                                "message": "해당 날짜의 질문에 이미 답변이 존재합니다."
+                                                "message": "해당 질문에 이미 답변이 존재합니다."
                                             }
                                             """
                             )
@@ -235,14 +247,14 @@ public interface QuestionApi {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "해당 날짜의 질문이 존재하지 않음",
+                    description = "해당 질문이 존재하지 않음",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
                                     value = """
                                             {
                                                 "code": "QUESTION_NOT_FOUND",
-                                                "message": "해당 날짜의 질문을 찾을 수 없습니다."
+                                                "message": "해당 질문을 찾을 수 없습니다."
                                             }
                                             """
                             )
@@ -251,11 +263,11 @@ public interface QuestionApi {
     })
     CreateAnswerResponse createAnswer(
             @Parameter(
-                    description = "답변할 질문의 날짜 (yyyy-MM-dd 형식)",
-                    example = "2024-01-15",
+                    description = "답변할 일일 질문 ID",
+                    example = "43",
                     required = true
             )
-            LocalDate date,
+            Long dailyQuestionId,
 
             @RequestBody(
                     description = "답변 작성 요청",

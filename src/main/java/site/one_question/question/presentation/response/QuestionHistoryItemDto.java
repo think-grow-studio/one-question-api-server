@@ -3,6 +3,7 @@ package site.one_question.question.presentation.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Schema(description = "질문 히스토리 항목")
 public record QuestionHistoryItemDto(
@@ -57,6 +58,6 @@ public record QuestionHistoryItemDto(
             String content,
 
             @Schema(description = "답변 작성 시간", example = "2024-01-15T14:30:00")
-            String answeredAt
+            LocalDateTime answeredAt
     ) {}
 }
