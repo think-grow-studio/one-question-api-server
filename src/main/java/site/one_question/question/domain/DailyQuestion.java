@@ -14,7 +14,13 @@ import site.one_question.global.common.domain.BaseEntity;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(name = "daily_question")
+@Table(
+        name = "daily_question",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_daily_question_member_date",
+                columnNames = {"member_id", "date"}
+        )
+)
 public class DailyQuestion extends BaseEntity {
 
     private static final int MAX_FREE_CHANGE_COUNT = 2;
@@ -32,6 +38,9 @@ public class DailyQuestion extends BaseEntity {
     @Column(name = "question_id", nullable = false)
     private Long questionId;
 
+    @Column(name = "date",nullable = false) // memberId + date -> unique
+    private LocalDate date;
+
     @Column(name = "assigned_at", nullable = false)
     private Instant assignedAt;
 
@@ -45,6 +54,7 @@ public class DailyQuestion extends BaseEntity {
             Long memberId,
             Long questionCycleId,
             Long questionId,
+            LocalDate date,
             String timezone
     ) {
         return new DailyQuestion(
@@ -52,6 +62,7 @@ public class DailyQuestion extends BaseEntity {
                 memberId,
                 questionCycleId,
                 questionId,
+                date,
                 Instant.now(),
                 timezone,
                 0

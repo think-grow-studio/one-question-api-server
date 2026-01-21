@@ -25,9 +25,10 @@ public interface QuestionApi {
     @Operation(
             summary = "오늘의 질문 제공",
             description = """
-                    클라이언트의 타임존을 기반으로 '오늘'의 질문을 제공합니다.
-                    서버는 UTC 현재 시간에 클라이언트 타임존을 적용하여 오늘 날짜를 계산합니다.
-                    매일 하나의 질문이 제공됩니다.
+                    지정한 날짜의 질문을 제공합니다.
+                    클라이언트가 원하는 날짜를 path parameter로 직접 지정합니다.
+                    해당 날짜에 이미 질문이 할당되어 있으면 기존 질문을 반환하고,
+                    없으면 새 질문을 할당하여 반환합니다.
                     """
     )
     @ApiResponses({
@@ -56,6 +57,15 @@ public interface QuestionApi {
             )
     })
     ServeDailyQuestionResponse serveDailyQuestion(
+            @Parameter(
+                    name = "date",
+                    description = "질문을 제공받을 날짜 (yyyy-MM-dd 형식). 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.",
+                    example = "2024-01-15",
+                    required = true,
+                    in = ParameterIn.PATH
+            )
+            LocalDate date,
+
             @Parameter(
                     name = "Timezone",
                     description = "클라이언트의 타임존 (IANA 타임존 형식)",

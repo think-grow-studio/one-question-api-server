@@ -23,25 +23,21 @@ import java.time.LocalDate;
 public class QuestionController implements QuestionApi {
 
     @Override
-    @GetMapping("/daily")
-    public ServeDailyQuestionResponse serveDailyQuestion(@RequestHeader("Timezone") String timezone) {
+    @GetMapping("/daily/{date}")
+    public ServeDailyQuestionResponse serveDailyQuestion(@PathVariable(name = "date")LocalDate date ,@RequestHeader("Timezone") String timezone) {
         /*
-         * [오늘의 질문 제공]
+         * [오늘의 질문 제공] - 멱등성 보장
          *
          * 1. 현재 로그인한 사용자 정보 조회 (SecurityContext)
          *
-         * 2. 클라이언트 타임존 기준 "오늘" 날짜 계산
-         *    - UTC 현재 시간 + timezone → LocalDate (오늘)
-         *
-         * 3. 해당 날짜에 이미 질문이 제공되었는지 확인 (DailyQuestion 테이블)
-         *    - 있으면 → 기존 질문 반환 (+ 답변 여부 포함)
+         * 2. 해당 날짜에 이미 질문이 제공되었는지 확인
+         *    - 요청의 LocalDate를 기준으로 DailyQuestion 테이블의 date와 비교하여 확인
+         *    - 있으면 → 기존 질문 반환 (멱등성)
          *    - 없으면 → 새 질문 할당 로직 진행
          *
-         * 4. 새 질문 할당 시:
-         *    a) 현재 사이클 번호 계산
-         *       - 사용자의 cycle_start_date 기준으로 오늘이 몇 번째 사이클인지 계산
-         *       - (오늘 - cycle_start_date) / 365 + 1 = 사이클 번호
-         *       - ※ 윤년 주의: 366일인 해 고려
+         * 3. 새 질문 할당 시:
+         *    a) 질문 사이클 확인
+         *       - 요청으로 들어온 LocalDate가 이 날짜로부터 가장 가까운 과거 날짜 중 (timezone 적용시킨) start_at이 가장 먼저 만나는 row의 cycle number가 해당 날짜에 대한 질문 사이클이다.
          *
          *    b) 해당 사이클에서 "제공된" 질문 ID 목록 조회
          *       - DailyQuestion 테이블에서 현재 사이클에 해당하는 question_id들
@@ -51,19 +47,13 @@ public class QuestionController implements QuestionApi {
          *       - 전체 Question 목록 - 이미 제공된 Question = 후보군
          *
          *    d) 후보군에서 랜덤 1개 선택
-         *       - 후보군이 비어있으면 (365개 모두 제공됨):
-         *         → 새 사이클 시작 OR 전체 질문에서 랜덤 (기획 확정 필요)
+         *       - 후보군이 비어있으면 (366개 모두 제공됨):
+         *         → 전체 질문에서 랜덤 제공
          *
          *    e) DailyQuestion 레코드 생성
          *       - member_id, question_id, target_date, cycle_number, change_count=0
          *
-         * 5. 권한 체크 (과거 날짜 질문 요청 시)
-         *    - 오늘 날짜가 아닌 경우:
-         *      → FREE 사용자: 광고 시청 필요 (또는 거부)
-         *      → PREMIUM 사용자: 허용
-         *    - ※ 현재 API는 "오늘" 기준이므로 과거 날짜는 별도 API 필요할 수 있음
-         *
-         * 6. 응답 반환
+         * 4. 응답 반환
          *    - dailyQuestionId, content, description, questionCycle, changeCount
          */
         return null;
