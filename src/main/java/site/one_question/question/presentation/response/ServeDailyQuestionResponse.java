@@ -1,6 +1,9 @@
 package site.one_question.question.presentation.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import site.one_question.question.domain.DailyQuestion;
+import site.one_question.question.domain.Question;
+import site.one_question.question.domain.QuestionCycle;
 
 @Schema(description = "오늘의 질문 응답")
 public record ServeDailyQuestionResponse(
@@ -19,4 +22,17 @@ public record ServeDailyQuestionResponse(
         @Schema(description = "질문 변경 횟수", example = "2")
         Long changeCount
 ) {
+    public static ServeDailyQuestionResponse from(
+            DailyQuestion dailyQuestion,
+            Question question,
+            QuestionCycle cycle
+    ) {
+        return new ServeDailyQuestionResponse(
+                dailyQuestion.getId(),
+                question.getContent(),
+                question.getDescription(),
+                (long) cycle.getCycleNumber(),
+                (long) dailyQuestion.getChangeCount()
+        );
+    }
 }

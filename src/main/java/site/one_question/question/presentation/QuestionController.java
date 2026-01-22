@@ -1,5 +1,7 @@
 package site.one_question.question.presentation;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import site.one_question.question.application.QuestionApplication;
 import site.one_question.question.presentation.request.CreateAnswerRequest;
 import site.one_question.question.presentation.request.UpdateAnswerRequest;
 import site.one_question.question.presentation.response.CreateAnswerResponse;
@@ -20,43 +23,18 @@ import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/v1/questions")
+@RequiredArgsConstructor
 public class QuestionController implements QuestionApi {
+
+    private final QuestionApplication questionApplication;
 
     @Override
     @GetMapping("/daily/{date}")
-    public ServeDailyQuestionResponse serveDailyQuestion(@PathVariable(name = "date")LocalDate date ,@RequestHeader("Timezone") String timezone) {
-        /*
-         * [오늘의 질문 제공] - 멱등성 보장
-         *
-         * 1. 현재 로그인한 사용자 정보 조회 (SecurityContext)
-         *
-         * 2. 해당 날짜에 이미 질문이 제공되었는지 확인
-         *    - 요청의 LocalDate를 기준으로 DailyQuestion 테이블의 date와 비교하여 확인
-         *    - 있으면 → 기존 질문 반환 (멱등성)
-         *    - 없으면 → 새 질문 할당 로직 진행
-         *
-         * 3. 새 질문 할당 시:
-         *    a) 질문 사이클 확인
-         *       - 요청으로 들어온 LocalDate가 이 날짜로부터 가장 가까운 과거 날짜 중 (timezone 적용시킨) start_at이 가장 먼저 만나는 row의 cycle number가 해당 날짜에 대한 질문 사이클이다.
-         *
-         *    b) 해당 사이클에서 "제공된" 질문 ID 목록 조회
-         *       - DailyQuestion 테이블에서 현재 사이클에 해당하는 question_id들
-         *       - ※ "답변 여부"가 아닌 "제공 여부" 기준
-         *
-         *    c) 전체 질문(365개+) 중 제공되지 않은 질문 필터링
-         *       - 전체 Question 목록 - 이미 제공된 Question = 후보군
-         *
-         *    d) 후보군에서 랜덤 1개 선택
-         *       - 후보군이 비어있으면 (366개 모두 제공됨):
-         *         → 전체 질문에서 랜덤 제공
-         *
-         *    e) DailyQuestion 레코드 생성
-         *       - member_id, question_id, target_date, cycle_number, change_count=0
-         *
-         * 4. 응답 반환
-         *    - dailyQuestionId, content, description, questionCycle, changeCount
-         */
-        return null;
+    public ResponseEntity<ServeDailyQuestionResponse> serveDailyQuestion(@PathVariable(name = "date")LocalDate date ,@RequestHeader("Timezone") String timezone) {
+        // TODO: SecurityContext에서 memberId 조회 (인증 구현 후)
+        Long memberId = 1L;
+        ServeDailyQuestionResponse response = questionApplication.serveDailyQuestion(memberId, date, timezone);
+        return ResponseEntity.ok(response);
     }
 
     @Override

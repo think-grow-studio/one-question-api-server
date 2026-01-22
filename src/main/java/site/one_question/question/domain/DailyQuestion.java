@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import site.one_question.global.common.domain.BaseEntity;
+import site.one_question.member.domain.Member;
 
 @Entity
 @Getter
@@ -29,14 +30,17 @@ public class DailyQuestion extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "member_id", nullable = false)
-    private Long memberId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
 
-    @Column(name = "question_cycle_id", nullable = false)
-    private Long questionCycleId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_cycle_id", nullable = false)
+    private QuestionCycle questionCycle;
 
-    @Column(name = "question_id", nullable = false)
-    private Long questionId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_id", nullable = false)
+    private Question question;
 
     @Column(name = "date",nullable = false) // memberId + date -> unique
     private LocalDate date;
@@ -51,17 +55,17 @@ public class DailyQuestion extends BaseEntity {
     private int changeCount;
 
     public static DailyQuestion create(
-            Long memberId,
-            Long questionCycleId,
-            Long questionId,
+            Member member,
+            QuestionCycle questionCycle,
+            Question question,
             LocalDate date,
             String timezone
     ) {
         return new DailyQuestion(
                 null,
-                memberId,
-                questionCycleId,
-                questionId,
+                member,
+                questionCycle,
+                question,
                 date,
                 Instant.now(),
                 timezone,
@@ -69,11 +73,11 @@ public class DailyQuestion extends BaseEntity {
         );
     }
 
-    public void changeQuestion(Long newQuestionId, boolean isPremiumMember) {
+    public void changeQuestion(Question newQuestion, boolean isPremiumMember) {
         if (!isPremiumMember && changeCount >= MAX_FREE_CHANGE_COUNT) {
             throw new IllegalStateException("무료 회원은 질문 변경을 " + MAX_FREE_CHANGE_COUNT + "회까지만 할 수 있습니다.");
         }
-        this.questionId = newQuestionId;
+        this.question = newQuestion;
         this.changeCount++;
     }
 
@@ -93,6 +97,6 @@ public class DailyQuestion extends BaseEntity {
     }
 
     public boolean isOwnedBy(Long memberId) {
-        return this.memberId.equals(memberId);
+        return this.member.getId().equals(memberId);
     }
 }

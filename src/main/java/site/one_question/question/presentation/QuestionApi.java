@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
 import site.one_question.question.presentation.request.CreateAnswerRequest;
 import site.one_question.question.presentation.request.UpdateAnswerRequest;
 import site.one_question.question.presentation.response.CreateAnswerResponse;
@@ -56,7 +57,7 @@ public interface QuestionApi {
                     )
             )
     })
-    ServeDailyQuestionResponse serveDailyQuestion(
+    ResponseEntity<ServeDailyQuestionResponse> serveDailyQuestion(
             @Parameter(
                     name = "date",
                     description = "질문을 제공받을 날짜 (yyyy-MM-dd 형식). 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.",

@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import site.one_question.global.common.domain.BaseEntity;
+import site.one_question.member.domain.Member;
 
 @Entity
 @Getter
@@ -22,34 +23,46 @@ public class QuestionCycle extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "member_id", nullable = false)
-    private Long memberId;
 
-    @Column(name = "cycle_number", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
+
+    @Column(name = "cycle_number", nullable = false) // memberId + cycleNumber = unique
     private int cycleNumber;
 
-    @Column(name = "start_at", nullable = false)
-    private Instant startAt;
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
 
-    @Column(name = "end_at", nullable = false)
-    private Instant endAt;
+    @Column(name = "end_date", nullable = false)
+    private LocalDate endDate;
+
+
+    @Column(name = "started_at", nullable = false)
+    private Instant startedAt;
+
+    @Column(name = "ended_at", nullable = false)
+    private Instant endedAt;
 
     @Column(nullable = false, length = 30)
     private String timezone;
 
-    public static QuestionCycle createFirstCycle(Long memberId, String timezone) {
+    public static QuestionCycle createFirstCycle(Member member, String timezone) {
+        Instant now = Instant.now();
         ZoneId zoneId = ZoneId.of(timezone);
-        ZonedDateTime now = ZonedDateTime.now(zoneId);
-        LocalDate today = now.toLocalDate();
+        ZonedDateTime startZdt = now.atZone(zoneId);
 
-        Instant startAt = today.atStartOfDay(zoneId).toInstant();
-        Instant endAt = today.plusYears(1).minusDays(1).atStartOfDay(zoneId).toInstant();
+        LocalDate startDate = startZdt.toLocalDate();
+        LocalDate endDate = startDate.plusYears(1).minusDays(1);
+        Instant endAt = endDate.atTime(startZdt.toLocalTime()).atZone(zoneId).toInstant();
 
         return new QuestionCycle(
                 null,
-                memberId,
+                member,
                 1,
-                startAt,
+                startDate,
+                endDate,
+                now,
                 endAt,
                 timezone
         );
@@ -57,19 +70,22 @@ public class QuestionCycle extends BaseEntity {
 
     public static QuestionCycle createNextCycle(QuestionCycle previousCycle) {
         ZoneId zoneId = ZoneId.of(previousCycle.getTimezone());
+        ZonedDateTime prevEndZdt = previousCycle.getEndedAt().atZone(zoneId);
 
-        LocalDate newStartDate = previousCycle.getEndAt()
-                .atZone(zoneId)
-                .toLocalDate()
-                .plusDays(1);
+        // 다음 사이클 시작: 이전 사이클 종료일 + 1일, 시/분/초 유지
+        LocalDate startDate = prevEndZdt.toLocalDate().plusDays(1);
+        Instant startAt = startDate.atTime(prevEndZdt.toLocalTime()).atZone(zoneId).toInstant();
 
-        Instant startAt = newStartDate.atStartOfDay(zoneId).toInstant();
-        Instant endAt = newStartDate.plusYears(1).minusDays(1).atStartOfDay(zoneId).toInstant();
+        // 종료: 시작일 + 1년 - 1일, 시/분/초 유지
+        LocalDate endDate = startDate.plusYears(1).minusDays(1);
+        Instant endAt = endDate.atTime(prevEndZdt.toLocalTime()).atZone(zoneId).toInstant();
 
         return new QuestionCycle(
                 null,
-                previousCycle.getMemberId(),
+                previousCycle.getMember(),
                 previousCycle.getCycleNumber() + 1,
+                startDate,
+                endDate,
                 startAt,
                 endAt,
                 previousCycle.getTimezone()
@@ -77,13 +93,10 @@ public class QuestionCycle extends BaseEntity {
     }
 
     public boolean containsDate(LocalDate date) {
-        ZoneId zoneId = ZoneId.of(timezone);
-        LocalDate startDate = startAt.atZone(zoneId).toLocalDate();
-        LocalDate endDate = endAt.atZone(zoneId).toLocalDate();
         return !date.isBefore(startDate) && !date.isAfter(endDate);
     }
 
     public boolean isExpired() {
-        return Instant.now().isAfter(endAt);
+        return Instant.now().isAfter(endedAt);
     }
 }
