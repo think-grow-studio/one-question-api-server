@@ -8,4 +8,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     List<Question> findAllByStatus(QuestionStatus status);
 
     List<Question> findAllByStatusAndIdNotIn(QuestionStatus status, List<Long> excludedIds);
+
+    List<Question> findAllByStatusAndIdNot(QuestionStatus status, Long excludeId);
 }

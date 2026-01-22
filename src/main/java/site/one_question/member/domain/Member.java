@@ -75,4 +75,8 @@ public class Member extends BaseEntity {
         this.fullName = fullName;
         this.locale = locale;
     }
+
+    public boolean isPremium() {
+        return this.permission == MemberPermission.PREMIUM;
+    }
 }

@@ -78,48 +78,14 @@ public class QuestionController implements QuestionApi {
     }
 
     @Override
-    @PostMapping("/daily/reload")
-    public ServeDailyQuestionResponse reloadDailyQuestion(@RequestHeader("Timezone") String timezone) {
-        /*
-         * [오늘의 질문 재할당 (변경)]
-         *
-         * 1. 현재 로그인한 사용자 정보 조회
-         *
-         * 2. 클라이언트 타임존 기준 "오늘" 날짜 계산
-         *
-         * 3. 오늘의 DailyQuestion 조회
-         *    - 없으면 → 에러 (먼저 질문을 받아야 함)
-         *
-         * 4. 답변 여부 확인
-         *    - 이미 답변했으면 → 에러 (답변 전에만 변경 가능)
-         *
-         * 5. 변경 횟수 제한 확인
-         *    - FREE 사용자:
-         *      → change_count >= 2 → 에러 (또는 광고 시청 유도)
-         *    - PREMIUM 사용자:
-         *      → 무제한 (또는 적절한 상한선)
-         *
-         * 6. 새 질문 할당
-         *    a) 현재 사이클에서 "제공된" 질문 ID 목록 조회
-         *       - 현재 질문도 포함 (이미 제공됨)
-         *
-         *    b) 전체 질문 중 제공되지 않은 질문 필터링
-         *       - 후보군이 비어있으면:
-         *         → 현재 질문 제외한 전체에서 랜덤 (중복 허용)
-         *         → 또는 에러 반환 (변경 불가)
-         *
-         *    c) 후보군에서 랜덤 1개 선택
-         *
-         * 7. DailyQuestion 업데이트
-         *    - question_id = 새 질문 ID
-         *    - change_count += 1
-         *    - ※ 기존 질문은 "제공됨" 상태로 유지? 아니면 취소?
-         *      → 기획 확정 필요: 변경된 질문도 "제공됨"으로 카운트할지
-         *
-         * 8. 응답 반환
-         *    - dailyQuestionId, content, description, questionCycle, changeCount(+1)
-         */
-        return null;
+    @PostMapping("/daily/{date}/reload")
+    public ResponseEntity<ServeDailyQuestionResponse> reloadDailyQuestion(
+            @PathVariable LocalDate date,
+            @RequestHeader("Timezone") String timezone
+    ) {
+        Long memberId = 1L; // TODO: SecurityContext에서 조회
+        ServeDailyQuestionResponse response = questionApplication.reloadDailyQuestion(memberId, date, timezone);
+        return ResponseEntity.ok(response);
     }
 
     @Override

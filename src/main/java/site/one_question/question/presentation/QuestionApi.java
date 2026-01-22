@@ -174,8 +174,8 @@ public interface QuestionApi {
     @Operation(
             summary = "오늘의 질문 재할당",
             description = """
-                    클라이언트의 타임존을 기반으로 '오늘'의 질문을 새로운 질문으로 재할당합니다.
-                    서버는 UTC 현재 시간에 클라이언트 타임존을 적용하여 오늘 날짜를 계산합니다.
+                    지정한 날짜의 질문을 새로운 질문으로 재할당합니다.
+                    클라이언트가 원하는 날짜를 path parameter로 직접 지정합니다.
                     기존 질문이 마음에 들지 않을 때 사용할 수 있습니다.
                     """
     )
@@ -190,17 +190,29 @@ public interface QuestionApi {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "재할당 횟수 초과",
+                    description = "재할당 횟수 초과 또는 이미 답변한 질문",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    value = """
-                                            {
-                                                "code": "RELOAD_LIMIT_EXCEEDED",
-                                                "message": "일일 질문 재할당 횟수를 초과했습니다."
-                                            }
-                                            """
-                            )
+                            examples = {
+                                    @ExampleObject(
+                                            name = "재할당 횟수 초과",
+                                            value = """
+                                                    {
+                                                        "code": "RELOAD_LIMIT_EXCEEDED",
+                                                        "message": "질문 변경 횟수를 초과했습니다. (최대 2회)"
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "이미 답변한 질문",
+                                            value = """
+                                                    {
+                                                        "code": "ALREADY_ANSWERED",
+                                                        "message": "이미 답변한 질문은 변경할 수 없습니다."
+                                                    }
+                                                    """
+                                    )
+                            }
                     )
             ),
             @ApiResponse(
@@ -211,7 +223,7 @@ public interface QuestionApi {
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                                "code": "QUESTION_NOT_FOUND",
+                                                "code": "DAILY_QUESTION_NOT_FOUND",
                                                 "message": "해당 날짜의 질문을 찾을 수 없습니다."
                                             }
                                             """
@@ -219,7 +231,16 @@ public interface QuestionApi {
                     )
             )
     })
-    ServeDailyQuestionResponse reloadDailyQuestion(
+    ResponseEntity<ServeDailyQuestionResponse> reloadDailyQuestion(
+            @Parameter(
+                    name = "date",
+                    description = "재할당할 질문의 날짜 (yyyy-MM-dd 형식). 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.",
+                    example = "2024-01-15",
+                    required = true,
+                    in = ParameterIn.PATH
+            )
+            LocalDate date,
+
             @Parameter(
                     name = "Timezone",
                     description = "클라이언트의 타임존 (IANA 타임존 형식)",

@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import site.one_question.global.common.domain.BaseEntity;
 import site.one_question.member.domain.Member;
+import site.one_question.question.domain.exception.ReloadLimitExceededException;
 
 @Entity
 @Getter
@@ -23,8 +24,6 @@ import site.one_question.member.domain.Member;
         )
 )
 public class DailyQuestion extends BaseEntity {
-
-    private static final int MAX_FREE_CHANGE_COUNT = 2;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -73,30 +72,16 @@ public class DailyQuestion extends BaseEntity {
         );
     }
 
-    public void changeQuestion(Question newQuestion, boolean isPremiumMember) {
-        if (!isPremiumMember && changeCount >= MAX_FREE_CHANGE_COUNT) {
-            throw new IllegalStateException("무료 회원은 질문 변경을 " + MAX_FREE_CHANGE_COUNT + "회까지만 할 수 있습니다.");
+    public void changeQuestion(Question newQuestion) {
+        if (!canChangeQuestion()) {
+            throw new ReloadLimitExceededException(
+                member.getPermission().getMaxQuestionChangeCount());
         }
         this.question = newQuestion;
         this.changeCount++;
     }
 
-    public boolean canChangeQuestion(boolean isPremiumMember) {
-        return isPremiumMember || changeCount < MAX_FREE_CHANGE_COUNT;
-    }
-
-    public int getRemainingChangeCount(boolean isPremiumMember) {
-        if (isPremiumMember) {
-            return Integer.MAX_VALUE;
-        }
-        return Math.max(0, MAX_FREE_CHANGE_COUNT - changeCount);
-    }
-
-    public LocalDate getTargetDate() {
-        return assignedAt.atZone(ZoneId.of(timezone)).toLocalDate();
-    }
-
-    public boolean isOwnedBy(Long memberId) {
-        return this.member.getId().equals(memberId);
+    public boolean canChangeQuestion() {
+        return changeCount < member.getPermission().getMaxQuestionChangeCount();
     }
 }
