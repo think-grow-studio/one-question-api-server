@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import site.one_question.member.domain.Member;
 
 @Entity
 @Getter
@@ -20,11 +21,13 @@ public class DailyQuestionAnswer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "daily_question_id", nullable = false)
-    private Long dailyQuestionId;
+    @OneToOne
+    @JoinColumn(name = "daily_question_id", nullable = false)
+    private DailyQuestion dailyQuestionId;
 
-    @Column(name = "member_id", nullable = false)
-    private Long memberId;
+    @ManyToOne
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member memberId;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
@@ -36,16 +39,16 @@ public class DailyQuestionAnswer {
     private String timezone;
 
     public static DailyQuestionAnswer create(
-            Long dailyQuestionId,
-            Long memberId,
+            DailyQuestion dailyQuestion,
+            Member member,
             String content,
             String timezone
     ) {
         validateContent(content);
         return new DailyQuestionAnswer(
                 null,
-                dailyQuestionId,
-                memberId,
+                dailyQuestion,
+                member,
                 content,
                 Instant.now(),
                 timezone
