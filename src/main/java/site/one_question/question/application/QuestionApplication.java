@@ -39,7 +39,7 @@ public class QuestionApplication {
 
         Member member = memberService.findById(memberId);
         QuestionCycle cycle = cycleService.getOrCreateCycle(member, date, timezone);
-        Question selectedQuestion = dailyQuestionService.selectRandomQuestion(cycle.getId());
+        Question selectedQuestion = dailyQuestionService.selectRandomQuestion(cycle);
 
         // 5. DailyQuestion 생성 및 저장
         DailyQuestion dailyQuestion = DailyQuestion.create(
@@ -71,8 +71,8 @@ public class QuestionApplication {
 
         // 4. 새 질문 선택 (현재 질문 제외)
         Question newQuestion = dailyQuestionService.selectRandomQuestionExcluding(
-            dailyQuestion.getQuestionCycle().getId(),
-            dailyQuestion.getQuestion().getId()
+            dailyQuestion.getQuestionCycle(),
+            dailyQuestion.getQuestion()
         );
 
         // 5. 질문 변경
