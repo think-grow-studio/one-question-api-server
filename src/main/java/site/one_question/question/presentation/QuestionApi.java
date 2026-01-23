@@ -84,7 +84,8 @@ public interface QuestionApi {
                     기준 날짜를 중심으로 이전/이후 날짜의 기록을 가져옵니다.
 
                     **중요**: baseDate는 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.
-                    서버는 전달받은 날짜를 그대로 사용하여 히스토리를 조회합니다.
+                    Timezone 헤더를 통해 미래 날짜 조회를 방지하며,
+                    조회 범위의 endDate가 오늘(타임존 기준)을 초과하지 않도록 제한합니다.
 
                     상태:
                     - ANSWERED: 질문 받음 + 답변 완료
@@ -168,7 +169,16 @@ public interface QuestionApi {
                     description = "가져올 항목 개수 (기본값: 5)",
                     example = "5"
             )
-            Integer size
+            Integer size,
+
+            @Parameter(
+                    name = "Timezone",
+                    description = "클라이언트의 타임존 (IANA 타임존 형식). 미래 날짜 조회 방지 및 답변 시각 변환에 사용됩니다.",
+                    example = "Asia/Seoul",
+                    required = true,
+                    in = ParameterIn.HEADER
+            )
+            String timezone
     );
 
     @Operation(
@@ -253,7 +263,10 @@ public interface QuestionApi {
 
     @Operation(
             summary = "답변 작성",
-            description = "지정한 질문에 대한 답변을 작성합니다."
+            description = """
+                    지정한 날짜의 질문에 대한 답변을 작성합니다.
+                    클라이언트의 타임존을 헤더로 전달하면, 답변 시각이 해당 타임존 기준으로 변환되어 응답됩니다.
+                    """
     )
     @ApiResponses({
             @ApiResponse(
@@ -281,14 +294,14 @@ public interface QuestionApi {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "해당 질문이 존재하지 않음",
+                    description = "해당 날짜의 질문이 존재하지 않음",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                                "code": "QUESTION_NOT_FOUND",
-                                                "message": "해당 질문을 찾을 수 없습니다."
+                                                "code": "DAILY_QUESTION_NOT_FOUND",
+                                                "message": "해당 날짜의 질문을 찾을 수 없습니다."
                                             }
                                             """
                             )
@@ -297,11 +310,22 @@ public interface QuestionApi {
     })
     CreateAnswerResponse createAnswer(
             @Parameter(
-                    description = "답변할 일일 질문 ID",
-                    example = "43",
-                    required = true
+                    name = "date",
+                    description = "답변할 질문의 날짜 (yyyy-MM-dd 형식). 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.",
+                    example = "2024-01-15",
+                    required = true,
+                    in = ParameterIn.PATH
             )
-            Long dailyQuestionId,
+            LocalDate date,
+
+            @Parameter(
+                    name = "Timezone",
+                    description = "클라이언트의 타임존 (IANA 타임존 형식)",
+                    example = "Asia/Seoul",
+                    required = true,
+                    in = ParameterIn.HEADER
+            )
+            String timezone,
 
             @RequestBody(
                     description = "답변 작성 요청",
@@ -315,7 +339,10 @@ public interface QuestionApi {
 
     @Operation(
             summary = "답변 수정",
-            description = "지정한 질문에 대한 답변을 수정합니다."
+            description = """
+                    지정한 날짜의 질문에 대한 답변을 수정합니다.
+                    클라이언트의 타임존을 헤더로 전달하면, 수정 시각이 해당 타임존 기준으로 변환되어 응답됩니다.
+                    """
     )
     @ApiResponses({
             @ApiResponse(
@@ -328,27 +355,50 @@ public interface QuestionApi {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "해당 질문 또는 답변이 존재하지 않음",
+                    description = "해당 날짜의 질문 또는 답변이 존재하지 않음",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    value = """
-                                            {
-                                                "code": "ANSWER_NOT_FOUND",
-                                                "message": "해당 질문에 대한 답변을 찾을 수 없습니다."
-                                            }
-                                            """
-                            )
+                            examples = {
+                                    @ExampleObject(
+                                            name = "질문 없음",
+                                            value = """
+                                                    {
+                                                        "code": "DAILY_QUESTION_NOT_FOUND",
+                                                        "message": "해당 날짜의 질문을 찾을 수 없습니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "답변 없음",
+                                            value = """
+                                                    {
+                                                        "code": "ANSWER_NOT_FOUND",
+                                                        "message": "해당 질문에 대한 답변을 찾을 수 없습니다."
+                                                    }
+                                                    """
+                                    )
+                            }
                     )
             )
     })
     UpdateAnswerResponse updateAnswer(
             @Parameter(
-                    description = "답변을 수정할 일일 질문 ID",
-                    example = "43",
-                    required = true
+                    name = "date",
+                    description = "답변을 수정할 질문의 날짜 (yyyy-MM-dd 형식). 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.",
+                    example = "2024-01-15",
+                    required = true,
+                    in = ParameterIn.PATH
             )
-            Long dailyQuestionId,
+            LocalDate date,
+
+            @Parameter(
+                    name = "Timezone",
+                    description = "클라이언트의 타임존 (IANA 타임존 형식)",
+                    example = "Asia/Seoul",
+                    required = true,
+                    in = ParameterIn.HEADER
+            )
+            String timezone,
 
             @RequestBody(
                     description = "답변 수정 요청",
