@@ -88,4 +88,8 @@ public class DailyQuestion extends BaseEntity {
     public boolean canChangeQuestion() {
         return changeCount < member.getPermission().getMaxQuestionChangeCount();
     }
+
+    public boolean hasAnswer() {
+        return this.answer != null;
+    }
 }

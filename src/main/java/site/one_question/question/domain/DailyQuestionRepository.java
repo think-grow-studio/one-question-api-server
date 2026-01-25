@@ -9,7 +9,15 @@ import org.springframework.data.repository.query.Param;
 
 public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Long> {
 
-    Optional<DailyQuestion> findByMemberIdAndDate(Long memberId, LocalDate date);
+    @Query("""
+        SELECT dq FROM DailyQuestion dq
+        LEFT JOIN FETCH dq.answer
+        WHERE dq.member.id = :memberId AND dq.date = :date
+        """)
+    Optional<DailyQuestion> findByMemberIdAndDate(
+        @Param("memberId") Long memberId,
+        @Param("date") LocalDate date
+    );
 
     @Query("SELECT dq.question.id FROM DailyQuestion dq WHERE dq.questionCycle.id = :questionCycleId")
     List<Long> findQuestionIdsByCycleId(@Param("questionCycleId") Long questionCycleId);

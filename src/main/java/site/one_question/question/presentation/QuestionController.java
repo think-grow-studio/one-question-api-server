@@ -68,29 +68,8 @@ public class QuestionController implements QuestionApi {
             @RequestHeader("Timezone") String timezone,
             @RequestBody CreateAnswerRequest request
     ) {
-        /*
-         * [답변 작성]
-         *
-         * 1. 현재 로그인한 사용자 정보 조회
-         *
-         * 2. DailyQuestion 조회 (memberId + date)
-         *    - 없으면 → 에러 (DAILY_QUESTION_NOT_FOUND)
-         *    - 다른 사용자의 질문이면 → 에러 (FORBIDDEN)
-         *
-         * 3. 기존 답변 존재 여부 확인
-         *    - 이미 답변이 있으면 → 에러 (ANSWER_ALREADY_EXISTS)
-         *    - ※ 답변 수정은 updateAnswer API 사용
-         *
-         * 4. Answer 레코드 생성
-         *    - daily_question_id = 조회된 DailyQuestion의 ID
-         *    - content = request.answer()
-         *    - answered_at = Instant.now() (DB 저장: UTC)
-         *    - timezone = 요청 헤더의 Timezone (DB 저장)
-         *
-         * 5. 응답 반환
-         *    - dailyAnswerId, content, answeredAt (LocalDateTime, timezone 기준 변환)
-         */
-        return null;
+        Long memberId = 1L; // TODO: SecurityContext에서 조회
+        return questionApplication.createAnswer(memberId, date, request.answer(), timezone);
     }
 
     @Override
@@ -100,25 +79,7 @@ public class QuestionController implements QuestionApi {
             @RequestHeader("Timezone") String timezone,
             @RequestBody UpdateAnswerRequest request
     ) {
-        /*
-         * [답변 수정]
-         *
-         * 1. 현재 로그인한 사용자 정보 조회
-         *
-         * 2. DailyQuestion 조회 (memberId + date)
-         *    - 없으면 → 에러 (DAILY_QUESTION_NOT_FOUND)
-         *    - 다른 사용자의 질문이면 → 에러 (FORBIDDEN)
-         *
-         * 3. 기존 Answer 조회
-         *    - 없으면 → 에러 (ANSWER_NOT_FOUND)
-         *
-         * 4. Answer 업데이트
-         *    - content = request.answer()
-         *    - ※ answered_at은 최초 답변 시간 유지
-         *
-         * 5. 응답 반환
-         *    - dailyAnswerId, content, updatedAt (LocalDateTime, timezone 기준 변환)
-         */
-        return null;
+        Long memberId = 1L; // TODO: SecurityContext에서 조회
+        return questionApplication.updateAnswer(memberId, date, request.answer(), timezone);
     }
 }

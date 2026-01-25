@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import site.one_question.global.common.domain.BaseEntity;
 import site.one_question.member.domain.Member;
 
 @Entity
@@ -13,7 +14,7 @@ import site.one_question.member.domain.Member;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(name = "daily_question_answer")
-public class DailyQuestionAnswer {
+public class DailyQuestionAnswer extends BaseEntity {
 
     private static final int MAX_CONTENT_LENGTH = 5000;
 

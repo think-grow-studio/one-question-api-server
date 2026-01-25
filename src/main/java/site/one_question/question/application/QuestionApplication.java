@@ -22,9 +22,14 @@ import site.one_question.question.domain.Question;
 import site.one_question.question.domain.QuestionCycle;
 import site.one_question.question.domain.QuestionCycleService;
 import site.one_question.question.domain.HistoryDirection;
+import site.one_question.question.domain.DailyQuestionAnswer;
+import site.one_question.question.domain.exception.AnswerAlreadyExistsException;
+import site.one_question.question.domain.exception.AnswerNotFoundException;
+import site.one_question.question.presentation.response.CreateAnswerResponse;
 import site.one_question.question.presentation.response.GetQuestionHistoryResponse;
 import site.one_question.question.presentation.response.QuestionHistoryItemDto;
 import site.one_question.question.presentation.response.ServeDailyQuestionResponse;
+import site.one_question.question.presentation.response.UpdateAnswerResponse;
 
 @Service
 @Transactional
@@ -35,7 +40,6 @@ public class QuestionApplication {
     private final DailyQuestionAnswerService answerService;
     private final QuestionCycleService cycleService;
     private final MemberService memberService;
-    private final DatePolicy datePolicy;
 
     public ServeDailyQuestionResponse serveDailyQuestion(Long memberId, LocalDate date, String timezone) {
         // 멱등성: 기존 질문 있으면 반환
@@ -67,7 +71,7 @@ public class QuestionApplication {
         DailyQuestion dailyQuestion = dailyQuestionService.findByMemberIdAndDateOrThrow(memberId, date);
 
         // 2. 답변 여부 확인
-        if (answerService.hasAnswer(dailyQuestion)) {
+        if (dailyQuestion.hasAnswer()) {
             throw new AlreadyAnsweredException();
         }
 
@@ -159,5 +163,42 @@ public class QuestionApplication {
         boolean hasNext = endDate.isBefore(today);
 
         return new GetQuestionHistoryResponse(histories, hasPrevious, hasNext, startDate, endDate);
+    }
+
+    public CreateAnswerResponse createAnswer(Long memberId, LocalDate date, String content, String timezone) {
+        // 1. DailyQuestion 조회
+        DailyQuestion dailyQuestion = dailyQuestionService.findByMemberIdAndDateOrThrow(memberId, date);
+
+        // 2. 기존 답변 존재 여부 확인
+        if (dailyQuestion.hasAnswer()) {
+            throw new AnswerAlreadyExistsException(dailyQuestion.getId());
+        }
+
+        // 3. 회원 조회
+        Member member = memberService.findById(memberId);
+
+        // 4. Answer 생성 및 저장
+        DailyQuestionAnswer answer = DailyQuestionAnswer.create(dailyQuestion, member, content, timezone);
+        DailyQuestionAnswer saved = answerService.save(answer);
+
+        // 5. 응답 반환
+        return CreateAnswerResponse.from(saved, timezone);
+    }
+
+    public UpdateAnswerResponse updateAnswer(Long memberId, LocalDate date, String content, String timezone) {
+        // 1. DailyQuestion 조회
+        DailyQuestion dailyQuestion = dailyQuestionService.findByMemberIdAndDateOrThrow(memberId, date);
+
+        // 2. Answer 존재 확인
+        if (!dailyQuestion.hasAnswer()) {
+            throw new AnswerNotFoundException(dailyQuestion.getId());
+        }
+        DailyQuestionAnswer answer = dailyQuestion.getAnswer();
+
+        // 3. 답변 수정
+        answer.updateContent(content);
+
+        // 4. 응답 반환
+        return UpdateAnswerResponse.from(answer, timezone);
     }
 }
