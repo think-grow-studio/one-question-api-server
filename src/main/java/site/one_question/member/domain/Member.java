@@ -2,6 +2,8 @@ package site.one_question.member.domain;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -35,6 +37,9 @@ public class Member extends BaseEntity {
     @Column(name = "joined_at", nullable = false)
     private Instant joinedAt;
 
+    @Column(name = "joined_date", nullable = false)
+    private LocalDate joinedDate;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private MemberPermission permission;
@@ -54,7 +59,8 @@ public class Member extends BaseEntity {
             String fullName,
             AuthSocialProvider provider,
             String providerId,
-            String locale
+            String locale,
+            LocalDate localDate
     ) {
         return new Member(
                 null,
@@ -63,6 +69,7 @@ public class Member extends BaseEntity {
                 provider,
                 providerId,
                 Instant.now(),
+                localDate,
                 MemberPermission.FREE,
                 locale,
                 MemberStatus.ACTIVE,

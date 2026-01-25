@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import site.one_question.question.presentation.request.CreateAnswerRequest;
+import site.one_question.question.domain.HistoryDirection;
 import site.one_question.question.presentation.request.UpdateAnswerRequest;
 import site.one_question.question.presentation.response.CreateAnswerResponse;
 import site.one_question.question.presentation.response.GetQuestionHistoryResponse;
@@ -161,9 +162,9 @@ public interface QuestionApi {
             @Parameter(
                     description = "조회 방향 (PREVIOUS: 이전 날짜들, NEXT: 다음 날짜들, BOTH: 양방향)",
                     example = "BOTH",
-                    schema = @Schema(allowableValues = {"PREVIOUS", "NEXT", "BOTH"})
+                    schema = @Schema(implementation = HistoryDirection.class)
             )
-            String direction,
+            HistoryDirection historyDirection,
 
             @Parameter(
                     description = "가져올 항목 개수 (기본값: 5)",

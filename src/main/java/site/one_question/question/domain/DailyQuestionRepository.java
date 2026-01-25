@@ -13,4 +13,19 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
 
     @Query("SELECT dq.question.id FROM DailyQuestion dq WHERE dq.questionCycle.id = :questionCycleId")
     List<Long> findQuestionIdsByCycleId(@Param("questionCycleId") Long questionCycleId);
+
+    @Query("""
+        SELECT dq FROM DailyQuestion dq
+        LEFT JOIN FETCH dq.question q
+        LEFT JOIN FETCH dq.questionCycle qc
+        LEFT JOIN FETCH dq.answer a
+        WHERE dq.member.id = :memberId
+        AND dq.date BETWEEN :startDate AND :endDate
+        ORDER BY dq.date DESC
+        """)
+    List<DailyQuestion> findByMemberIdAndDateBetween(
+        @Param("memberId") Long memberId,
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate
+    );
 }

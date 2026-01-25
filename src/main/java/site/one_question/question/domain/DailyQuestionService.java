@@ -83,4 +83,9 @@ public class DailyQuestionService {
         int randomIndex = ThreadLocalRandom.current().nextInt(candidates.size());
         return candidates.get(randomIndex);
     }
+
+    public List<DailyQuestion> findByMemberIdAndDateBetween(
+            Long memberId, LocalDate startDate, LocalDate endDate) {
+        return dailyQuestionRepository.findByMemberIdAndDateBetween(memberId, startDate, endDate);
+    }
 }

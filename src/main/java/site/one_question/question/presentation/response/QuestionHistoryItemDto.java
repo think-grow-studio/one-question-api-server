@@ -1,9 +1,12 @@
 package site.one_question.question.presentation.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import site.one_question.question.domain.DailyQuestion;
+import site.one_question.question.domain.DailyQuestionAnswer;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Schema(description = "질문 히스토리 항목")
 public record QuestionHistoryItemDto(
@@ -59,5 +62,44 @@ public record QuestionHistoryItemDto(
 
             @Schema(description = "답변 작성 시간", example = "2024-01-15T14:30:00")
             LocalDateTime answeredAt
-    ) {}
+    ) {
+        public static AnswerInfoDto from(DailyQuestionAnswer answer, String timezone) {
+            return new AnswerInfoDto(
+                answer.getId(),
+                answer.getContent(),
+                answer.getAnsweredAt().atZone(ZoneId.of(timezone)).toLocalDateTime()
+            );
+        }
+    }
+
+    public static QuestionHistoryItemDto noQuestion(LocalDate date) {
+        return new QuestionHistoryItemDto(date, Status.NO_QUESTION, null, null);
+    }
+
+    public static QuestionHistoryItemDto from(DailyQuestion dailyQuestion, String timezone) {
+        QuestionInfoDto questionInfo = new QuestionInfoDto(
+            dailyQuestion.getId(),
+            dailyQuestion.getQuestion().getContent(),
+            dailyQuestion.getQuestion().getDescription(),
+            (long) dailyQuestion.getQuestionCycle().getCycleNumber(),
+            (long) dailyQuestion.getChangeCount()
+        );
+
+        DailyQuestionAnswer answer = dailyQuestion.getAnswer();
+        if (answer == null) {
+            return new QuestionHistoryItemDto(
+                dailyQuestion.getDate(),
+                Status.UNANSWERED,
+                questionInfo,
+                null
+            );
+        }
+
+        return new QuestionHistoryItemDto(
+            dailyQuestion.getDate(),
+            Status.ANSWERED,
+            questionInfo,
+            AnswerInfoDto.from(answer, timezone)
+        );
+    }
 }

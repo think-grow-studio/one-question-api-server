@@ -53,6 +53,9 @@ public class DailyQuestion extends BaseEntity {
     @Column(name = "change_count", nullable = false)
     private int changeCount;
 
+    @OneToOne(mappedBy = "dailyQuestionId", fetch = FetchType.LAZY)
+    private DailyQuestionAnswer answer;
+
     public static DailyQuestion create(
             Member member,
             QuestionCycle questionCycle,
@@ -68,7 +71,8 @@ public class DailyQuestion extends BaseEntity {
                 date,
                 Instant.now(),
                 timezone,
-                0
+                0,
+                null
         );
     }
 

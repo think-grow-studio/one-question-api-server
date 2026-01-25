@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import site.one_question.question.application.QuestionApplication;
 import site.one_question.question.presentation.request.CreateAnswerRequest;
+import site.one_question.question.domain.HistoryDirection;
 import site.one_question.question.presentation.request.UpdateAnswerRequest;
 import site.one_question.question.presentation.response.CreateAnswerResponse;
 import site.one_question.question.presentation.response.ServeDailyQuestionResponse;
@@ -41,45 +42,12 @@ public class QuestionController implements QuestionApi {
     @GetMapping("/histories")
     public GetQuestionHistoryResponse getQuestionHistory(
             @RequestParam LocalDate baseDate,
-            @RequestParam(defaultValue = "BOTH") String direction,
+            @RequestParam(defaultValue = "BOTH") HistoryDirection historyDirection,
             @RequestParam(defaultValue = "5") Integer size,
             @RequestHeader("Timezone") String timezone
     ) {
-        /*
-         * [질문 히스토리 조회]
-         *
-         * 1. 현재 로그인한 사용자 정보 조회
-         *
-         * 2. 미래 날짜 검증
-         *    - baseDate > LocalDate.now(ZoneId.of(timezone)) → 에러 (FUTURE_DATE_QUESTION)
-         *
-         * 3. 조회 날짜 범위 계산
-         *    - direction=PREVIOUS: baseDate 기준 이전 size개 날짜
-         *    - direction=NEXT: baseDate 기준 이후 size개 날짜
-         *    - direction=BOTH: 양방향 각각 size개 (총 size*2 + 1개, baseDate 포함)
-         *    - ※ endDate는 today(timezone)를 초과하지 않도록 제한
-         *
-         * 4. 해당 날짜 범위의 DailyQuestion 조회
-         *    - member_id = 현재 사용자
-         *    - target_date BETWEEN startDate AND endDate
-         *    - LEFT JOIN Answer (답변이 없을 수도 있음)
-         *
-         * 5. 날짜별 상태 매핑
-         *    - 날짜 범위 내 모든 날짜를 순회하며:
-         *      a) DailyQuestion 있음 + Answer 있음 → ANSWERED
-         *      b) DailyQuestion 있음 + Answer 없음 → UNANSWERED
-         *      c) DailyQuestion 없음 → NO_QUESTION
-         *
-         * 6. 페이징 정보 계산
-         *    - hasPrevious: startDate 이전에 데이터가 더 있는지
-         *    - hasNext: endDate 이후 ~ today(timezone) 사이에 데이터가 더 있는지
-         *    - ※ 사용자 가입일 이전은 조회 불가 (hasPrevious = false)
-         *
-         * 7. 응답 반환
-         *    - histories: [{date, status, question, answer}, ...]
-         *    - hasPrevious, hasNext, startDate, endDate
-         */
-        return null;
+        Long memberId = 1L; // TODO: SecurityContext에서 조회
+        return questionApplication.getQuestionHistory(memberId, baseDate, historyDirection, size, timezone);
     }
 
     @Override
