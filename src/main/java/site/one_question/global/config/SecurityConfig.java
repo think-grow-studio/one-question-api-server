@@ -1,45 +1,67 @@
 package site.one_question.global.config;
 
+import lombok.RequiredArgsConstructor;
+import tools.jackson.databind.json.JsonMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
+import site.one_question.auth.domain.RefreshTokenService;
+import site.one_question.global.filter.MdcLoggingFilter;
+import site.one_question.global.filter.MdcMemberIdFilter;
+import site.one_question.global.security.filter.JwtLogoutFilter;
+import site.one_question.global.security.service.JwtService;
+import site.one_question.global.security.filter.JwtValidationFilter;
+import site.one_question.member.domain.MemberService;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .headers(headers ->
-                        headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
-                )
-                .authorizeHttpRequests(auth -> auth
-                        // Swagger UI
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/swagger-resources/**"
-                        ).permitAll()
-                        // H2 Console
-                        .requestMatchers("/h2-console/**").permitAll()
-                        // Actuator
-                        .requestMatchers("/actuator/**").permitAll()
-                        // API endpoints (임시로 모두 허용)
-                        .requestMatchers("/api/**").permitAll()
-                        .anyRequest().authenticated()
-                );
+  private final JsonMapper jsonMapper;
+  private final RefreshTokenService refreshTokenService;
+  private final JwtService jwtService;
+  private final AuthenticationEntryPoint authenticationEntryPoint;
+  private final MdcLoggingFilter mdcLoggingFilter;
+  private final MdcMemberIdFilter mdcMemberIdFilter;
 
-        return http.build();
-    }
+  @Bean
+  public SecurityFilterChain securityFilterChain(
+      HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+    return http.authorizeHttpRequests(
+            authorize ->
+                authorize
+                    .requestMatchers("/api/v1/auth/**", "/error","/api/v1/app-versions", "/health","/legal-document","/static/**","/images/**",
+                        "/swagger-ui/**","swagger-ui.html","/v3/api-docs/**","swagger-resources/**")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated())
+        .sessionManagement(
+            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(new JwtLogoutFilter(refreshTokenService), LogoutFilter.class)
+        .addFilterBefore(
+            new JwtValidationFilter(jwtService, jsonMapper), JwtLogoutFilter.class)
+        .addFilterAfter(mdcMemberIdFilter, JwtValidationFilter.class)
+        .addFilterBefore(mdcLoggingFilter, JwtValidationFilter.class)
+        .exceptionHandling(
+            exceptions -> exceptions.authenticationEntryPoint(authenticationEntryPoint))
+        .csrf(AbstractHttpConfigurer::disable)
+        .httpBasic(AbstractHttpConfigurer::disable)
+        .build();
+  }
+
+  @Bean
+  AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+    return config.getAuthenticationManager();
+  }
 }
+
+
