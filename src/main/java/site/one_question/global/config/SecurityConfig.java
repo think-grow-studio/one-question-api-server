@@ -1,7 +1,7 @@
 package site.one_question.global.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import tools.jackson.databind.json.JsonMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,7 +26,7 @@ import site.one_question.member.domain.MemberService;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final JsonMapper jsonMapper;
+  private final ObjectMapper objectMapper;
   private final RefreshTokenService refreshTokenService;
   private final JwtService jwtService;
   private final AuthenticationEntryPoint authenticationEntryPoint;
@@ -48,7 +48,7 @@ public class SecurityConfig {
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .addFilterBefore(new JwtLogoutFilter(refreshTokenService), LogoutFilter.class)
         .addFilterBefore(
-            new JwtValidationFilter(jwtService, jsonMapper), JwtLogoutFilter.class)
+            new JwtValidationFilter(jwtService, objectMapper), JwtLogoutFilter.class)
         .addFilterAfter(mdcMemberIdFilter, JwtValidationFilter.class)
         .addFilterBefore(mdcLoggingFilter, JwtValidationFilter.class)
         .exceptionHandling(

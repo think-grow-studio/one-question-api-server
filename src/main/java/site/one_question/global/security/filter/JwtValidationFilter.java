@@ -3,8 +3,8 @@ package site.one_question.global.security.filter;
 import static site.one_question.auth.domain.exception.AuthExceptionSpec.ACCESS_TOKEN_EXCEPTION;
 import static site.one_question.auth.domain.exception.AuthExceptionSpec.ACCESS_TOKEN_EXPIRED;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
-import tools.jackson.databind.json.JsonMapper;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,7 +30,7 @@ import site.one_question.global.security.service.JwtService;
 public class JwtValidationFilter extends OncePerRequestFilter {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final JwtService jwtService;
-  private final JsonMapper jsonMapper;
+  private final ObjectMapper objectMapper;
 
   private static final String HTTP_HEADER_AUTHORIZATION = "Authorization";
   private static final String HTTP_HEADER_AUTH_BEARER = "Bearer ";
@@ -85,6 +85,6 @@ public class JwtValidationFilter extends OncePerRequestFilter {
     response.setCharacterEncoding("UTF-8");
     ExceptionResponse errorResponse = ExceptionResponse.of(
         MDC.get(MdcKey.REQUEST_ID), spec.getStatus().value(), spec.getCode(), message);
-    response.getWriter().write(jsonMapper.writeValueAsString(errorResponse));
+    response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
   }
 }
