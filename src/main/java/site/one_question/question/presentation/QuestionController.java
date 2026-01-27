@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import site.one_question.auth.infrastructure.annotation.PrincipalId;
+import site.one_question.global.common.HttpHeaders;
 import site.one_question.question.application.QuestionApplication;
 import site.one_question.question.presentation.request.CreateAnswerRequest;
 import site.one_question.question.domain.HistoryDirection;
@@ -35,7 +36,7 @@ public class QuestionController implements QuestionApi {
     public ResponseEntity<ServeDailyQuestionResponse> serveDailyQuestion(
             @PrincipalId Long memberId,
             @PathVariable(name = "date") LocalDate date,
-            @RequestHeader("Timezone") String timezone
+            @RequestHeader(HttpHeaders.TIMEZONE) String timezone
     ) {
         ServeDailyQuestionResponse response = questionApplication.serveDailyQuestion(memberId, date, timezone);
         return ResponseEntity.ok(response);
@@ -48,7 +49,7 @@ public class QuestionController implements QuestionApi {
             @RequestParam LocalDate baseDate,
             @RequestParam(defaultValue = "BOTH") HistoryDirection historyDirection,
             @RequestParam(defaultValue = "5") Integer size,
-            @RequestHeader("Timezone") String timezone
+            @RequestHeader(HttpHeaders.TIMEZONE) String timezone
     ) {
         return questionApplication.getQuestionHistory(memberId, baseDate, historyDirection, size, timezone);
     }
@@ -58,7 +59,7 @@ public class QuestionController implements QuestionApi {
     public ResponseEntity<ServeDailyQuestionResponse> reloadDailyQuestion(
             @PrincipalId Long memberId,
             @PathVariable LocalDate date,
-            @RequestHeader("Timezone") String timezone
+            @RequestHeader(HttpHeaders.TIMEZONE) String timezone
     ) {
         ServeDailyQuestionResponse response = questionApplication.reloadDailyQuestion(memberId, date, timezone);
         return ResponseEntity.ok(response);
@@ -69,7 +70,7 @@ public class QuestionController implements QuestionApi {
     public CreateAnswerResponse createAnswer(
             @PrincipalId Long memberId,
             @PathVariable LocalDate date,
-            @RequestHeader("Timezone") String timezone,
+            @RequestHeader(HttpHeaders.TIMEZONE) String timezone,
             @RequestBody CreateAnswerRequest request
     ) {
         return questionApplication.createAnswer(memberId, date, request.answer(), timezone);
@@ -80,7 +81,7 @@ public class QuestionController implements QuestionApi {
     public UpdateAnswerResponse updateAnswer(
             @PrincipalId Long memberId,
             @PathVariable LocalDate date,
-            @RequestHeader("Timezone") String timezone,
+            @RequestHeader(HttpHeaders.TIMEZONE) String timezone,
             @RequestBody UpdateAnswerRequest request
     ) {
         return questionApplication.updateAnswer(memberId, date, request.answer(), timezone);

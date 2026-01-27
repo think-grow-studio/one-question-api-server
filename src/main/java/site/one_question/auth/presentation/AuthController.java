@@ -1,5 +1,7 @@
 package site.one_question.auth.presentation;
 
+import static org.springframework.http.HttpHeaders.ACCEPT_LANGUAGE;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,7 @@ import site.one_question.auth.presentation.request.GoogleAuthRequest;
 import site.one_question.auth.presentation.request.ReissueAuthTokenRequest;
 import site.one_question.auth.presentation.response.AuthResponse;
 import site.one_question.auth.presentation.response.ReissueAuthTokenResponse;
+import site.one_question.global.common.HttpHeaders;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -26,8 +29,8 @@ public class AuthController implements AuthApi {
     @Override
     @PostMapping("/google")
     public ResponseEntity<AuthResponse> googleAuth(
-            @RequestHeader("Accept-Language") String locale,
-            @RequestHeader("Timezone") String timezone,
+            @RequestHeader(ACCEPT_LANGUAGE) String locale,
+            @RequestHeader(HttpHeaders.TIMEZONE) String timezone,
             @Valid @RequestBody GoogleAuthRequest request
     ) {
         AuthResponse response = authApplication.googleAuth(request, locale, timezone);
@@ -37,8 +40,8 @@ public class AuthController implements AuthApi {
     @Override
     @PostMapping("/apple")
     public ResponseEntity<AuthResponse> appleAuth(
-            @RequestHeader("Accept-Language") String locale,
-            @RequestHeader("Timezone") String timezone,
+            @RequestHeader(ACCEPT_LANGUAGE) String locale,
+            @RequestHeader(HttpHeaders.TIMEZONE) String timezone,
             @Valid @RequestBody AppleAuthRequest request
     ) {
         AuthResponse response = authApplication.appleAuth(request, locale, timezone);
