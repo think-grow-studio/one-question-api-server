@@ -33,4 +33,8 @@ public class Question extends BaseEntity {
 
     @Column(name = "number", nullable = false)
     private int number;
+
+    public static Question create(String content, String description, String locale, int number) {
+        return new Question(null, content, description, locale, QuestionStatus.ACTIVE, number);
+    }
 }
