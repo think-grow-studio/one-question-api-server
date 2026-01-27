@@ -3,16 +3,18 @@ package site.one_question.test_config.initializer;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Component;
-import site.one_question.question.domain.Question;
-import site.one_question.question.domain.QuestionRepository;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
+import org.springframework.test.util.ReflectionTestUtils;
+import site.one_question.question.domain.Question;
+import site.one_question.question.domain.QuestionRepository;
+import site.one_question.question.domain.QuestionStatus;
 
 @Component
 @RequiredArgsConstructor
@@ -35,14 +37,19 @@ public class TestDataInitializer {
         );
 
         List<Question> questions = dtos.stream()
-            .map(dto -> Question.create(
-                dto.text(),
-                dto.description(),
-                "ko-KR",
-                Integer.parseInt(dto.id())
-            ))
+            .map(this::createQuestion)
             .toList();
 
         questionRepository.saveAll(questions);
+    }
+
+    private Question createQuestion(QuestionJsonDto dto) {
+        Question question = BeanUtils.instantiateClass(Question.class);
+        ReflectionTestUtils.setField(question, "content", dto.text());
+        ReflectionTestUtils.setField(question, "description", dto.description());
+        ReflectionTestUtils.setField(question, "locale", "ko-KR");
+        ReflectionTestUtils.setField(question, "status", QuestionStatus.ACTIVE);
+        ReflectionTestUtils.setField(question, "number", Integer.parseInt(dto.id()));
+        return question;
     }
 }

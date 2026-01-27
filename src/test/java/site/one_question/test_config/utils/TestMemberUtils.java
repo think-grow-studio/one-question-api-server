@@ -37,4 +37,16 @@ public class TestMemberUtils {
         );
         return memberRepository.save(member);
     }
+
+    public Member createSave_With_JoinedDate(LocalDate joinedDate) {
+        Member member = Member.create(
+                "test" + uniqueId + "@test.com",
+                "테스트유저" + uniqueId,
+                AuthSocialProvider.GOOGLE,
+                "provider-id-" + uniqueId++,
+                "ko-KR",
+                joinedDate
+        );
+        return memberRepository.save(member);
+    }
 }
