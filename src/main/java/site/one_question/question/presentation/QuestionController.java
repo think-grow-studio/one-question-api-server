@@ -44,14 +44,15 @@ public class QuestionController implements QuestionApi {
 
     @Override
     @GetMapping("/histories")
-    public GetQuestionHistoryResponse getQuestionHistory(
+    public ResponseEntity<GetQuestionHistoryResponse> getQuestionHistory(
             @PrincipalId Long memberId,
             @RequestParam LocalDate baseDate,
             @RequestParam(defaultValue = "BOTH") HistoryDirection historyDirection,
             @RequestParam(defaultValue = "5") Integer size,
             @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone
     ) {
-        return questionApplication.getQuestionHistory(memberId, baseDate, historyDirection, size, timezone);
+        GetQuestionHistoryResponse response = questionApplication.getQuestionHistory(memberId, baseDate, historyDirection, size, timezone);
+        return ResponseEntity.ok(response);
     }
 
     @Override
@@ -67,23 +68,25 @@ public class QuestionController implements QuestionApi {
 
     @Override
     @PostMapping("/daily/{date}/answer")
-    public CreateAnswerResponse createAnswer(
+    public ResponseEntity<CreateAnswerResponse> createAnswer(
             @PrincipalId Long memberId,
             @PathVariable LocalDate date,
             @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone,
             @RequestBody CreateAnswerRequest request
     ) {
-        return questionApplication.createAnswer(memberId, date, request.answer(), timezone);
+        CreateAnswerResponse response = questionApplication.createAnswer(memberId, date, request.answer(), timezone);
+        return ResponseEntity.ok(response);
     }
 
     @Override
     @PatchMapping("/daily/{date}/answer")
-    public UpdateAnswerResponse updateAnswer(
+    public ResponseEntity<UpdateAnswerResponse> updateAnswer(
             @PrincipalId Long memberId,
             @PathVariable LocalDate date,
             @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone,
             @RequestBody UpdateAnswerRequest request
     ) {
-        return questionApplication.updateAnswer(memberId, date, request.answer(), timezone);
+        UpdateAnswerResponse response = questionApplication.updateAnswer(memberId, date, request.answer(), timezone);
+        return ResponseEntity.ok(response);
     }
 }

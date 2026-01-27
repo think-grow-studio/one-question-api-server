@@ -153,7 +153,7 @@ public interface QuestionApi {
                     )
             )
     })
-    GetQuestionHistoryResponse getQuestionHistory(
+    ResponseEntity<GetQuestionHistoryResponse> getQuestionHistory(
             Long memberId,
 
             @Parameter(
@@ -315,7 +315,7 @@ public interface QuestionApi {
                     )
             )
     })
-    CreateAnswerResponse createAnswer(
+    ResponseEntity<CreateAnswerResponse> createAnswer(
             Long memberId,
 
             @Parameter(
@@ -390,7 +390,7 @@ public interface QuestionApi {
                     )
             )
     })
-    UpdateAnswerResponse updateAnswer(
+    ResponseEntity<UpdateAnswerResponse> updateAnswer(
             Long memberId,
 
             @Parameter(
