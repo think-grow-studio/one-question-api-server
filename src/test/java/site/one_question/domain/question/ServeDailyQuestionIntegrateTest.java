@@ -17,6 +17,7 @@ import site.one_question.global.common.HttpHeaderConstant;
 import site.one_question.member.domain.Member;
 import site.one_question.question.domain.DailyQuestion;
 import site.one_question.question.domain.QuestionCycle;
+import site.one_question.question.domain.exception.QuestionExceptionSpec;
 import site.one_question.test_config.IntegrateTest;
 
 @DisplayName("오늘의 질문 조회 통합 테스트")
@@ -217,7 +218,7 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.code").value("QUESTION-007"));
+                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.FUTURE_DATE_QUESTION.getCode()));
 
             // DB 검증 - 아무것도 생성되지 않음
             assertThat(dailyQuestionRepository.findAll()).isEmpty();
@@ -238,7 +239,7 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.code").value("QUESTION-006"));
+                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.BEFORE_SIGNUP_DATE.getCode()));
 
             // DB 검증 - 새 사이클이 생성되지 않음
             assertThat(questionCycleRepository.findAll()).hasSize(1);

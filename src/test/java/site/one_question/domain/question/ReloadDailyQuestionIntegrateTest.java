@@ -1,0 +1,223 @@
+package site.one_question.domain.question;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.LocalDate;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
+import org.springframework.test.util.ReflectionTestUtils;
+import site.one_question.global.common.HttpHeaderConstant;
+import site.one_question.member.domain.Member;
+import site.one_question.member.domain.MemberPermission;
+import site.one_question.question.domain.DailyQuestion;
+import site.one_question.question.domain.Question;
+import site.one_question.question.domain.QuestionCycle;
+import site.one_question.question.domain.exception.QuestionExceptionSpec;
+import site.one_question.test_config.IntegrateTest;
+
+@DisplayName("오늘의 질문 새로고침 통합 테스트")
+class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
+
+    private static final String TIMEZONE = "Asia/Seoul";
+
+    private Member member;
+    private String token;
+
+    @BeforeEach
+    void setup() {
+        member = testMemberUtils.createSave();
+        token = testAuthUtils.createBearerToken(member);
+    }
+
+    @Nested
+    @DisplayName("정상 케이스")
+    class SuccessTest {
+
+        @Test
+        @DisplayName("정상 새로고침 시 200 OK, 새 질문 반환")
+        void reload_daily_question_success() throws Exception {
+            // given
+            LocalDate today = LocalDate.now();
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question question = testQuestionUtils.createSave();
+            testQuestionUtils.createSave(); // 새로고침용 추가 질문
+            testDailyQuestionUtils.createSave(member, cycle, question);
+
+            // when & then
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.dailyQuestionId").exists())
+                    .andExpect(jsonPath("$.content").exists())
+                    .andExpect(jsonPath("$.questionCycle").value(1));
+        }
+
+        @Test
+        @DisplayName("새로고침 후 changeCount 1 증가")
+        void reload_increments_change_count() throws Exception {
+            // given
+            LocalDate today = LocalDate.now();
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question question = testQuestionUtils.createSave();
+            testQuestionUtils.createSave(); // 새로고침용 추가 질문
+            DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave(member, cycle, question);
+
+            assertThat(dailyQuestion.getChangeCount()).isEqualTo(0);
+
+            // when
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.changeCount").value(1));
+
+            // then
+            entityManager.clear();
+            DailyQuestion reloaded = dailyQuestionRepository.findById(dailyQuestion.getId()).orElseThrow();
+            assertThat(reloaded.getChangeCount()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("새로고침 시 기존과 다른 질문 반환")
+        void reload_returns_different_question() throws Exception {
+            // given
+            LocalDate today = LocalDate.now();
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question originalQuestion = testQuestionUtils.createSave();
+            testQuestionUtils.createSave(); // 새로고침용 추가 질문
+            DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave(member, cycle, originalQuestion);
+
+            Long originalQuestionId = originalQuestion.getId();
+
+            // when
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            // then
+            entityManager.clear();
+            DailyQuestion reloaded = dailyQuestionRepository.findById(dailyQuestion.getId()).orElseThrow();
+            assertThat(reloaded.getQuestion().getId()).isNotEqualTo(originalQuestionId);
+        }
+    }
+
+    @Nested
+    @DisplayName("경계 테스트")
+    class BoundaryTest {
+
+        @Test
+        @DisplayName("changeCount가 max-1일 때 마지막 새로고침 성공")
+        void reload_at_max_minus_one_succeeds() throws Exception {
+            // given - FREE 권한의 경우 maxChangeCount = 2, 따라서 1회 변경 후 한 번 더 가능
+            LocalDate today = LocalDate.now();
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question question = testQuestionUtils.createSave();
+            testQuestionUtils.createSave(); // 새로고침용 추가 질문
+            DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave(member, cycle, question);
+
+            // changeCount를 max-1 (1)로 설정
+            int maxCount = MemberPermission.FREE.getMaxQuestionChangeCount(); // 2
+            ReflectionTestUtils.setField(dailyQuestion, "changeCount", maxCount - 1);
+            dailyQuestionRepository.save(dailyQuestion);
+
+            // when & then - 마지막 새로고침 성공
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.changeCount").value(maxCount));
+        }
+
+        @Test
+        @DisplayName("changeCount가 max일 때 새로고침 실패 (400)")
+        void reload_at_max_count_fails() throws Exception {
+            // given
+            LocalDate today = LocalDate.now();
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question question = testQuestionUtils.createSave();
+            DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave(member, cycle, question);
+
+            // changeCount를 max (2)로 설정
+            int maxCount = MemberPermission.FREE.getMaxQuestionChangeCount(); // 2
+            ReflectionTestUtils.setField(dailyQuestion, "changeCount", maxCount);
+            dailyQuestionRepository.save(dailyQuestion);
+
+            // when & then
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.RELOAD_LIMIT_EXCEEDED.getCode()));
+        }
+    }
+
+    @Nested
+    @DisplayName("예외 테스트")
+    class ExceptionTest {
+
+        @Test
+        @DisplayName("DailyQuestion 없이 새로고침 시 404")
+        void reload_without_daily_question_throws_404() throws Exception {
+            // given
+            LocalDate today = LocalDate.now();
+            // DailyQuestion 생성하지 않음
+
+            // when & then
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.DAILY_QUESTION_NOT_FOUND.getCode()));
+        }
+
+        @Test
+        @DisplayName("답변한 질문 새로고침 시 400 (QUESTION-005)")
+        void reload_answered_question_throws_400() throws Exception {
+            // given
+            LocalDate today = LocalDate.now();
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question question = testQuestionUtils.createSave();
+            DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave(member, cycle, question);
+
+            // 답변 생성
+            testDailyQuestionAnswerUtils.createSave(dailyQuestion, member);
+
+            // when & then
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.ALREADY_ANSWERED.getCode()));
+        }
+
+        @Test
+        @DisplayName("변경 횟수 초과 시 400 (QUESTION-008)")
+        void reload_exceeded_limit_throws_400() throws Exception {
+            // given
+            LocalDate today = LocalDate.now();
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question question = testQuestionUtils.createSave();
+            DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave(member, cycle, question);
+
+            // changeCount를 max 초과로 설정
+            int exceedCount = MemberPermission.FREE.getMaxQuestionChangeCount() + 1;
+            ReflectionTestUtils.setField(dailyQuestion, "changeCount", exceedCount);
+            dailyQuestionRepository.save(dailyQuestion);
+
+            // when & then
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.RELOAD_LIMIT_EXCEEDED.getCode()));
+        }
+    }
+}
