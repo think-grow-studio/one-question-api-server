@@ -2,7 +2,10 @@ package site.one_question.member.presentation.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import site.one_question.member.domain.Member;
 
 @Schema(description = "회원 정보 조회 응답")
 public record GetMemberResponse(
@@ -27,7 +30,19 @@ public record GetMemberResponse(
         @Schema(description = "상태", example = "ACTIVE", allowableValues = {"ACTIVE", "BLOCKED", "WITHDRAWAL_REQUESTED"})
         String status,
 
-        @Schema(description = "가입일시", example = "2024-01-01T10:00:00")
-        LocalDateTime joinedAt
+        @Schema(description = "가입일자", example = "2024-01-01")
+        LocalDate joineDate
 ) {
+    public static GetMemberResponse from(Member member) {
+        return new GetMemberResponse(
+                member.getId(),
+                member.getEmail(),
+                member.getFullName(),
+                member.getProvider().name(),
+                member.getLocale(),
+                member.getPermission().name(),
+                member.getStatus().name(),
+                member.getJoinedDate()
+        );
+    }
 }

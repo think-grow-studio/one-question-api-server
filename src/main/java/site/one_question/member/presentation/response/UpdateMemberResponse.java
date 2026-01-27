@@ -3,6 +3,8 @@ package site.one_question.member.presentation.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import site.one_question.member.domain.Member;
 
 @Schema(description = "회원 정보 수정 응답")
 public record UpdateMemberResponse(
@@ -30,4 +32,16 @@ public record UpdateMemberResponse(
         @Schema(description = "가입일시", example = "2024-01-01T10:00:00")
         LocalDateTime joinedAt
 ) {
+    public static UpdateMemberResponse from(Member member) {
+        return new UpdateMemberResponse(
+                member.getId(),
+                member.getEmail(),
+                member.getFullName(),
+                member.getProvider().name(),
+                member.getLocale(),
+                member.getPermission().name(),
+                member.getStatus().name(),
+                LocalDateTime.ofInstant(member.getJoinedAt(), ZoneId.systemDefault())
+        );
+    }
 }

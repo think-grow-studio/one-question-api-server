@@ -77,10 +77,13 @@ public class Member extends BaseEntity {
         );
     }
 
-    public void updateProfile(String email, String fullName, String locale) {
-        this.email = email;
-        this.fullName = fullName;
-        this.locale = locale;
+    public void updateProfile(String fullName, String locale) {
+        if (fullName != null) {
+            this.fullName = fullName;
+        }
+        if (locale != null) {
+            this.locale = locale;
+        }
     }
 
     public boolean isPremium() {

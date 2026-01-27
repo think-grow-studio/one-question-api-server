@@ -8,9 +8,9 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
 import site.one_question.member.presentation.request.UpdateMemberRequest;
 import site.one_question.member.presentation.response.GetMemberResponse;
-import site.one_question.member.presentation.response.UpdateMemberResponse;
 
 @Tag(name = "Member", description = "회원 관련 API")
 public interface MemberApi {
@@ -44,7 +44,7 @@ public interface MemberApi {
                     )
             )
     })
-    GetMemberResponse getMe();
+    ResponseEntity<GetMemberResponse> getMe(Long memberId);
 
     @Operation(
             summary = "내 정보 수정",
@@ -55,12 +55,8 @@ public interface MemberApi {
     )
     @ApiResponses({
             @ApiResponse(
-                    responseCode = "200",
-                    description = "수정 성공",
-                    content = @Content(
-                            mediaType = "application/json",
-                            schema = @Schema(implementation = UpdateMemberResponse.class)
-                    )
+                    responseCode = "204",
+                    description = "수정 성공"
             ),
             @ApiResponse(
                     responseCode = "401",
@@ -76,24 +72,10 @@ public interface MemberApi {
                                             """
                             )
                     )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "잘못된 요청",
-                    content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    value = """
-                                            {
-                                                "code": "INVALID_LOCALE",
-                                                "message": "유효하지 않은 로케일입니다."
-                                            }
-                                            """
-                            )
-                    )
             )
     })
-    UpdateMemberResponse updateMe(
+    ResponseEntity<Void> updateMe(
+            Long memberId,
             @RequestBody(
                     description = "회원 정보 수정 요청",
                     content = @Content(
