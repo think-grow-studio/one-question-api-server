@@ -59,6 +59,8 @@ public interface QuestionApi {
             )
     })
     ResponseEntity<ServeDailyQuestionResponse> serveDailyQuestion(
+            Long memberId,
+
             @Parameter(
                     name = "date",
                     description = "질문을 제공받을 날짜 (yyyy-MM-dd 형식). 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.",
@@ -152,6 +154,8 @@ public interface QuestionApi {
             )
     })
     GetQuestionHistoryResponse getQuestionHistory(
+            Long memberId,
+
             @Parameter(
                     description = "기준 날짜 (yyyy-MM-dd 형식). 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.",
                     example = "2024-01-15",
@@ -243,6 +247,8 @@ public interface QuestionApi {
             )
     })
     ResponseEntity<ServeDailyQuestionResponse> reloadDailyQuestion(
+            Long memberId,
+
             @Parameter(
                     name = "date",
                     description = "재할당할 질문의 날짜 (yyyy-MM-dd 형식). 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.",
@@ -310,6 +316,8 @@ public interface QuestionApi {
             )
     })
     CreateAnswerResponse createAnswer(
+            Long memberId,
+
             @Parameter(
                     name = "date",
                     description = "답변할 질문의 날짜 (yyyy-MM-dd 형식). 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.",
@@ -383,6 +391,8 @@ public interface QuestionApi {
             )
     })
     UpdateAnswerResponse updateAnswer(
+            Long memberId,
+
             @Parameter(
                     name = "date",
                     description = "답변을 수정할 질문의 날짜 (yyyy-MM-dd 형식). 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.",
