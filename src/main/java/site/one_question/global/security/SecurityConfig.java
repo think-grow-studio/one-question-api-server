@@ -1,4 +1,4 @@
-package site.one_question.global.config;
+package site.one_question.global.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -12,14 +12,11 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.logout.LogoutFilter;
-import site.one_question.auth.domain.RefreshTokenService;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import site.one_question.global.filter.MdcLoggingFilter;
 import site.one_question.global.filter.MdcMemberIdFilter;
-import site.one_question.global.security.filter.JwtLogoutFilter;
 import site.one_question.global.security.service.JwtService;
 import site.one_question.global.security.filter.JwtValidationFilter;
-import site.one_question.member.domain.MemberService;
 
 @Configuration
 @EnableWebSecurity
@@ -27,7 +24,6 @@ import site.one_question.member.domain.MemberService;
 public class SecurityConfig {
 
   private final ObjectMapper objectMapper;
-  private final RefreshTokenService refreshTokenService;
   private final JwtService jwtService;
   private final AuthenticationEntryPoint authenticationEntryPoint;
   private final MdcLoggingFilter mdcLoggingFilter;
@@ -46,9 +42,8 @@ public class SecurityConfig {
                     .authenticated())
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .addFilterBefore(new JwtLogoutFilter(refreshTokenService), LogoutFilter.class)
         .addFilterBefore(
-            new JwtValidationFilter(jwtService, objectMapper), JwtLogoutFilter.class)
+            new JwtValidationFilter(jwtService, objectMapper), UsernamePasswordAuthenticationFilter.class)
         .addFilterAfter(mdcMemberIdFilter, JwtValidationFilter.class)
         .addFilterBefore(mdcLoggingFilter, JwtValidationFilter.class)
         .exceptionHandling(

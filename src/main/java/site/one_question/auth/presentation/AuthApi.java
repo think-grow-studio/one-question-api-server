@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
 import site.one_question.auth.presentation.request.AppleAuthRequest;
 import site.one_question.auth.presentation.request.GoogleAuthRequest;
 import site.one_question.auth.presentation.request.ReissueAuthTokenRequest;
@@ -51,7 +52,7 @@ public interface AuthApi {
                     )
             )
     })
-    AuthResponse googleAuth(
+    ResponseEntity<AuthResponse> googleAuth(
             @Parameter(
                     name = "Accept-Language",
                     description = "클라이언트 로케일 (예: ko-KR)",
@@ -111,7 +112,7 @@ public interface AuthApi {
                     )
             )
     })
-    AuthResponse appleAuth(
+    ResponseEntity<AuthResponse> appleAuth(
             @Parameter(
                     name = "Accept-Language",
                     description = "클라이언트 로케일 (예: ko-KR)",
@@ -170,7 +171,7 @@ public interface AuthApi {
                     )
             )
     })
-    ReissueAuthTokenResponse reissueToken(
+    ResponseEntity<ReissueAuthTokenResponse> reissueToken(
             @RequestBody(
                     description = "토큰 재발급 요청",
                     content = @Content(
@@ -206,5 +207,5 @@ public interface AuthApi {
                     )
             )
     })
-    void logout(Long memberId);
+    ResponseEntity<Void> logout(Long memberId);
 }

@@ -2,14 +2,13 @@ package site.one_question.auth.presentation;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import site.one_question.auth.application.AuthApplicationService;
+import site.one_question.auth.application.AuthApplication;
 import site.one_question.auth.infrastructure.annotation.PrincipalId;
 import site.one_question.auth.presentation.request.AppleAuthRequest;
 import site.one_question.auth.presentation.request.GoogleAuthRequest;
@@ -22,38 +21,41 @@ import site.one_question.auth.presentation.response.ReissueAuthTokenResponse;
 @RequiredArgsConstructor
 public class AuthController implements AuthApi {
 
-    private final AuthApplicationService authApplicationService;
+    private final AuthApplication authApplication;
 
     @Override
     @PostMapping("/google")
-    public AuthResponse googleAuth(
+    public ResponseEntity<AuthResponse> googleAuth(
             @RequestHeader("Accept-Language") String locale,
             @RequestHeader("Timezone") String timezone,
             @Valid @RequestBody GoogleAuthRequest request
     ) {
-        return authApplicationService.googleAuth(request, locale, timezone);
+        AuthResponse response = authApplication.googleAuth(request, locale, timezone);
+        return ResponseEntity.ok(response);
     }
 
     @Override
     @PostMapping("/apple")
-    public AuthResponse appleAuth(
+    public ResponseEntity<AuthResponse> appleAuth(
             @RequestHeader("Accept-Language") String locale,
             @RequestHeader("Timezone") String timezone,
             @Valid @RequestBody AppleAuthRequest request
     ) {
-        return authApplicationService.appleAuth(request, locale, timezone);
+        AuthResponse response = authApplication.appleAuth(request, locale, timezone);
+        return ResponseEntity.ok(response);
     }
 
     @Override
     @PostMapping("/reissue-token")
-    public ReissueAuthTokenResponse reissueToken(@Valid @RequestBody ReissueAuthTokenRequest request) {
-        return authApplicationService.reissueToken(request);
+    public ResponseEntity<ReissueAuthTokenResponse> reissueToken(@Valid @RequestBody ReissueAuthTokenRequest request) {
+        ReissueAuthTokenResponse response = authApplication.reissueToken(request);
+        return ResponseEntity.ok(response);
     }
 
     @Override
     @PostMapping("/logout")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void logout(@PrincipalId Long memberId) {
-        authApplicationService.logout(memberId);
+    public ResponseEntity<Void> logout(@PrincipalId Long memberId) {
+        authApplication.logout(memberId);
+        return ResponseEntity.noContent().build();
     }
 }

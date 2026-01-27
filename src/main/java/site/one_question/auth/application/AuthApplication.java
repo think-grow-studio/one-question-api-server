@@ -25,7 +25,7 @@ import site.one_question.member.domain.MemberService;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class AuthApplicationService {
+public class AuthApplication {
 
     private final GoogleTokenVerifier googleTokenVerifier;
     private final AppleTokenVerifier appleTokenVerifier;
