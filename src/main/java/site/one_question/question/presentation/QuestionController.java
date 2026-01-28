@@ -1,6 +1,7 @@
 package site.one_question.question.presentation;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -24,6 +25,7 @@ import site.one_question.question.presentation.response.UpdateAnswerResponse;
 
 import java.time.LocalDate;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/questions")
 @RequiredArgsConstructor
@@ -38,7 +40,9 @@ public class QuestionController implements QuestionApi {
             @PathVariable(name = "date") LocalDate date,
             @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone
     ) {
+        log.info("[API] 오늘의 질문 조회 요청 시작 - date: {}", date);
         ServeDailyQuestionResponse response = questionApplication.serveDailyQuestion(memberId, date, timezone);
+        log.info("[API] 오늘의 질문 조회 요청 종료 - date: {}", date);
         return ResponseEntity.ok(response);
     }
 
@@ -51,7 +55,9 @@ public class QuestionController implements QuestionApi {
             @RequestParam(defaultValue = "5") Integer size,
             @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone
     ) {
+        log.info("[API] 질문 히스토리 조회 요청 시작 - baseDate: {}, direction: {}", baseDate, historyDirection);
         GetQuestionHistoryResponse response = questionApplication.getQuestionHistory(memberId, baseDate, historyDirection, size, timezone);
+        log.info("[API] 질문 히스토리 조회 요청 종료 - baseDate: {}, direction: {}", baseDate, historyDirection);
         return ResponseEntity.ok(response);
     }
 
@@ -62,7 +68,9 @@ public class QuestionController implements QuestionApi {
             @PathVariable LocalDate date,
             @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone
     ) {
+        log.info("[API] 질문 재요청 시작 - date: {}", date);
         ServeDailyQuestionResponse response = questionApplication.reloadDailyQuestion(memberId, date, timezone);
+        log.info("[API] 질문 재요청 요청 종료 - date: {}", date);
         return ResponseEntity.ok(response);
     }
 
@@ -74,7 +82,9 @@ public class QuestionController implements QuestionApi {
             @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone,
             @RequestBody CreateAnswerRequest request
     ) {
+        log.info("[API] 답변 생성 요청 시작 - date: {}", date);
         CreateAnswerResponse response = questionApplication.createAnswer(memberId, date, request.answer(), timezone);
+        log.info("[API] 답변 생성 요청 종료 - date: {}", date);
         return ResponseEntity.ok(response);
     }
 
@@ -86,7 +96,9 @@ public class QuestionController implements QuestionApi {
             @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone,
             @RequestBody UpdateAnswerRequest request
     ) {
+        log.info("[API] 답변 수정 요청 시작 - date: {}", date);
         UpdateAnswerResponse response = questionApplication.updateAnswer(memberId, date, request.answer(), timezone);
+        log.info("[API] 답변 수정 요청 종료 - date: {}", date);
         return ResponseEntity.ok(response);
     }
 }
