@@ -29,9 +29,12 @@ public record GetMemberResponse(
         String status,
 
         @Schema(description = "가입일자", example = "2024-01-01")
-        LocalDate joinedDate
+        LocalDate joinedDate,
+
+        @Schema(description = "첫 번째 사이클 시작일 (질문 시작 가능 날짜)", example = "2024-01-01")
+        LocalDate cycleStartDate
 ) {
-    public static GetMemberResponse from(Member member) {
+    public static GetMemberResponse from(Member member, LocalDate firstCycleStartDate) {
         return new GetMemberResponse(
                 member.getId(),
                 member.getEmail(),
@@ -40,7 +43,8 @@ public record GetMemberResponse(
                 member.getLocale(),
                 member.getPermission().name(),
                 member.getStatus().name(),
-                member.getJoinedDate()
+                member.getJoinedDate(),
+                firstCycleStartDate
         );
     }
 }

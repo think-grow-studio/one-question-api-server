@@ -55,6 +55,12 @@ public enum QuestionExceptionSpec implements ExceptionSpec {
         "QUESTION-008",
         "질문 변경 횟수 초과",
         "error.question.reload-limit-exceeded"
+    ),
+    FIRST_CYCLE_NOT_FOUND(
+        HttpStatus.NOT_FOUND,
+        "QUESTION-009",
+        "첫 번째 질문 사이클을 찾을 수 없음",
+        "error.question.first-cycle-not-found"
     );
 
     private final HttpStatus status;

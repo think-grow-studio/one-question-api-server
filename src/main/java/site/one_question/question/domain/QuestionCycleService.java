@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import site.one_question.member.domain.Member;
 import site.one_question.question.domain.exception.BeforeSignupDateException;
+import site.one_question.question.domain.exception.FirstCycleNotFoundException;
 import site.one_question.question.domain.exception.FutureDateQuestionException;
 
 @Service
@@ -19,6 +20,12 @@ public class QuestionCycleService {
     public QuestionCycle createFirstCycle(Member member, String timezone) {
         QuestionCycle firstCycle = QuestionCycle.createFirstCycle(member, timezone);
         return cycleRepository.save(firstCycle);
+    }
+
+    public QuestionCycle getFirstCycle(Long memberId) {
+        return cycleRepository.findByMemberIdOrderByCycleNumberDesc(memberId).stream()
+                .min(Comparator.comparing(QuestionCycle::getCycleNumber))
+                .orElseThrow(FirstCycleNotFoundException::new);
     }
 
     public QuestionCycle getOrCreateCycle(Member member, LocalDate date, String timezone) {
