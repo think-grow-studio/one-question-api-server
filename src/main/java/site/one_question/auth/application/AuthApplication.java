@@ -21,6 +21,7 @@ import site.one_question.auth.presentation.response.ReissueAuthTokenResponse;
 import site.one_question.member.domain.AuthSocialProvider;
 import site.one_question.member.domain.Member;
 import site.one_question.member.domain.MemberService;
+import site.one_question.question.domain.QuestionCycleService;
 
 @Service
 @Transactional
@@ -32,6 +33,7 @@ public class AuthApplication {
     private final JwtService jwtService;
     private final MemberService memberService;
     private final RefreshTokenService refreshTokenService;
+    private final QuestionCycleService questionCycleService;
 
     public AuthResponse googleAuth(GoogleAuthRequest request, String locale, String timezone) {
         GoogleIdToken.Payload payload = googleTokenVerifier.verify(request.idToken());
@@ -47,7 +49,8 @@ public class AuthApplication {
                 email,
                 name,
                 locale,
-                joinedDate
+                joinedDate,
+                timezone
         );
     }
 
@@ -61,7 +64,8 @@ public class AuthApplication {
                 payload.email(),
                 request.name(),
                 locale,
-                joinedDate
+                joinedDate,
+                timezone
         );
     }
 
@@ -71,19 +75,24 @@ public class AuthApplication {
             String email,
             String name,
             String locale,
-            LocalDate localDate
+            LocalDate localDate,
+            String timezone
     ) {
         Optional<Member> existingMember = memberService.findByProviderAndProviderId(provider, providerId);
         boolean isNewMember = existingMember.isEmpty();
 
-        Member member = existingMember.orElseGet(() -> memberService.createMember(
-                email,
-                name != null ? name : "Member",
-                provider,
-                providerId,
-                locale,
-                localDate
-        ));
+        Member member = existingMember.orElseGet(() -> {
+            Member newMember = memberService.createMember(
+                    email,
+                    name != null ? name : "Member",
+                    provider,
+                    providerId,
+                    locale,
+                    localDate
+            );
+            questionCycleService.createFirstCycle(newMember, timezone);
+            return newMember;
+        });
 
         String accessToken = jwtService.issueAccessToken(member.getId(),member.getEmail(),member.getPermission());
         String refreshToken = jwtService.issueRefreshToken(member.getId(),member.getEmail(),member.getPermission());

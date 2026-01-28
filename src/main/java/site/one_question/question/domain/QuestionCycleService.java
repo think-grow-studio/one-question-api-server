@@ -16,6 +16,11 @@ public class QuestionCycleService {
 
     private final QuestionCycleRepository cycleRepository;
 
+    public QuestionCycle createFirstCycle(Member member, String timezone) {
+        QuestionCycle firstCycle = QuestionCycle.createFirstCycle(member, timezone);
+        return cycleRepository.save(firstCycle);
+    }
+
     public QuestionCycle getOrCreateCycle(Member member, LocalDate date, String timezone) {
         // 1. 미래 날짜 검증
         LocalDate today = LocalDate.now(ZoneId.of(timezone));
