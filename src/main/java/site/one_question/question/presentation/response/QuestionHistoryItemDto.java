@@ -60,14 +60,19 @@ public record QuestionHistoryItemDto(
             @Schema(description = "답변 내용", example = "새로운 시작의 날")
             String content,
 
-            @Schema(description = "답변 작성 시간", example = "2024-01-15T14:30:00")
+            @Schema(description = "답변 작성 시간 (수정된 경우 수정 시간)", example = "2024-01-15T14:30:00")
             LocalDateTime answeredAt
     ) {
         public static AnswerInfoDto from(DailyQuestionAnswer answer, String timezone) {
+            // updatedAt이 null이 아니면 수정 시간을, null이면 최초 작성 시간을 사용
+            var timestamp = answer.getUpdatedAt() != null
+                ? answer.getUpdatedAt()
+                : answer.getAnsweredAt();
+
             return new AnswerInfoDto(
                 answer.getId(),
                 answer.getContent(),
-                answer.getAnsweredAt().atZone(ZoneId.of(timezone)).toLocalDateTime()
+                timestamp.atZone(ZoneId.of(timezone)).toLocalDateTime()
             );
         }
     }
