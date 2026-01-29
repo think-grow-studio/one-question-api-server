@@ -99,10 +99,11 @@ public class QuestionApplication {
             Long memberId, LocalDate baseDate, HistoryDirection historyDirection, int size, String timezone) {
 
         Member member = memberService.findById(memberId);
+        QuestionCycle cycle = cycleService.getFirstCycle(member.getId());
         LocalDate today = DatePolicy.getToday(timezone);
 
         DatePolicy.requireNotFuture(baseDate, timezone);
-        LocalDate joinedDate = member.getJoinedDate();
+        LocalDate cycleStartDate = cycle.getStartDate();
 
         // 날짜 범위 계산
         LocalDate startDate;
@@ -128,9 +129,9 @@ public class QuestionApplication {
             }
         }
 
-        // 범위 제한: joinedDate 이상, today 이하
-        if (startDate.isBefore(joinedDate)) {
-            startDate = joinedDate;
+        // 범위 제한: cycleStartDate 이상, today 이하
+        if (startDate.isBefore(cycleStartDate)) {
+            startDate = cycleStartDate;
         }
         if (endDate.isAfter(today)) {
             endDate = today;
@@ -159,7 +160,7 @@ public class QuestionApplication {
         }
 
         // 페이징 정보 계산
-        boolean hasPrevious = startDate.isAfter(joinedDate);
+        boolean hasPrevious = startDate.isAfter(cycleStartDate);
         boolean hasNext = endDate.isBefore(today);
 
         return new GetQuestionHistoryResponse(histories, hasPrevious, hasNext, startDate, endDate);
