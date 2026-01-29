@@ -55,9 +55,9 @@ public class QuestionController implements QuestionApi {
             @RequestParam(defaultValue = "5") Integer size,
             @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone
     ) {
-        log.info("[API] 질문 히스토리 조회 요청 시작 - baseDate: {}, direction: {}", baseDate, historyDirection);
+        log.info("[API] 질문 히스토리 조회 요청 시작 - baseDate: {}, direction: {}, size: {}", baseDate, historyDirection, size);
         GetQuestionHistoryResponse response = questionApplication.getQuestionHistory(memberId, baseDate, historyDirection, size, timezone);
-        log.info("[API] 질문 히스토리 조회 요청 종료 - baseDate: {}, direction: {}", baseDate, historyDirection);
+        log.info("[API] 질문 히스토리 조회 요청 종료 - baseDate: {}, direction: {}, size: {}", baseDate, historyDirection, size);
         return ResponseEntity.ok(response);
     }
 
