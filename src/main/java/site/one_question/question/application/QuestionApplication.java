@@ -119,7 +119,8 @@ public class QuestionApplication {
                 endDate = baseDate.plusDays(size - 1);
             }
             case BOTH -> {
-                int half = size / 2; // size는 홀수 이어야만 합니다.
+                int adjustedSize = size % 2 == 0 ? size - 1 : size; // 짝수면 -1하여 홀수로 변경
+                int half = adjustedSize / 2;
                 startDate = baseDate.minusDays(half);
                 endDate = baseDate.plusDays(half);
             }
