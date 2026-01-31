@@ -97,7 +97,6 @@ public abstract class IntegrateTest {
         transactionTemplate.execute(status -> {
             entityManager.createNativeQuery("SET REFERENTIAL_INTEGRITY FALSE").executeUpdate();
             entityManager.getMetamodel().getEntities().stream()
-                .filter(entityType -> !entityType.getName().equals("Question"))  // Question 제외 (마스터 데이터)
                 .forEach(entityType -> {
                     entityManager.createQuery("DELETE FROM " + entityType.getName()).executeUpdate();
                 });

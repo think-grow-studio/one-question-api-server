@@ -32,6 +32,11 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
     void setup() {
         member = testMemberUtils.createSave();
         token = testAuthUtils.createBearerToken(member);
+
+        // 테스트용 질문 10개 생성 (DailyQuestion 생성 시 질문 풀에서 선택하기 위함)
+        for (int i = 0; i < 10; i++) {
+            testQuestionUtils.createSave();
+        }
     }
 
     @Test
