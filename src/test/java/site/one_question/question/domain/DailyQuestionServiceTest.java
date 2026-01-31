@@ -70,8 +70,11 @@ class DailyQuestionServiceTest {
         Question firstReload = dailyQuestionService.selectRandomQuestionExcluding(cycle, todayDailyQuestion.getQuestion());
 
         assertThat(firstReload.getId())
+                .as("첫 번째 새로고침 후 질문이 첫째 날 질문과 달라야 함 (첫째 날 ID: %d)", firstDayId)
                 .isNotEqualTo(firstDayId)
+                .as("첫 번째 새로고침 후 질문이 둘째 날 질문과 달라야 함 (둘째 날 ID: %d)", secondDayId)
                 .isNotEqualTo(secondDayId)
+                .as("첫 번째 새로고침 후 질문이 셋째 날 초기 질문과 달라야 함 (초기 ID: %d)", thirdDayInitialId)
                 .isNotEqualTo(thirdDayInitialId);
 
         todayDailyQuestion.changeQuestion(firstReload);
@@ -80,8 +83,11 @@ class DailyQuestionServiceTest {
         Question secondReload = dailyQuestionService.selectRandomQuestionExcluding(cycle, todayDailyQuestion.getQuestion());
 
         assertThat(secondReload.getId())
+                .as("두 번째 새로고침 후 질문이 첫째 날 질문과 달라야 함 (첫째 날 ID: %d)", firstDayId)
                 .isNotEqualTo(firstDayId)
+                .as("두 번째 새로고침 후 질문이 둘째 날 질문과 달라야 함 (둘째 날 ID: %d)", secondDayId)
                 .isNotEqualTo(secondDayId)
+                .as("두 번째 새로고침 후 질문이 첫 번째 새로고침 질문과 달라야 함 (첫 번째 새로고침 ID: %d)", firstReload.getId())
                 .isNotEqualTo(firstReload.getId());
     }
 
@@ -97,6 +103,7 @@ class DailyQuestionServiceTest {
         DailyQuestion todayDailyQuestion = testDailyQuestionUtils.createSave_With_Date(member, cycle, onlyQuestion, today);
 
         assertThatThrownBy(() -> dailyQuestionService.selectRandomQuestionExcluding(cycle, todayDailyQuestion.getQuestion()))
+                .as("후보 질문이 없을 때 QuestionNotFoundException이 발생해야 함")
                 .isInstanceOf(QuestionNotFoundException.class);
     }
 }

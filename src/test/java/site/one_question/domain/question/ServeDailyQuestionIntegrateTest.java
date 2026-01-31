@@ -51,14 +51,22 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
                 .andExpect(jsonPath("$.changeCount").value(0));
 
         // DB 검증 - DailyQuestion 생성 확인
-        assertThat(dailyQuestionRepository.findAll()).hasSize(1);
+        assertThat(dailyQuestionRepository.findAll())
+                .as("DailyQuestion이 1개 생성되어야 함")
+                .hasSize(1);
 
         DailyQuestion savedDailyQuestion = dailyQuestionRepository.findAll().get(0);
-        assertThat(savedDailyQuestion.getMember().getId()).isEqualTo(member.getId());
-        assertThat(savedDailyQuestion.getDate()).isEqualTo(today);
+        assertThat(savedDailyQuestion.getMember().getId())
+                .as("저장된 DailyQuestion의 회원 ID가 요청한 회원 ID와 일치해야 함 (기대 ID: %d)", member.getId())
+                .isEqualTo(member.getId());
+        assertThat(savedDailyQuestion.getDate())
+                .as("저장된 DailyQuestion의 날짜가 요청한 날짜와 일치해야 함 (기대 날짜: %s)", today)
+                .isEqualTo(today);
 
         // QuestionCycle 생성 확인
-        assertThat(questionCycleRepository.findAll()).hasSize(1);
+        assertThat(questionCycleRepository.findAll())
+                .as("QuestionCycle이 1개 생성되어야 함")
+                .hasSize(1);
     }
 
     @Nested
@@ -78,7 +86,9 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
                     .andExpect(status().isOk());
 
             List<DailyQuestion> afterFirstRequest = dailyQuestionRepository.findAll();
-            assertThat(afterFirstRequest).hasSize(1);
+            assertThat(afterFirstRequest)
+                    .as("첫 번째 요청 후 DailyQuestion이 1개 생성되어야 함")
+                    .hasSize(1);
             Long firstDailyQuestionId = afterFirstRequest.get(0).getId();
 
             // when - 두 번째 요청 (동일 날짜)
@@ -89,8 +99,12 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
                     .andExpect(jsonPath("$.dailyQuestionId").value(firstDailyQuestionId));
 
             // then - DailyQuestion이 1개만 존재 (중복 생성 없음)
-            assertThat(dailyQuestionRepository.findAll()).hasSize(1);
-            assertThat(questionCycleRepository.findAll()).hasSize(1);
+            assertThat(dailyQuestionRepository.findAll())
+                    .as("두 번째 요청 후에도 DailyQuestion이 1개만 존재해야 함 (중복 생성 없음)")
+                    .hasSize(1);
+            assertThat(questionCycleRepository.findAll())
+                    .as("두 번째 요청 후에도 QuestionCycle이 1개만 존재해야 함 (중복 생성 없음)")
+                    .hasSize(1);
         }
     }
 
@@ -120,22 +134,31 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
 
             // then - 사이클이 순차적으로 생성됨
             List<QuestionCycle> cycles = questionCycleRepository.findAll();
-            assertThat(cycles).hasSize(3);
+            assertThat(cycles)
+                    .as("2년 후 요청 시 총 3개의 사이클이 생성되어야 함")
+                    .hasSize(3);
 
             // cycleNumber 순서 검증
             List<QuestionCycle> sortedCycles = cycles.stream()
                     .sorted(Comparator.comparing(QuestionCycle::getCycleNumber))
                     .toList();
 
-            assertThat(sortedCycles.get(0).getCycleNumber()).isEqualTo(1);
-            assertThat(sortedCycles.get(1).getCycleNumber()).isEqualTo(2);
-            assertThat(sortedCycles.get(2).getCycleNumber()).isEqualTo(3);
+            assertThat(sortedCycles.get(0).getCycleNumber())
+                    .as("첫 번째 사이클 번호가 1이어야 함")
+                    .isEqualTo(1);
+            assertThat(sortedCycles.get(1).getCycleNumber())
+                    .as("두 번째 사이클 번호가 2여야 함")
+                    .isEqualTo(2);
+            assertThat(sortedCycles.get(2).getCycleNumber())
+                    .as("세 번째 사이클 번호가 3이어야 함")
+                    .isEqualTo(3);
 
             // 각 사이클의 시작/종료일 연속성 검증
             for (int i = 1; i < sortedCycles.size(); i++) {
                 QuestionCycle prevCycle = sortedCycles.get(i - 1);
                 QuestionCycle currentCycle = sortedCycles.get(i);
                 assertThat(currentCycle.getStartDate())
+                        .as("사이클 %d의 시작일이 이전 사이클의 종료일 + 1일이어야 함", currentCycle.getCycleNumber())
                         .isEqualTo(prevCycle.getEndDate().plusDays(1));
             }
         }
@@ -166,8 +189,12 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
                     .andExpect(jsonPath("$.questionCycle").value(1)); // 첫 번째 사이클
 
             // then - 새 사이클이 생성되지 않음
-            assertThat(questionCycleRepository.findAll()).hasSize(1);
-            assertThat(questionCycleRepository.findAll().get(0).getId()).isEqualTo(cycle.getId());
+            assertThat(questionCycleRepository.findAll())
+                    .as("사이클 종료일에 요청 시 새 사이클이 생성되지 않아야 함 (1개 유지)")
+                    .hasSize(1);
+            assertThat(questionCycleRepository.findAll().get(0).getId())
+                    .as("기존 사이클 ID가 유지되어야 함 (기대 ID: %d)", cycle.getId())
+                    .isEqualTo(cycle.getId());
         }
 
         @Test
@@ -192,14 +219,18 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
 
             // then - 새 사이클 생성 확인
             List<QuestionCycle> cycles = questionCycleRepository.findAll();
-            assertThat(cycles).hasSize(2);
+            assertThat(cycles)
+                    .as("사이클 종료일 다음 날 요청 시 새 사이클이 생성되어 총 2개가 되어야 함")
+                    .hasSize(2);
 
             QuestionCycle newCycle = cycles.stream()
                     .filter(c -> c.getCycleNumber() == 2)
                     .findFirst()
                     .orElseThrow();
 
-            assertThat(newCycle.getStartDate()).isEqualTo(dayAfterCycleEnd);
+            assertThat(newCycle.getStartDate())
+                    .as("새 사이클의 시작일이 사이클 종료일 다음 날과 일치해야 함 (기대 날짜: %s)", dayAfterCycleEnd)
+                    .isEqualTo(dayAfterCycleEnd);
         }
     }
 
@@ -221,8 +252,12 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
                     .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.FUTURE_DATE_QUESTION.getCode()));
 
             // DB 검증 - 아무것도 생성되지 않음
-            assertThat(dailyQuestionRepository.findAll()).isEmpty();
-            assertThat(questionCycleRepository.findAll()).isEmpty();
+            assertThat(dailyQuestionRepository.findAll())
+                    .as("미래 날짜 요청 시 DailyQuestion이 생성되지 않아야 함")
+                    .isEmpty();
+            assertThat(questionCycleRepository.findAll())
+                    .as("미래 날짜 요청 시 QuestionCycle이 생성되지 않아야 함")
+                    .isEmpty();
         }
 
         @Test
@@ -242,8 +277,12 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
                     .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.BEFORE_SIGNUP_DATE.getCode()));
 
             // DB 검증 - 새 사이클이 생성되지 않음
-            assertThat(questionCycleRepository.findAll()).hasSize(1);
-            assertThat(dailyQuestionRepository.findAll()).isEmpty();
+            assertThat(questionCycleRepository.findAll())
+                    .as("가입일 이전 날짜 요청 시 새 사이클이 생성되지 않아야 함 (1개 유지)")
+                    .hasSize(1);
+            assertThat(dailyQuestionRepository.findAll())
+                    .as("가입일 이전 날짜 요청 시 DailyQuestion이 생성되지 않아야 함")
+                    .isEmpty();
         }
     }
 }

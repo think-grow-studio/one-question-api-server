@@ -33,11 +33,17 @@ class DailyQuestionReuseTest extends IntegrateTest {
                 member, cycle, question, nextDay);
 
         // then: 동일 question_id를 가진 DailyQuestion이 정상적으로 저장되어야 한다.
-        assertThat(reusedDailyQuestion.getQuestion().getId()).isEqualTo(question.getId());
-        assertThat(reusedDailyQuestion.getDate()).isEqualTo(nextDay);
+        assertThat(reusedDailyQuestion.getQuestion().getId())
+                .as("재사용된 DailyQuestion의 질문 ID가 전 날의 질문 ID와 일치해야 함 (원본 ID: %d)", question.getId())
+                .isEqualTo(question.getId());
+        assertThat(reusedDailyQuestion.getDate())
+                .as("재사용된 DailyQuestion의 날짜가 다음 날짜와 일치해야 함 (기대 날짜: %s)", nextDay)
+                .isEqualTo(nextDay);
         assertThat(dailyQuestionRepository.findByMemberIdAndDate(member.getId(), nextDay))
+                .as("다음 날짜에 해당하는 DailyQuestion이 존재해야 함")
                 .map(DailyQuestion::getQuestion)
                 .map(Question::getId)
+                .as("저장된 질문 ID가 원본 전 날의 ID와 일치해야 함 (원본 ID: %d)", question.getId())
                 .hasValue(question.getId());
     }
 }

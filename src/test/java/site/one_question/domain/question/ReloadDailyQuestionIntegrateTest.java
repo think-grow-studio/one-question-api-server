@@ -69,7 +69,9 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
             testQuestionUtils.createSave(); // 새로고침용 추가 질문
             DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave(member, cycle, question);
 
-            assertThat(dailyQuestion.getChangeCount()).isEqualTo(0);
+            assertThat(dailyQuestion.getChangeCount())
+                    .as("초기 changeCount가 0이어야 함")
+                    .isEqualTo(0);
 
             // when
             mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
@@ -81,7 +83,9 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
             // then
             entityManager.clear();
             DailyQuestion reloaded = dailyQuestionRepository.findById(dailyQuestion.getId()).orElseThrow();
-            assertThat(reloaded.getChangeCount()).isEqualTo(1);
+            assertThat(reloaded.getChangeCount())
+                    .as("리로드 후 changeCount가 1 증가해야 함 (기대: 1)")
+                    .isEqualTo(1);
         }
 
         @Test
@@ -105,7 +109,9 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
             // then
             entityManager.clear();
             DailyQuestion reloaded = dailyQuestionRepository.findById(dailyQuestion.getId()).orElseThrow();
-            assertThat(reloaded.getQuestion().getId()).isNotEqualTo(originalQuestionId);
+            assertThat(reloaded.getQuestion().getId())
+                    .as("리로드 후 질문 ID가 원래 질문 ID와 달라야 함 (원래 ID: %d)", originalQuestionId)
+                    .isNotEqualTo(originalQuestionId);
         }
 
         @Test
@@ -146,8 +152,11 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
             Long firstReloadQuestionId = firstReload.getQuestion().getId();
 
             assertThat(firstReloadQuestionId)
+                    .as("첫 번째 새로고침 후 질문이 첫째 날 질문과 달라야 함 (첫째 날 ID: %d)", firstDayQuestionId)
                     .isNotEqualTo(firstDayQuestionId)
+                    .as("첫 번째 새로고침 후 질문이 둘째 날 질문과 달라야 함 (둘째 날 ID: %d)", secondDayQuestionId)
                     .isNotEqualTo(secondDayQuestionId)
+                    .as("첫 번째 새로고침 후 질문이 셋째 날 초기 질문과 달라야 함 (초기 ID: %d)", initialThirdDayQuestionId)
                     .isNotEqualTo(initialThirdDayQuestionId);
 
             // when - 두 번째 새로고침 (3일차 2번 -> 3번 질문)
@@ -161,8 +170,11 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
             Long secondReloadQuestionId = secondReload.getQuestion().getId();
 
             assertThat(secondReloadQuestionId)
+                    .as("두 번째 새로고침 후 질문이 첫째 날 질문과 달라야 함 (첫째 날 ID: %d)", firstDayQuestionId)
                     .isNotEqualTo(firstDayQuestionId)
+                    .as("두 번째 새로고침 후 질문이 둘째 날 질문과 달라야 함 (둘째 날 ID: %d)", secondDayQuestionId)
                     .isNotEqualTo(secondDayQuestionId)
+                    .as("두 번째 새로고침 후 질문이 첫 번째 새로고침 질문과 달라야 함 (첫 번째 새로고침 ID: %d)", firstReloadQuestionId)
                     .isNotEqualTo(firstReloadQuestionId);
         }
     }
