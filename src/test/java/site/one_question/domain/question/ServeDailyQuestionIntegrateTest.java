@@ -35,7 +35,7 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
     }
 
     @Test
-    @DisplayName("오늘의 질문 조회 시 200 OK 응답 및 질문 정보 반환")
+    @DisplayName("오늘의 질문 제공 시 200 OK 응답 및 질문 정보 반환")
     void serve_daily_question_with_valid_request_then_return_200_ok() throws Exception {
         // given
         LocalDate today = LocalDate.now();

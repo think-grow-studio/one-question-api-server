@@ -3,7 +3,6 @@ package site.one_question.question.domain;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -37,7 +36,7 @@ public class DailyQuestion extends BaseEntity {
     @JoinColumn(name = "question_cycle_id", nullable = false)
     private QuestionCycle questionCycle;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 

@@ -107,6 +107,64 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
             DailyQuestion reloaded = dailyQuestionRepository.findById(dailyQuestion.getId()).orElseThrow();
             assertThat(reloaded.getQuestion().getId()).isNotEqualTo(originalQuestionId);
         }
+
+        @Test
+        @DisplayName("질문 리로드시 과거 및 이전 질문과 중복되지 않는다")
+        void reload_multiple_days_without_duplicates() throws Exception {
+            // given
+            LocalDate today = LocalDate.now();
+            LocalDate firstDay = today.minusDays(2);
+            LocalDate secondDay = today.minusDays(1);
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+
+            Question firstDayQuestion = testQuestionUtils.createSave();
+            Question secondDayQuestion = testQuestionUtils.createSave();
+            Question thirdDayQuestion = testQuestionUtils.createSave();
+            testQuestionUtils.createSave(); // 첫 번째 새로고침 후보
+            testQuestionUtils.createSave(); // 두 번째 새로고침 후보
+
+            DailyQuestion firstDailyQuestion = testDailyQuestionUtils.createSave_With_Date(member, cycle, firstDayQuestion, firstDay);
+            testDailyQuestionAnswerUtils.createSave(firstDailyQuestion, member);
+
+            DailyQuestion secondDailyQuestion = testDailyQuestionUtils.createSave_With_Date(member, cycle, secondDayQuestion, secondDay);
+            testDailyQuestionAnswerUtils.createSave(secondDailyQuestion, member);
+
+            DailyQuestion todayDailyQuestion = testDailyQuestionUtils.createSave_With_Date(member, cycle, thirdDayQuestion, today);
+
+            Long firstDayQuestionId = firstDayQuestion.getId();
+            Long secondDayQuestionId = secondDayQuestion.getId();
+            Long initialThirdDayQuestionId = thirdDayQuestion.getId();
+
+            // when - 첫 번째 새로고침 (3일차 1번 -> 2번 질문)
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            entityManager.clear();
+            DailyQuestion firstReload = dailyQuestionRepository.findById(todayDailyQuestion.getId()).orElseThrow();
+            Long firstReloadQuestionId = firstReload.getQuestion().getId();
+
+            assertThat(firstReloadQuestionId)
+                    .isNotEqualTo(firstDayQuestionId)
+                    .isNotEqualTo(secondDayQuestionId)
+                    .isNotEqualTo(initialThirdDayQuestionId);
+
+            // when - 두 번째 새로고침 (3일차 2번 -> 3번 질문)
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            entityManager.clear();
+            DailyQuestion secondReload = dailyQuestionRepository.findById(todayDailyQuestion.getId()).orElseThrow();
+            Long secondReloadQuestionId = secondReload.getQuestion().getId();
+
+            assertThat(secondReloadQuestionId)
+                    .isNotEqualTo(firstDayQuestionId)
+                    .isNotEqualTo(secondDayQuestionId)
+                    .isNotEqualTo(firstReloadQuestionId);
+        }
     }
 
     @Nested
