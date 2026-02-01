@@ -30,7 +30,8 @@ public class DailyQuestionAnswer extends BaseEntity {
     @JoinColumn(name = "member_id", nullable = false)
     private Member memberId;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Lob
+    @Column(nullable = false)
     private String content;
 
     @Column(name = "answered_at", nullable = false)
