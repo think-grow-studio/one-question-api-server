@@ -31,6 +31,6 @@ public class Question extends BaseEntity {
     @Column(nullable = false, length = 20)
     private QuestionStatus status;
 
-    @Column(name = "number", nullable = false)
-    private int number;
+    @Column(name = "question_number", nullable = false)
+    private int questionNumber;
 }

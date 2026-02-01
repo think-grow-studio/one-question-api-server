@@ -51,7 +51,7 @@ public class TestQuestionUtils {
         ReflectionTestUtils.setField(question, "description", description);
         ReflectionTestUtils.setField(question, "locale", locale);
         ReflectionTestUtils.setField(question, "status", QuestionStatus.ACTIVE);
-        ReflectionTestUtils.setField(question, "number", number);
+        ReflectionTestUtils.setField(question, "questionNumber", number);
         return question;
     }
 }
