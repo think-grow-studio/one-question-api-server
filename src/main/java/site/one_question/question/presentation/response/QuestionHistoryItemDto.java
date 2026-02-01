@@ -93,7 +93,7 @@ public record QuestionHistoryItemDto(
         DailyQuestionAnswer answer = dailyQuestion.getAnswer();
         if (answer == null) {
             return new QuestionHistoryItemDto(
-                dailyQuestion.getDate(),
+                dailyQuestion.getQuestionDate(),
                 Status.UNANSWERED,
                 questionInfo,
                 null
@@ -101,7 +101,7 @@ public record QuestionHistoryItemDto(
         }
 
         return new QuestionHistoryItemDto(
-            dailyQuestion.getDate(),
+            dailyQuestion.getQuestionDate(),
             Status.ANSWERED,
             questionInfo,
             AnswerInfoDto.from(answer, timezone)

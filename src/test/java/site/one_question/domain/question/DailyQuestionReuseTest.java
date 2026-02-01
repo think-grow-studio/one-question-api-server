@@ -36,7 +36,7 @@ class DailyQuestionReuseTest extends IntegrateTest {
         assertThat(reusedDailyQuestion.getQuestion().getId())
                 .as("재사용된 DailyQuestion의 질문 ID가 전 날의 질문 ID와 일치해야 함 (원본 ID: %d)", question.getId())
                 .isEqualTo(question.getId());
-        assertThat(reusedDailyQuestion.getDate())
+        assertThat(reusedDailyQuestion.getQuestionDate())
                 .as("재사용된 DailyQuestion의 날짜가 다음 날짜와 일치해야 함 (기대 날짜: %s)", nextDay)
                 .isEqualTo(nextDay);
         assertThat(dailyQuestionRepository.findByMemberIdAndDate(member.getId(), nextDay))

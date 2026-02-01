@@ -12,7 +12,7 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
     @Query("""
         SELECT dq FROM DailyQuestion dq
         LEFT JOIN FETCH dq.answer
-        WHERE dq.member.id = :memberId AND dq.date = :date
+        WHERE dq.member.id = :memberId AND dq.questionDate = :date
         """)
     Optional<DailyQuestion> findByMemberIdAndDate(
         @Param("memberId") Long memberId,
@@ -28,8 +28,8 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
         LEFT JOIN FETCH dq.questionCycle qc
         LEFT JOIN FETCH dq.answer a
         WHERE dq.member.id = :memberId
-        AND dq.date BETWEEN :startDate AND :endDate
-        ORDER BY dq.date DESC
+        AND dq.questionDate BETWEEN :startDate AND :endDate
+        ORDER BY dq.questionDate DESC
         """)
     List<DailyQuestion> findByMemberIdAndDateBetween(
         @Param("memberId") Long memberId,

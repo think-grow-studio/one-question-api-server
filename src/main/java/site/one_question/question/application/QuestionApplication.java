@@ -144,7 +144,7 @@ public class QuestionApplication {
 
         // DailyQuestion을 날짜 기준 Map으로 변환
         Map<LocalDate, DailyQuestion> dailyQuestionMap = dailyQuestions.stream()
-            .collect(Collectors.toMap(DailyQuestion::getDate, Function.identity()));
+            .collect(Collectors.toMap(DailyQuestion::getQuestionDate, Function.identity()));
 
         // 날짜별 히스토리 아이템 생성 (최신순)
         List<QuestionHistoryItemDto> histories = new ArrayList<>();

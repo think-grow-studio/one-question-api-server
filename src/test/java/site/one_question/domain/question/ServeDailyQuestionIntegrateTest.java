@@ -64,7 +64,7 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
         assertThat(savedDailyQuestion.getMember().getId())
                 .as("저장된 DailyQuestion의 회원 ID가 요청한 회원 ID와 일치해야 함 (기대 ID: %d)", member.getId())
                 .isEqualTo(member.getId());
-        assertThat(savedDailyQuestion.getDate())
+        assertThat(savedDailyQuestion.getQuestionDate())
                 .as("저장된 DailyQuestion의 날짜가 요청한 날짜와 일치해야 함 (기대 날짜: %s)", today)
                 .isEqualTo(today);
 

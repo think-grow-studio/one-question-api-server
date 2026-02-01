@@ -19,7 +19,7 @@ import site.one_question.question.domain.exception.ReloadLimitExceededException;
         name = "daily_question",
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_daily_question_member_date",
-                columnNames = {"member_id", "date"}
+                columnNames = {"member_id", "question_date"}
         )
 )
 public class DailyQuestion extends BaseEntity {
@@ -40,8 +40,8 @@ public class DailyQuestion extends BaseEntity {
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
-    @Column(name = "date",nullable = false) // memberId + date -> unique
-    private LocalDate date;
+    @Column(name = "question_date",nullable = false) // memberId + date -> unique
+    private LocalDate questionDate;
 
     @Column(name = "assigned_at", nullable = false)
     private Instant assignedAt;
