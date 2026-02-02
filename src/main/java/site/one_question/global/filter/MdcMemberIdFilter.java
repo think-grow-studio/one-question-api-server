@@ -36,6 +36,10 @@ public class MdcMemberIdFilter extends OncePerRequestFilter {
       MDC.put(MEMBER_ID_KEY, String.valueOf(principal.getId()));
     }
 
-    filterChain.doFilter(request, response);
+    try {
+      filterChain.doFilter(request, response);
+    } finally {
+      MDC.remove(MEMBER_ID_KEY);
+    }
   }
 }
