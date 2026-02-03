@@ -1,0 +1,329 @@
+name: Deploy to Oracle Cloud VM (Sequential)
+
+on:
+  workflow_run:
+    workflows: ["Docker Build and Push to GHCR"]
+    types:
+      - completed
+
+jobs:
+  deploy-sub:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      status: ${{ steps.deployment.outcome }}
+      image_url: ${{ steps.setup.outputs.image_url }}
+
+    steps:
+      - name: Setup Variables
+        id: setup
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_URL="ghcr.io/${REPO_LOWER}:latest"
+          echo "image_url=$IMAGE_URL" >> $GITHUB_OUTPUT
+          echo "Using image: $IMAGE_URL"
+
+      - name: Deploy and Health Check SUB VM
+        id: deployment
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SUB_VM_HOST }}
+          username: ${{ secrets.SUB_VM_USERNAME }}
+          key: ${{ secrets.SUB_VM_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            
+            # 변수 설정
+            IMAGE_URL="${{ steps.setup.outputs.image_url }}"
+            CONTAINER_NAME="one-question-api"
+            
+            echo "🚀 [SUB VM] Starting deployment with image: $IMAGE_URL"
+            
+            # GitHub Container Registry 로그인
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            
+            # 배포 함수
+            deploy_container() {
+              echo "🧹 [SUB VM] Cleaning up..."
+              docker stop $CONTAINER_NAME 2>/dev/null || true
+              docker rm $CONTAINER_NAME 2>/dev/null || true
+              docker rmi $IMAGE_URL 2>/dev/null || true
+            
+              echo "📦 [SUB VM] Deploying new container..."
+              docker pull $IMAGE_URL
+              docker run -d \
+                --name $CONTAINER_NAME \
+                --restart unless-stopped \
+                --memory=700m \
+                -p 8080:8080 \
+                -v /home/ubuntu/log-one:/root/log-one \
+                -v /home/ubuntu/heapdump:/app/logs \
+                --log-driver json-file \
+                --log-opt max-size=50m \
+                --log-opt max-file=10 \
+                -e ORACLE_DB_DRIVER="${{ secrets.ORACLE_DB_DRIVER }}" \
+                -e ORACLE_DB_URL="${{ secrets.ORACLE_DB_URL }}" \
+                -e ORACLE_DB_USERNAME="${{ secrets.ORACLE_DB_USERNAME }}" \
+                -e ORACLE_DB_PASSWORD="${{ secrets.ORACLE_DB_PASSWORD }}" \
+                -e ORACLE_DB_DIALECT="${{ secrets.ORACLE_DB_DIALECT }}" \
+                -e JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
+                -e ACCESS_EXPIRE_TIME="${{ secrets.ACCESS_EXPIRE_TIME }}" \
+                -e REFRESH_EXPIRE_TIME="${{ secrets.REFRESH_EXPIRE_TIME }}" \
+                -e APP_VERSION_MINIMUM="${{ secrets.APP_VERSION_MINIMUM }}" \
+                -e APP_VERSION_UPDATE_FORCE="${{ secrets.APP_VERSION_UPDATE_FORCE }}" \
+                -e APP_MAINTENANCE_MODE="${{ secrets.APP_MAINTENANCE_MODE }}" \
+                -e GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}" \
+                $IMAGE_URL
+            
+              echo "⏳ [SUB VM] Waiting for container to start..."
+              sleep 30
+            }
+            
+            # 헬스체크 함수
+            health_check() {
+              echo "🔍 [SUB VM] Starting health check..."
+              local max_attempts=6
+              local wait_time=20
+            
+              for attempt in $(seq 1 $max_attempts); do
+                echo "⏳ [SUB VM] Health check attempt $attempt/$max_attempts..."
+            
+                # 컨테이너 상태 확인
+                if ! docker ps --filter "name=$CONTAINER_NAME" --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
+                  echo "❌ [SUB VM] Container '$CONTAINER_NAME' is not running"
+                  echo "📋 [SUB VM] Container logs:"
+                  docker logs --tail=20 $CONTAINER_NAME 2>/dev/null || echo "No logs available"
+                  return 1
+                fi
+            
+                # HTTP 헬스체크
+                local response
+                local http_code
+                local body
+            
+                if response=$(curl -s -w "%{http_code}" --connect-timeout 20 --max-time 20 "http://localhost:8080/health" 2>/dev/null); then
+                  http_code="${response: -3}"
+                  body="${response%???}"
+            
+                  echo "📡 [SUB VM] HTTP Response: $http_code"
+                  echo "📄 [SUB VM] Body: $body"
+            
+                  if [[ "$http_code" == "200" ]] && echo "$body" | grep -q "healthy"; then
+                    echo "✅ [SUB VM] Health check passed!"
+                    return 0
+                  fi
+                else
+                  echo "🔌 [SUB VM] Health check request failed"
+                fi
+            
+                if [[ $attempt -lt $max_attempts ]]; then
+                  echo "⏱️ [SUB VM] Waiting ${wait_time}s before retry..."
+                  sleep $wait_time
+                fi
+              done
+            
+              echo "❌ [SUB VM] Health check failed after $max_attempts attempts"
+              echo "📋 [SUB VM] Final container logs:"
+              docker logs --tail=30 $CONTAINER_NAME 2>/dev/null || echo "No logs available"
+              return 1
+            }
+            
+            # 실행
+            deploy_container
+            health_check
+            echo "🎉 [SUB VM] Deployment completed successfully!"
+
+  deploy-main:
+    runs-on: ubuntu-latest
+    needs: deploy-sub
+    if: ${{ needs.deploy-sub.outputs.status == 'success' }}
+    outputs:
+      status: ${{ steps.deployment.outcome }}
+
+    steps:
+      - name: Deploy and Health Check MAIN VM
+        id: deployment
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.MAIN_VM_HOST }}
+          username: ${{ secrets.MAIN_VM_USERNAME }}
+          key: ${{ secrets.MAIN_VM_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            
+            # 변수 설정
+            IMAGE_URL="${{ needs.deploy-sub.outputs.image_url }}"
+            CONTAINER_NAME="one-question-api"
+            
+            echo "🚀 [MAIN VM] Starting deployment with image: $IMAGE_URL"
+            
+            # GitHub Container Registry 로그인
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            
+            # 배포 함수 (SUB와 동일한 로직)
+            deploy_container() {
+              echo "🧹 [MAIN VM] Cleaning up..."
+              docker stop $CONTAINER_NAME 2>/dev/null || true
+              docker rm $CONTAINER_NAME 2>/dev/null || true
+              docker rmi $IMAGE_URL 2>/dev/null || true
+            
+              echo "📦 [MAIN VM] Deploying new container..."
+              docker pull $IMAGE_URL
+              docker run -d \
+                --name $CONTAINER_NAME \
+                --restart unless-stopped \
+                --memory=700m \
+                -p 8080:8080 \
+                -v /home/ubuntu/log-one:/root/log-one \
+                -v /home/ubuntu/heapdump:/app/logs \
+                --log-driver json-file \
+                --log-opt max-size=50m \
+                --log-opt max-file=10 \
+                -e ORACLE_DB_DRIVER="${{ secrets.ORACLE_DB_DRIVER }}" \
+                -e ORACLE_DB_URL="${{ secrets.ORACLE_DB_URL }}" \
+                -e ORACLE_DB_USERNAME="${{ secrets.ORACLE_DB_USERNAME }}" \
+                -e ORACLE_DB_PASSWORD="${{ secrets.ORACLE_DB_PASSWORD }}" \
+                -e ORACLE_DB_DIALECT="${{ secrets.ORACLE_DB_DIALECT }}" \
+                -e JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
+                -e ACCESS_EXPIRE_TIME="${{ secrets.ACCESS_EXPIRE_TIME }}" \
+                -e REFRESH_EXPIRE_TIME="${{ secrets.REFRESH_EXPIRE_TIME }}" \
+                -e APP_VERSION_MINIMUM="${{ secrets.APP_VERSION_MINIMUM }}" \
+                -e APP_VERSION_UPDATE_FORCE="${{ secrets.APP_VERSION_UPDATE_FORCE }}" \
+                -e APP_MAINTENANCE_MODE="${{ secrets.APP_MAINTENANCE_MODE }}" \
+                -e GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}" \
+                $IMAGE_URL
+            
+              echo "⏳ [MAIN VM] Waiting for container to start..."
+              sleep 30
+            }
+            
+            # 헬스체크 함수
+            health_check() {
+              echo "🔍 [MAIN VM] Starting health check..."
+              local max_attempts=6
+              local wait_time=20
+            
+              for attempt in $(seq 1 $max_attempts); do
+                echo "⏳ [MAIN VM] Health check attempt $attempt/$max_attempts..."
+            
+                if ! docker ps --filter "name=$CONTAINER_NAME" --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
+                  echo "❌ [MAIN VM] Container '$CONTAINER_NAME' is not running"
+                  echo "📋 [MAIN VM] Container logs:"
+                  docker logs --tail=20 $CONTAINER_NAME 2>/dev/null || echo "No logs available"
+                  return 1
+                fi
+            
+                local response
+                local http_code
+                local body
+            
+                if response=$(curl -s -w "%{http_code}" --connect-timeout 20 --max-time 20 "http://localhost:8080/health" 2>/dev/null); then
+                  http_code="${response: -3}"
+                  body="${response%???}"
+            
+                  echo "📡 [MAIN VM] HTTP Response: $http_code"
+                  echo "📄 [MAIN VM] Body: $body"
+            
+                  if [[ "$http_code" == "200" ]] && echo "$body" | grep -q "healthy"; then
+                    echo "✅ [MAIN VM] Health check passed!"
+                    return 0
+                  fi
+                else
+                  echo "🔌 [MAIN VM] Health check request failed"
+                fi
+            
+                if [[ $attempt -lt $max_attempts ]]; then
+                  echo "⏱️ [MAIN VM] Waiting ${wait_time}s before retry..."
+                  sleep $wait_time
+                fi
+              done
+            
+              echo "❌ [MAIN VM] Health check failed after $max_attempts attempts"
+              echo "📋 [MAIN VM] Final container logs:"
+              docker logs --tail=30 $CONTAINER_NAME 2>/dev/null || echo "No logs available"
+              return 1
+            }
+            
+            # 실행
+            deploy_container
+            health_check
+            echo "🎉 [MAIN VM] Deployment completed successfully!"
+
+  # 알림 Job - 안전한 조건 처리
+  notify:
+    runs-on: ubuntu-latest
+    needs: [deploy-sub, deploy-main]
+    if: always()
+
+    steps:
+      - name: Determine Status
+        id: status
+        run: |
+          SUB_STATUS="${{ needs.deploy-sub.outputs.status }}"
+          MAIN_STATUS="${{ needs.deploy-main.outputs.status }}"
+          
+          echo "SUB_STATUS: $SUB_STATUS"
+          echo "MAIN_STATUS: $MAIN_STATUS"
+          
+          # 안전한 조건 처리
+          if [[ "$SUB_STATUS" == "success" && "$MAIN_STATUS" == "success" ]]; then
+            echo "notification_status=success" >> $GITHUB_OUTPUT
+            echo "notification_color=0x00ff00" >> $GITHUB_OUTPUT
+            echo "notification_title=🎉 All Deployments Successful" >> $GITHUB_OUTPUT
+            echo "sub_icon=🟢 ✅" >> $GITHUB_OUTPUT
+            echo "main_icon=🟢 ✅" >> $GITHUB_OUTPUT
+            echo "sub_text=SUCCESS" >> $GITHUB_OUTPUT
+            echo "main_text=SUCCESS" >> $GITHUB_OUTPUT
+            echo "footer_message=🎊 Zero-downtime deployment completed successfully!" >> $GITHUB_OUTPUT
+          elif [[ "$SUB_STATUS" == "success" && "$MAIN_STATUS" == "failure" ]]; then
+            echo "notification_status=failure" >> $GITHUB_OUTPUT
+            echo "notification_color=0xff8800" >> $GITHUB_OUTPUT
+            echo "notification_title=⚠️ Partial Deployment (MAIN Failed)" >> $GITHUB_OUTPUT
+            echo "sub_icon=🟢 ✅" >> $GITHUB_OUTPUT
+            echo "main_icon=🔴 ❌" >> $GITHUB_OUTPUT
+            echo "sub_text=SUCCESS" >> $GITHUB_OUTPUT
+            echo "main_text=FAILED" >> $GITHUB_OUTPUT
+            echo "footer_message=⚠️ Service running on SUB VM only. Manual intervention needed for MAIN VM." >> $GITHUB_OUTPUT
+          elif [[ "$SUB_STATUS" == "success" && "$MAIN_STATUS" == "" ]]; then
+            # MAIN이 실행되지 않은 경우 (skipped)
+            echo "notification_status=success" >> $GITHUB_OUTPUT
+            echo "notification_color=0x0099ff" >> $GITHUB_OUTPUT
+            echo "notification_title=🟡 SUB VM Deployment Only" >> $GITHUB_OUTPUT
+            echo "sub_icon=🟢 ✅" >> $GITHUB_OUTPUT
+            echo "main_icon=⏸️ ⏭️" >> $GITHUB_OUTPUT
+            echo "sub_text=SUCCESS" >> $GITHUB_OUTPUT
+            echo "main_text=SKIPPED" >> $GITHUB_OUTPUT
+            echo "footer_message=ℹ️ Only SUB VM was deployed. MAIN VM deployment was skipped." >> $GITHUB_OUTPUT
+          else
+            echo "notification_status=failure" >> $GITHUB_OUTPUT
+            echo "notification_color=0xff0000" >> $GITHUB_OUTPUT
+            echo "notification_title=🚨 Deployment Failed" >> $GITHUB_OUTPUT
+            echo "sub_icon=🔴 ❌" >> $GITHUB_OUTPUT
+            echo "main_icon=⏸️ ⏭️" >> $GITHUB_OUTPUT
+            echo "sub_text=FAILED" >> $GITHUB_OUTPUT
+            echo "main_text=SKIPPED" >> $GITHUB_OUTPUT
+            echo "footer_message=🚨 Critical: SUB VM deployment failed. Service may be unavailable." >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Discord Notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: ${{ steps.status.outputs.notification_status }}
+          color: ${{ steps.status.outputs.notification_color }}
+          title: "[${{ github.repository }}] ${{ steps.status.outputs.notification_title }}"
+          description: |
+            **Deployment Results:**
+
+            ${{ steps.status.outputs.sub_icon }} **SUB VM**: ${{ steps.status.outputs.sub_text }}
+            ${{ steps.status.outputs.main_icon }} **MAIN VM**: ${{ steps.status.outputs.main_text }}
+
+            **Image**: `${{ needs.deploy-sub.outputs.image_url }}`
+            **Trigger**: ${{ github.event.workflow_run.head_commit.message }}
+            **Commit**: [`${{ github.event.workflow_run.head_sha }}`](${{ github.event.workflow_run.html_url }})
+
+            ${{ steps.status.outputs.footer_message }}
+          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          username: "기도함께 도우미"

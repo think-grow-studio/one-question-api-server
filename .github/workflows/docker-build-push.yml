@@ -1,0 +1,84 @@
+name: Docker Build and Push to GHCR
+
+on:
+  workflow_run:
+    workflows: ["Spring Build With Gradle"]
+    types:
+      - completed
+
+jobs:
+  docker-build-and-push:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download JAR Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar-${{ github.event.workflow_run.head_sha }}
+          path: app
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate lowercase repository name
+        id: repo
+        run: echo "repository=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ steps.repo.outputs.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        id: docker_build
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          secrets: | 
+            wallet_base64=${{secrets.ORACLE_MAIN_WALLET_COMPRESSED_BASE64}}
+            firebase_base64=${{secrets.FIREBASE_ADMIN_SDK_JSON_BASE64}}
+
+      - name: Get short commit SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Send Discord Docker Job Status
+        if: always()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: ${{ job.status }}
+          color: ${{ job.status == 'success' && '0x00ff00' || '0xff0000' }}
+          title: "[${{ github.repository }}] ${{ job.status == 'success' && '✅ Docker Image Pushed' || '❌ Docker Build/Push Failed' }}"
+          description: |
+            Docker build & push job status for **${{ github.repository }}**.
+
+            **Image:** `ghcr.io/${{ steps.repo.outputs.repository }}`
+            **Commit:** [`${{ steps.vars.outputs.sha_short }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }})
+
+            ${{ job.status == 'success' && format('**Tags Applied:**\n```{0}```', steps.meta.outputs.tags) || '**Failure detected!** Please check the workflow logs.' }}
+          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          username: "질문 하나 도우미"

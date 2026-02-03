@@ -1,0 +1,65 @@
+name: Spring Build With Gradle
+
+on:
+  push:
+    branches: [main, release, develop]
+  pull_request:
+    branches: [main, release, develop]
+
+jobs:
+  gradle-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew clean build
+
+      - name: Publish Test Results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: "**/build/test-results/**/*.xml"
+
+      - name: Upload JAR Artifact
+        if: success() && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          # docker-build-push.yml의 이름과 일치해야함.
+          name: app-jar-${{ github.sha }}
+          path: build/libs/one-question-0.0.1-SNAPSHOT.jar
+          retention-days: 1 # 아티팩트 보관 기간 1일
+
+      - name: Get short commit SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Send Discord Build Status
+        if: always()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: ${{ job.status }} # (success, failure, cancelled, skipped)
+          color: ${{ job.status == 'success' && '0x00ff00' || '0xff0000' }}
+          title: "[${{ github.repository }}] ${{ job.status == 'success' && '✅ Build Succeeded' || '❌ Build Failed' }} (${{ github.event_name }})"
+          description: |
+            Workflow triggered by **${{ github.actor }}**.
+
+            ${{ github.event_name == 'pull_request' && format('**PR:** [{0}]({1}) (`{2}`)', github.event.pull_request.title, github.event.pull_request.html_url, github.head_ref) || format('**Branch:** `{0}`', github.ref_name) }}
+            **Commit:** [`${{ steps.vars.outputs.sha_short }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+
+            ${{ job.status != 'success' && '**Failure detected!** Please check the logs.' || '' }}
+
+          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          username: "기도함께 도우미"
+          # avatar_url: "봇_이미지_URL"
