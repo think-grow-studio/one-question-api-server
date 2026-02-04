@@ -80,4 +80,4 @@ jobs:
 
             ${{ job.status == 'success' && format('**Tags Applied:**\n```{0}```', steps.meta.outputs.tags) || '**Failure detected!** Please check the workflow logs.' }}
           url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          username: "질문 하나 도우미"
+          username: "도커 도우미"

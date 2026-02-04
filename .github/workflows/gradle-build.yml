@@ -65,5 +65,5 @@ jobs:
             ${{ job.status != 'success' && '**Failure detected!** Please check the logs.' || '' }}
 
           url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          username: "CI/CD 도우미"
+          username: "빌드 도우미"
           # avatar_url: "봇_이미지_URL"

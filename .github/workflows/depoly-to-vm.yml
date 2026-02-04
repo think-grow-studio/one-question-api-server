@@ -326,4 +326,4 @@ jobs:
 
             ${{ steps.status.outputs.footer_message }}
           url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          username: "기도함께 도우미"
+          username: "배포 도우미"
