@@ -1,4 +1,4 @@
-name: Docker Build and Push to GHCR
+name: Dev Docker Build and Push to GHCR
 
 on:
   workflow_run:
@@ -7,9 +7,9 @@ on:
       - completed
 
 jobs:
-  docker-build-and-push:
+  dev-docker-build-and-push:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && (github.event.workflow_run.head_branch == 'release' || github.event.workflow_run.head_branch == 'develop') }}
     permissions:
       contents: read
       packages: write
@@ -27,20 +27,26 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate lowercase repository name
-        id: repo
-        run: echo "repository=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+      - name: Determine image name based on branch
+        id: image
+        run: |
+          BRANCH=${{ github.event.workflow_run.head_branch }}
+          OWNER=$(echo ${{ github.repository }} | cut -d'/' -f1 | tr '[:upper:]' '[:lower:]')
+          if [ "$BRANCH" = "release" ]; then
+            IMAGE="ghcr.io/${OWNER}/release-one-question-api"
+          elif [ "$BRANCH" = "develop" ]; then
+            IMAGE="ghcr.io/${OWNER}/develop-one-question-api"
+          fi
+          echo "name=${IMAGE}" >> $GITHUB_OUTPUT
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/${{ steps.repo.outputs.repository }}
+          images: ${{ steps.image.outputs.name }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
             type=sha,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -54,11 +60,20 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          file: ./Dockerfile-Dev
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          secrets: | 
-            wallet_base64=${{secrets.ORACLE_MAIN_WALLET_COMPRESSED_BASE64}}
+
+      - name: Save image URL for downstream workflows
+        run: echo "${{ steps.image.outputs.name }}:latest" > image-url.txt
+
+      - name: Upload image URL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-image-url
+          path: image-url.txt
+          retention-days: 1
 
       - name: Get short commit SHA
         id: vars
@@ -71,13 +86,14 @@ jobs:
           webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
           status: ${{ job.status }}
           color: ${{ job.status == 'success' && '0x00ff00' || '0xff0000' }}
-          title: "[${{ github.repository }}] ${{ job.status == 'success' && '✅ Docker Image Pushed' || '❌ Docker Build/Push Failed' }}"
+          title: "[${{ github.repository }}] ${{ job.status == 'success' && '✅ Docker Image Pushed' || '❌ Docker Build/Push Failed' }} (`${{ github.event.workflow_run.head_branch }}`)"
           description: |
             Docker build & push job status for **${{ github.repository }}**.
 
-            **Image:** `ghcr.io/${{ steps.repo.outputs.repository }}`
+            **Branch:** `${{ github.event.workflow_run.head_branch }}`
+            **Image:** `${{ steps.image.outputs.name }}`
             **Commit:** [`${{ steps.vars.outputs.sha_short }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }})
 
             ${{ job.status == 'success' && format('**Tags Applied:**\n```{0}```', steps.meta.outputs.tags) || '**Failure detected!** Please check the workflow logs.' }}
           url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          username: "도커 도우미"
+          username: "Dev 도커 도우미"

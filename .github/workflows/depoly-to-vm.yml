@@ -55,7 +55,7 @@ jobs:
               docker run -d \
                 --name $CONTAINER_NAME \
                 --restart unless-stopped \
-                --memory=700m \
+                --memory=1200m \
                 -p 8080:8080 \
                 -v /home/ubuntu/log-one:/root/log-one \
                 -v /home/ubuntu/heapdump:/app/logs \
@@ -174,7 +174,7 @@ jobs:
               docker run -d \
                 --name $CONTAINER_NAME \
                 --restart unless-stopped \
-                --memory=700m \
+                --memory=1200m \
                 -p 8080:8080 \
                 -v /home/ubuntu/log-one:/root/log-one \
                 -v /home/ubuntu/heapdump:/app/logs \

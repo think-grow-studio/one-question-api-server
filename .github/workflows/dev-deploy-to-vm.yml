@@ -1,0 +1,167 @@
+name: Dev Deploy to Oracle Cloud VM
+
+on:
+  workflow_run:
+    workflows: ["Dev Docker Build and Push to GHCR"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      status: ${{ steps.deployment.outcome }}
+      image_url: ${{ steps.setup.outputs.image_url }}
+
+    steps:
+      - name: Download image URL artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dev-image-url
+          path: .
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Variables
+        id: setup
+        run: |
+          IMAGE_URL=$(cat image-url.txt)
+          echo "image_url=$IMAGE_URL" >> $GITHUB_OUTPUT
+          echo "Using image: $IMAGE_URL"
+
+      - name: Deploy and Health Check DEV VM
+        id: deployment
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SUB_VM_HOST }}
+          username: ${{ secrets.SUB_VM_USERNAME }}
+          key: ${{ secrets.SUB_VM_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            # 변수 설정
+            IMAGE_URL="${{ steps.setup.outputs.image_url }}"
+            CONTAINER_NAME="one-question-api"
+
+            echo "🚀 [DEV VM] Starting deployment with image: $IMAGE_URL"
+
+            # GitHub Container Registry 로그인
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+            # 배포 함수
+            deploy_container() {
+              echo "🧹 [DEV VM] Cleaning up..."
+              docker stop $CONTAINER_NAME 2>/dev/null || true
+              docker rm $CONTAINER_NAME 2>/dev/null || true
+              docker rmi $IMAGE_URL 2>/dev/null || true
+
+              echo "📦 [DEV VM] Deploying new container..."
+              docker pull $IMAGE_URL
+              docker run -d \
+                --name $CONTAINER_NAME \
+                --restart unless-stopped \
+                --memory=900m \
+                -p 8080:8080 \
+                -v /home/ubuntu/log-one:/root/log-one \
+                -v /home/ubuntu/heapdump:/app/logs \
+                --log-driver json-file \
+                --log-opt max-size=50m \
+                --log-opt max-file=10 \
+                -e ORACLE_DB_DRIVER="${{ secrets.ORACLE_DB_DRIVER }}" \
+                -e ORACLE_DB_URL="${{ secrets.DEV_ORACLE_DB_URL }}" \
+                -e ORACLE_DB_USERNAME="${{ secrets.DEV_ORACLE_DB_USERNAME }}" \
+                -e ORACLE_DB_PASSWORD="${{ secrets.DEV_ORACLE_DB_PASSWORD }}" \
+                -e ORACLE_DB_DIALECT="${{ secrets.ORACLE_DB_DIALECT }}" \
+                -e JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
+                -e ACCESS_EXPIRE_TIME="${{ secrets.ACCESS_EXPIRE_TIME }}" \
+                -e REFRESH_EXPIRE_TIME="${{ secrets.REFRESH_EXPIRE_TIME }}" \
+                -e APP_VERSION_MIN="${{ secrets.APP_VERSION_MIN }}" \
+                -e APP_VERSION_LATEST="${{ secrets.APP_VERSION_LATEST }}" \
+                -e APP_SERVER_LIVE="${{ secrets.APP_SERVER_LIVE }}" \
+                -e GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}" \
+                $IMAGE_URL
+
+              echo "⏳ [DEV VM] Waiting for container to start..."
+              sleep 30
+            }
+
+            # 헬스체크 함수
+            health_check() {
+              echo "🔍 [DEV VM] Starting health check..."
+              local max_attempts=6
+              local wait_time=20
+
+              for attempt in $(seq 1 $max_attempts); do
+                echo "⏳ [DEV VM] Health check attempt $attempt/$max_attempts..."
+
+                # 컨테이너 상태 확인
+                if ! docker ps --filter "name=$CONTAINER_NAME" --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
+                  echo "❌ [DEV VM] Container '$CONTAINER_NAME' is not running"
+                  echo "📋 [DEV VM] Container logs:"
+                  docker logs --tail=20 $CONTAINER_NAME 2>/dev/null || echo "No logs available"
+                  return 1
+                fi
+
+                # HTTP 헬스체크
+                local response
+                local http_code
+                local body
+
+                if response=$(curl -s -w "%{http_code}" --connect-timeout 20 --max-time 20 "http://localhost:8080/health" 2>/dev/null); then
+                  http_code="${response: -3}"
+                  body="${response%???}"
+
+                  echo "📡 [DEV VM] HTTP Response: $http_code"
+                  echo "📄 [DEV VM] Body: $body"
+
+                  if [[ "$http_code" == "200" ]] && echo "$body" | grep -q "healthy"; then
+                    echo "✅ [DEV VM] Health check passed!"
+                    return 0
+                  fi
+                else
+                  echo "🔌 [DEV VM] Health check request failed"
+                fi
+
+                if [[ $attempt -lt $max_attempts ]]; then
+                  echo "⏱️ [DEV VM] Waiting ${wait_time}s before retry..."
+                  sleep $wait_time
+                fi
+              done
+
+              echo "❌ [DEV VM] Health check failed after $max_attempts attempts"
+              echo "📋 [DEV VM] Final container logs:"
+              docker logs --tail=30 $CONTAINER_NAME 2>/dev/null || echo "No logs available"
+              return 1
+            }
+
+            # 실행
+            deploy_container
+            health_check
+            echo "🎉 [DEV VM] Deployment completed successfully!"
+
+  # 알림 Job
+  notify:
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always()
+
+    steps:
+      - name: Send Discord Notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: ${{ needs.deploy.outputs.status }}
+          color: ${{ needs.deploy.outputs.status == 'success' && '0x00ff00' || '0xff0000' }}
+          title: "[${{ github.repository }}] ${{ needs.deploy.outputs.status == 'success' && '🎉 Dev Deployment Successful' || '🚨 Dev Deployment Failed' }}"
+          description: |
+            **Dev Deployment Results:**
+
+            ${{ needs.deploy.outputs.status == 'success' && '🟢 ✅' || '🔴 ❌' }} **DEV VM**: ${{ needs.deploy.outputs.status == 'success' && 'SUCCESS' || 'FAILED' }}
+
+            **Image**: `${{ needs.deploy.outputs.image_url }}`
+
+            ${{ needs.deploy.outputs.status != 'success' && '⚠️ Please check the workflow logs.' || '' }}
+          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          username: "Dev 배포 도우미"
