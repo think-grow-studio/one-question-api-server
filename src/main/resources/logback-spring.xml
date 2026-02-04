@@ -1,15 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <property name="LOG_ROOT_PATH" value="${user.home}/log-one"/>
+    <property name="LOG_FILE_NAME" value="one-question-log"/>
     <property name="LOG_PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} [req:%X{requestId:-N/A}] [ip:%X{clientIp:-N/A}] [uri:%X{uri:-N/A}] [member:%X{memberId:-N/A}] [%thread] %-5level %logger{36} - %msg%n"/>
 
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
-        </encoder>
-    </appender>
+    <!-- local: CONSOLE + FILE -->
+    <springProfile name="local">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
 
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_ROOT_PATH}/%d{yyyy/MM/dd}/${LOG_FILE_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>3GB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- prod: CONSOLE + FILE -->
+    <springProfile name="prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_ROOT_PATH}/%d{yyyy/MM/dd}/${LOG_FILE_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>3GB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- default: CONSOLE only (프로파일 미설정 시) -->
+    <springProfile name="default">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
 </configuration>
