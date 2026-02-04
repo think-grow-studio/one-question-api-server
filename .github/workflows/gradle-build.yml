@@ -5,6 +5,7 @@ on:
     branches: [main, release, develop]
   pull_request:
     branches: [main, release, develop]
+  workflow_dispatch:
 
 jobs:
   gradle-build:
@@ -36,7 +37,7 @@ jobs:
           files: "**/build/test-results/**/*.xml"
 
       - name: Upload JAR Artifact
-        if: success() && github.event_name == 'push'
+        if: success() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           # docker-build-push.yml의 이름과 일치해야함.
