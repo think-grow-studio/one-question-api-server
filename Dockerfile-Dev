@@ -1,0 +1,26 @@
+# JRE만 있는 가벼운 이미지 사용
+FROM eclipse-temurin:21-jre-jammy
+WORKDIR /app
+
+COPY app/*.jar ./app.jar
+
+# Heap dump 저장 디렉토리 생성
+RUN mkdir -p /app/logs
+
+ENV SPRING_PROFILES_ACTIVE=prod
+ENTRYPOINT ["java", \
+"-Xms600m", \
+"-Xmx600m", \
+"-XX:MaxMetaspaceSize=160m", \
+"-XX:+UseStringDeduplication", \
+"-XX:MaxDirectMemorySize=64m", \
+"-XX:ReservedCodeCacheSize=64m", \
+"-XX:TieredStopAtLevel=1", \
+"-Xlog:gc*:file=/app/logs/gc-%t.log:time,level,tags", \
+"-XX:+HeapDumpOnOutOfMemoryError", \
+"-XX:HeapDumpPath=/app/logs/heapdump-%t-%p.hprof", \
+"-XX:ErrorFile=/app/logs/hs_err_pid%p.log", \
+"-XX:+ExitOnOutOfMemoryError", \
+"-jar", \
+"app.jar"]
+
