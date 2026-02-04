@@ -68,14 +68,14 @@ jobs:
                 -e ORACLE_DB_PASSWORD="${{ secrets.ORACLE_DB_PASSWORD }}" \
                 -e ORACLE_DB_DIALECT="${{ secrets.ORACLE_DB_DIALECT }}" \
                 -e JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
-                -e ACCESS_EXPIRE_TIME="${{ secrets.ACCESS_EXPIRE_TIME }}" \
-                -e REFRESH_EXPIRE_TIME="${{ secrets.REFRESH_EXPIRE_TIME }}" \
+                -e JWT_ACCESS_EXPIRE_TIME="${{ secrets.ACCESS_EXPIRE_TIME }}" \
+                -e JWT_REFRESH_EXPIRE_TIME="${{ secrets.REFRESH_EXPIRE_TIME }}" \
                 -e APP_VERSION_MIN="${{ secrets.APP_VERSION_MIN }}" \
                 -e APP_VERSION_LATEST="${{ secrets.APP_VERSION_LATEST }}" \
                 -e APP_SERVER_LIVE="${{ secrets.APP_SERVER_LIVE }}" \
                 -e GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}" \
                 $IMAGE_URL
-            
+
               echo "⏳ [SUB VM] Waiting for container to start..."
               sleep 30
             }
@@ -187,14 +187,14 @@ jobs:
                 -e ORACLE_DB_PASSWORD="${{ secrets.ORACLE_DB_PASSWORD }}" \
                 -e ORACLE_DB_DIALECT="${{ secrets.ORACLE_DB_DIALECT }}" \
                 -e JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
-                -e ACCESS_EXPIRE_TIME="${{ secrets.ACCESS_EXPIRE_TIME }}" \
-                -e REFRESH_EXPIRE_TIME="${{ secrets.REFRESH_EXPIRE_TIME }}" \
+                -e JWT_ACCESS_EXPIRE_TIME="${{ secrets.ACCESS_EXPIRE_TIME }}" \
+                -e JWT_REFRESH_EXPIRE_TIME="${{ secrets.REFRESH_EXPIRE_TIME }}" \
                 -e APP_VERSION_MIN="${{ secrets.APP_VERSION_MIN }}" \
                 -e APP_VERSION_LATEST="${{ secrets.APP_VERSION_LATEST }}" \
                 -e APP_SERVER_LIVE="${{ secrets.APP_SERVER_LIVE }}" \
                 -e GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}" \
                 $IMAGE_URL
-            
+
               echo "⏳ [MAIN VM] Waiting for container to start..."
               sleep 30
             }
