@@ -7,7 +7,7 @@ COPY app/*.jar ./app.jar
 # Heap dump 저장 디렉토리 생성
 RUN mkdir -p /app/logs
 
-ENV SPRING_PROFILES_ACTIVE=prod
+ENV SPRING_PROFILES_ACTIVE=local
 ENTRYPOINT ["java", \
 "-Xms600m", \
 "-Xmx600m", \
