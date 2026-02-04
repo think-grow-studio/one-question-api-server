@@ -59,7 +59,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           secrets: | 
             wallet_base64=${{secrets.ORACLE_MAIN_WALLET_COMPRESSED_BASE64}}
-            firebase_base64=${{secrets.FIREBASE_ADMIN_SDK_JSON_BASE64}}
 
       - name: Get short commit SHA
         id: vars
