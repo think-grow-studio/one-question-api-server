@@ -70,9 +70,9 @@ jobs:
                 -e JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
                 -e ACCESS_EXPIRE_TIME="${{ secrets.ACCESS_EXPIRE_TIME }}" \
                 -e REFRESH_EXPIRE_TIME="${{ secrets.REFRESH_EXPIRE_TIME }}" \
-                -e APP_VERSION_MINIMUM="${{ secrets.APP_VERSION_MINIMUM }}" \
-                -e APP_VERSION_UPDATE_FORCE="${{ secrets.APP_VERSION_UPDATE_FORCE }}" \
-                -e APP_MAINTENANCE_MODE="${{ secrets.APP_MAINTENANCE_MODE }}" \
+                -e APP_VERSION_MIN="${{ secrets.APP_VERSION_MIN }}" \
+                -e APP_VERSION_LATEST="${{ secrets.APP_VERSION_LATEST }}" \
+                -e APP_SERVER_LIVE="${{ secrets.APP_SERVER_LIVE }}" \
                 -e GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}" \
                 $IMAGE_URL
             
@@ -189,9 +189,9 @@ jobs:
                 -e JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
                 -e ACCESS_EXPIRE_TIME="${{ secrets.ACCESS_EXPIRE_TIME }}" \
                 -e REFRESH_EXPIRE_TIME="${{ secrets.REFRESH_EXPIRE_TIME }}" \
-                -e APP_VERSION_MINIMUM="${{ secrets.APP_VERSION_MINIMUM }}" \
-                -e APP_VERSION_UPDATE_FORCE="${{ secrets.APP_VERSION_UPDATE_FORCE }}" \
-                -e APP_MAINTENANCE_MODE="${{ secrets.APP_MAINTENANCE_MODE }}" \
+                -e APP_VERSION_MIN="${{ secrets.APP_VERSION_MIN }}" \
+                -e APP_VERSION_LATEST="${{ secrets.APP_VERSION_LATEST }}" \
+                -e APP_SERVER_LIVE="${{ secrets.APP_SERVER_LIVE }}" \
                 -e GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}" \
                 $IMAGE_URL
             
