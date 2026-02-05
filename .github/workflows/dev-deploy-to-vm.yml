@@ -62,8 +62,6 @@ jobs:
               docker run -d \
                 --name $CONTAINER_NAME \
                 --restart unless-stopped \
-                --dns 8.8.8.8 \
-                --dns 8.8.4.4 \
                 --memory=1200m \
                 -p 8080:8080 \
                 -v /home/ubuntu/log-one:/root/log-one \
