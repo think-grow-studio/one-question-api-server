@@ -64,7 +64,7 @@ jobs:
                 --restart unless-stopped \
                 --dns 8.8.8.8 \
                 --dns 8.8.4.4 \
-                --memory=900m \
+                --memory=1200m \
                 -p 8080:8080 \
                 -v /home/ubuntu/log-one:/root/log-one \
                 -v /home/ubuntu/heapdump:/app/logs \
