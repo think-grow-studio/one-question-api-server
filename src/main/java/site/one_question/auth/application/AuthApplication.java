@@ -125,11 +125,11 @@ public class AuthApplication {
     }
 
     public void logout(Long memberId) {
-        refreshTokenService.delete(memberId);
+        refreshTokenService.deleteByMemberId(memberId);
     }
 
     public void withdraw(Long memberId) {
-        refreshTokenService.delete(memberId);
+        refreshTokenService.deleteByMemberId(memberId);
         dailyQuestionAnswerService.deleteByMemberId(memberId);
         dailyQuestionService.deleteByMemberId(memberId);
         questionCycleService.deleteByMemberId(memberId);

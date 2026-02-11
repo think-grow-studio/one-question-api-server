@@ -37,7 +37,7 @@ public class RefreshTokenService {
         return refreshToken;
     }
 
-    public void delete(Long memberId) {
+    public void deleteByMemberId(Long memberId) {
         refreshTokenRepository.deleteByMemberId(memberId);
     }
 }
