@@ -15,7 +15,7 @@ public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     public void save(Member member, String token, Instant expiredAt) {
-        refreshTokenRepository.findByMemberId(member.getId())
+        refreshTokenRepository.findByMember_Id(member.getId())
                 .ifPresentOrElse(
                         existing -> existing.updateToken(token, expiredAt),
                         () -> refreshTokenRepository.save(RefreshToken.create(member, token, expiredAt))
@@ -23,7 +23,7 @@ public class RefreshTokenService {
     }
 
     public RefreshToken validateAndGet(Long memberId, String token) {
-        RefreshToken refreshToken = refreshTokenRepository.findByMemberId(memberId)
+        RefreshToken refreshToken = refreshTokenRepository.findByMember_Id(memberId)
                 .orElseThrow(() -> new RefreshTokenNotFoundException(memberId));
 
         if (refreshToken.isExpired()) {

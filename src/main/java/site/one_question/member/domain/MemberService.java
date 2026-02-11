@@ -37,4 +37,9 @@ public class MemberService {
     member.updateProfile(fullName, locale);
     return member;
   }
+
+  public void withdraw(Long memberId) {
+    Member member = findById(memberId);
+    memberRepository.delete(member);
+  }
 }

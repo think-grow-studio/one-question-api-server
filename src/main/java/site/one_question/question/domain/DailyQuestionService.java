@@ -88,4 +88,8 @@ public class DailyQuestionService {
             Long memberId, LocalDate startDate, LocalDate endDate) {
         return dailyQuestionRepository.findByMemberIdAndDateBetween(memberId, startDate, endDate);
     }
+
+    public void deleteByMemberId(Long memberId) {
+        dailyQuestionRepository.deleteByMemberId(memberId);
+    }
 }

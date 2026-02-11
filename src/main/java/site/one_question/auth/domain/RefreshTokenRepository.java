@@ -2,10 +2,15 @@ package site.one_question.auth.domain;
 
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
 
-    Optional<RefreshToken> findByMemberId(Long memberId);
+    Optional<RefreshToken> findByMember_Id(Long memberId);
 
-    void deleteByMemberId(Long memberId);
+    @Modifying
+    @Query("DELETE FROM RefreshToken rt WHERE rt.member.id = :memberId")
+    int deleteByMemberId(@Param("memberId") Long memberId);
 }

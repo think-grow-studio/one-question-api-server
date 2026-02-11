@@ -208,4 +208,46 @@ public interface AuthApi {
             )
     })
     ResponseEntity<Void> logout(Long memberId);
+
+    @Operation(
+            summary = "회원 탈퇴",
+            description = "현재 사용자의 계정을 즉시 삭제하고 모든 세션을 무효화합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "회원 탈퇴 성공"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 실패",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "UNAUTHORIZED",
+                                                "message": "인증이 필요합니다."
+                                            }
+                                            """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "회원을 찾을 수 없음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "MEMBER-001",
+                                                "message": "회원 정보를 찾을 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    ResponseEntity<Void> withdraw(Long memberId);
 }

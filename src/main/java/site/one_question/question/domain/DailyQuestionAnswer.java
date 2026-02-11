@@ -28,7 +28,7 @@ public class DailyQuestionAnswer extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "member_id", nullable = false)
-    private Member memberId;
+    private Member member;
 
     @Lob
     @Column(nullable = false)
@@ -72,6 +72,6 @@ public class DailyQuestionAnswer extends BaseEntity {
     }
 
     public boolean isOwnedBy(Long memberId) {
-        return this.memberId.equals(memberId);
+        return this.member.getId().equals(memberId);
     }
 }

@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -69,6 +70,15 @@ public class AuthController implements AuthApi {
         log.info("[API] 로그아웃 요청 시작");
         authApplication.logout(memberId);
         log.info("[API] 로그아웃 요청 종료");
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> withdraw(@PrincipalId Long memberId) {
+        log.info("[API] 회원 탈퇴 요청 시작");
+        authApplication.withdraw(memberId);
+        log.info("[API] 회원 탈퇴 요청 종료");
         return ResponseEntity.noContent().build();
     }
 }

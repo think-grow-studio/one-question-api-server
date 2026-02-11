@@ -73,4 +73,8 @@ public class QuestionCycleService {
 
         return newCycle;
     }
+
+    public void deleteByMemberId(Long memberId) {
+        cycleRepository.deleteByMemberId(memberId);
+    }
 }
