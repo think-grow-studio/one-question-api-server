@@ -15,11 +15,18 @@ jobs:
       image_url: ${{ steps.setup.outputs.image_url }}
 
     steps:
+      - name: Download image URL artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: image-url
+          path: .
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Setup Variables
         id: setup
         run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE_URL="ghcr.io/${REPO_LOWER}:latest"
+          IMAGE_URL=$(cat image-url.txt)
           echo "image_url=$IMAGE_URL" >> $GITHUB_OUTPUT
           echo "Using image: $IMAGE_URL"
 
@@ -56,12 +63,14 @@ jobs:
                 --name $CONTAINER_NAME \
                 --restart unless-stopped \
                 --memory=1200m \
-                -p 8080:8080 \
+                -p 443:443 \
                 -v /home/ubuntu/log-one:/root/log-one \
                 -v /home/ubuntu/heapdump:/app/logs \
+                -v /home/ubuntu/certs:/certs \
                 --log-driver json-file \
                 --log-opt max-size=50m \
                 --log-opt max-file=10 \
+                -e SPRING_PROFILES_ACTIVE=prod \
                 -e ORACLE_DB_DRIVER="${{ secrets.ORACLE_DB_DRIVER }}" \
                 -e ORACLE_DB_URL="${{ secrets.ORACLE_DB_URL }}" \
                 -e ORACLE_DB_USERNAME="${{ secrets.ORACLE_DB_USERNAME }}" \
@@ -74,12 +83,13 @@ jobs:
                 -e APP_VERSION_LATEST="${{ secrets.APP_VERSION_LATEST }}" \
                 -e APP_SERVER_LIVE="${{ secrets.APP_SERVER_LIVE }}" \
                 -e GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}" \
+                -e SSL_KEYSTORE_PASSWORD="${{ secrets.SSL_KEYSTORE_PASSWORD }}" \
                 $IMAGE_URL
 
               echo "⏳ [SUB VM] Waiting for container to start..."
               sleep 30
             }
-            
+
             # 헬스체크 함수
             health_check() {
               echo "🔍 [SUB VM] Starting health check..."
@@ -102,10 +112,10 @@ jobs:
                 local http_code
                 local body
             
-                if response=$(curl -s -w "%{http_code}" --connect-timeout 20 --max-time 20 "http://localhost:8080/health" 2>/dev/null); then
+                if response=$(curl -s -w "%{http_code}" --connect-timeout 20 --max-time 20 -k "https://localhost:443/health" 2>/dev/null); then
                   http_code="${response: -3}"
                   body="${response%???}"
-            
+
                   echo "📡 [SUB VM] HTTP Response: $http_code"
                   echo "📄 [SUB VM] Body: $body"
             
@@ -175,12 +185,14 @@ jobs:
                 --name $CONTAINER_NAME \
                 --restart unless-stopped \
                 --memory=1200m \
-                -p 8080:8080 \
+                -p 443:443 \
                 -v /home/ubuntu/log-one:/root/log-one \
                 -v /home/ubuntu/heapdump:/app/logs \
+                -v /home/ubuntu/certs:/certs \
                 --log-driver json-file \
                 --log-opt max-size=50m \
                 --log-opt max-file=10 \
+                -e SPRING_PROFILES_ACTIVE=prod \
                 -e ORACLE_DB_DRIVER="${{ secrets.ORACLE_DB_DRIVER }}" \
                 -e ORACLE_DB_URL="${{ secrets.ORACLE_DB_URL }}" \
                 -e ORACLE_DB_USERNAME="${{ secrets.ORACLE_DB_USERNAME }}" \
@@ -193,6 +205,7 @@ jobs:
                 -e APP_VERSION_LATEST="${{ secrets.APP_VERSION_LATEST }}" \
                 -e APP_SERVER_LIVE="${{ secrets.APP_SERVER_LIVE }}" \
                 -e GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}" \
+                -e SSL_KEYSTORE_PASSWORD="${{ secrets.SSL_KEYSTORE_PASSWORD }}" \
                 $IMAGE_URL
 
               echo "⏳ [MAIN VM] Waiting for container to start..."
@@ -219,10 +232,10 @@ jobs:
                 local http_code
                 local body
             
-                if response=$(curl -s -w "%{http_code}" --connect-timeout 20 --max-time 20 "http://localhost:8080/health" 2>/dev/null); then
+                if response=$(curl -s -w "%{http_code}" --connect-timeout 20 --max-time 20 -k "https://localhost:443/health" 2>/dev/null); then
                   http_code="${response: -3}"
                   body="${response%???}"
-            
+
                   echo "📡 [MAIN VM] HTTP Response: $http_code"
                   echo "📄 [MAIN VM] Body: $body"
             
