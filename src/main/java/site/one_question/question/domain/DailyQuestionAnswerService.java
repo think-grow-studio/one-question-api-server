@@ -27,4 +27,8 @@ public class DailyQuestionAnswerService {
         return findByDailyQuestion(dailyQuestion)
                 .orElseThrow(() -> new AnswerNotFoundException(dailyQuestion.getId()));
     }
+
+    public void deleteByMemberId(Long memberId) {
+        answerRepository.deleteByMemberId(memberId);
+    }
 }

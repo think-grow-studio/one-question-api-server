@@ -45,6 +45,8 @@ jobs:
         with:
           images: ${{ steps.image.outputs.name }}
           tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
             type=sha,format=short
             type=raw,value=latest
 

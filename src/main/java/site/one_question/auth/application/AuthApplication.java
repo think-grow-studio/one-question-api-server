@@ -21,6 +21,8 @@ import site.one_question.auth.presentation.response.ReissueAuthTokenResponse;
 import site.one_question.member.domain.AuthSocialProvider;
 import site.one_question.member.domain.Member;
 import site.one_question.member.domain.MemberService;
+import site.one_question.question.domain.DailyQuestionAnswerService;
+import site.one_question.question.domain.DailyQuestionService;
 import site.one_question.question.domain.QuestionCycleService;
 
 @Service
@@ -34,6 +36,8 @@ public class AuthApplication {
     private final MemberService memberService;
     private final RefreshTokenService refreshTokenService;
     private final QuestionCycleService questionCycleService;
+    private final DailyQuestionService dailyQuestionService;
+    private final DailyQuestionAnswerService dailyQuestionAnswerService;
 
     public AuthResponse googleAuth(GoogleAuthRequest request, String locale, String timezone) {
         GoogleIdToken.Payload payload = googleTokenVerifier.verify(request.idToken());
@@ -121,6 +125,14 @@ public class AuthApplication {
     }
 
     public void logout(Long memberId) {
-        refreshTokenService.delete(memberId);
+        refreshTokenService.deleteByMemberId(memberId);
+    }
+
+    public void withdraw(Long memberId) {
+        refreshTokenService.deleteByMemberId(memberId);
+        dailyQuestionAnswerService.deleteByMemberId(memberId);
+        dailyQuestionService.deleteByMemberId(memberId);
+        questionCycleService.deleteByMemberId(memberId);
+        memberService.withdraw(memberId);
     }
 }
