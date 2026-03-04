@@ -112,7 +112,7 @@ jobs:
                 local http_code
                 local body
 
-                if response=$(curl -s -w "%{http_code}" --connect-timeout 20 --max-time 20 -k "https://localhost:443/health" 2>/dev/null); then
+                if response=$(curl -s -w "%{http_code}" --connect-timeout 20 --max-time 20 -k "https://localhost:443/api/v1/health" 2>/dev/null); then
                   http_code="${response: -3}"
                   body="${response%???}"
 
