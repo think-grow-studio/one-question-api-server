@@ -9,7 +9,7 @@ on:
 jobs:
   dev-docker-build-and-push:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event != 'pull_request' && (github.event.workflow_run.head_branch == 'release' || github.event.workflow_run.head_branch == 'develop') }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event != 'pull_request' && github.event.workflow_run.head_branch == 'develop' }}
     permissions:
       contents: read
       packages: write
@@ -45,6 +45,8 @@ jobs:
         with:
           images: ${{ steps.image.outputs.name }}
           tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
             type=sha,format=short
             type=raw,value=latest
 

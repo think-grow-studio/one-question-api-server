@@ -67,6 +67,16 @@ jobs:
           secrets: |
             wallet_base64=${{secrets.ORACLE_MAIN_WALLET_COMPRESSED_BASE64}}
 
+      - name: Save image URL for downstream workflows
+        run: echo "ghcr.io/${{ steps.repo.outputs.repository }}:latest" > image-url.txt
+
+      - name: Upload image URL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-url
+          path: image-url.txt
+          retention-days: 1
+
       - name: Get short commit SHA
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT

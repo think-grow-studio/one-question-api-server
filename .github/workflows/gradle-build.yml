@@ -2,9 +2,9 @@ name: Spring Build With Gradle
 
 on:
   push:
-    branches: [main, release, develop]
+    branches: [main, develop]
   pull_request:
-    branches: [main, release, develop]
+    branches: [main, develop]
   workflow_dispatch:
 
 jobs:
