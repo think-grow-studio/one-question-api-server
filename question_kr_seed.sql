@@ -1,4 +1,4 @@
-INSERT INTO question (id, content, discription, locale, status, question_number, created_at, updated_at) VALUES
+INSERT INTO question (id, content, description, locale, status, question_number, created_at, updated_at) VALUES
     (1, '요즘 나를 가장 설레게 하는 것은 무엇인가요?', NULL, 'ko-KR', 'ACTIVE', 1, SYS_EXTRACT_UTC(SYSTIMESTAMP), SYS_EXTRACT_UTC(SYSTIMESTAMP)),
     (2, '요즘 내 인생의 장르는 무엇인가요?', '(코미디, 액션, 다큐 등등)', 'ko-KR', 'ACTIVE', 2, SYS_EXTRACT_UTC(SYSTIMESTAMP), SYS_EXTRACT_UTC(SYSTIMESTAMP)),
     (3, '현재 유행하고 있는 것은 무엇인가요?', NULL, 'ko-KR', 'ACTIVE', 3, SYS_EXTRACT_UTC(SYSTIMESTAMP), SYS_EXTRACT_UTC(SYSTIMESTAMP)),
