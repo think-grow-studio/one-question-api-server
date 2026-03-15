@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,6 +21,9 @@ public class Member extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false, length = 50)
+    private String publicId;
 
     @Column(length = 255,nullable = false)
     private String email;
@@ -64,6 +68,7 @@ public class Member extends BaseEntity {
     ) {
         return new Member(
                 null,
+                "mem_" + UUID.randomUUID(),
                 email,
                 fullName,
                 provider,
