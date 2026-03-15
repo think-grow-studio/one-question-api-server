@@ -10,6 +10,9 @@ public record GetMemberResponse(
         @Schema(description = "회원 ID", example = "1")
         Long id,
 
+        @Schema(description = "회원 공개 ID", example = "mem_550e8400-e29b-41d4-a716-446655440000")
+        String publicId,
+
         @Schema(description = "이메일", example = "user@gmail.com")
         String email,
 
@@ -37,6 +40,7 @@ public record GetMemberResponse(
     public static GetMemberResponse from(Member member, LocalDate firstCycleStartDate) {
         return new GetMemberResponse(
                 member.getId(),
+                member.getPublicId(),
                 member.getEmail(),
                 member.getFullName(),
                 member.getProvider().name(),
