@@ -39,6 +39,6 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
     );
 
     @Modifying
-    @Query("DELETE FROM DailyQuestion dq WHERE dq.member.id = :memberId")
+    @Query(value = "DELETE /*+ NO_PARALLEL */ FROM daily_question WHERE member_id = :memberId", nativeQuery = true)
     int deleteByMemberId(@Param("memberId") Long memberId);
 }
