@@ -5,7 +5,7 @@
     <property name="LOG_PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} [req:%X{requestId:-N/A}] [ip:%X{clientIp:-N/A}] [uri:%X{uri:-N/A}] [member:%X{memberId:-N/A}] [%thread] %-5level %logger{36} - %msg%n"/>
 
-    <!-- local: CONSOLE + FILE -->
+    <!-- local: CONSOLE + FILE, INFO + Hibernate SQL DEBUG -->
     <springProfile name="local">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
@@ -24,13 +24,15 @@
             </encoder>
         </appender>
 
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
         </root>
     </springProfile>
 
-    <!-- dev: CONSOLE + FILE -->
+    <!-- dev: CONSOLE + FILE, INFO -->
     <springProfile name="dev">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
@@ -55,7 +57,7 @@
         </root>
     </springProfile>
 
-    <!-- prod: CONSOLE + FILE -->
+    <!-- prod: CONSOLE + FILE, 서드파티 WARN + 앱 INFO -->
     <springProfile name="prod">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
@@ -74,13 +76,15 @@
             </encoder>
         </appender>
 
-        <root level="INFO">
+        <logger name="site.one_question" level="INFO"/>
+
+        <root level="WARN">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
         </root>
     </springProfile>
 
-    <!-- default: CONSOLE only (프로파일 미설정 시) -->
+    <!-- default: CONSOLE only -->
     <springProfile name="default">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
