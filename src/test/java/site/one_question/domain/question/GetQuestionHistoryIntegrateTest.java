@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -37,7 +38,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
 
     @BeforeEach
     void setup() {
-        LocalDate joinedDate = LocalDate.now().minusDays(30);
+        LocalDate joinedDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(30);
         member = testMemberUtils.createSave_With_JoinedDate(joinedDate);
         token = testAuthUtils.createBearerToken(member);
         cycle = testQuestionCycleUtils.createSave_With_StartDate(member, joinedDate, TIMEZONE, 1);
@@ -51,7 +52,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("PREVIOUS 방향: baseDate부터 size일 이전까지 조회")
         void get_history_with_previous_direction() throws Exception {
             // given
-            LocalDate baseDate = LocalDate.now();
+            LocalDate baseDate = LocalDate.now(ZoneId.of(TIMEZONE));
             long size = DAILY_SIZE;
 
             // 7일치 DailyQuestion 생성
@@ -79,7 +80,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("NEXT 방향: baseDate부터 size일 이후까지 조회")
         void get_history_with_next_direction() throws Exception {
             // given
-            LocalDate baseDate = LocalDate.now().minusDays(10);
+            LocalDate baseDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(10);
             long size = DAILY_SIZE;
 
             // 7일치 DailyQuestion 생성
@@ -107,7 +108,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("BOTH 방향: baseDate 중심 양쪽 균등 조회")
         void get_history_with_both_direction() throws Exception {
             // given
-            LocalDate baseDate = LocalDate.now().minusDays(10);
+            LocalDate baseDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(10);
             long size = CALENDAR_SIZE;
 
             // 35일치 DailyQuestion 생성 (baseDate 중심)
@@ -120,7 +121,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
             // when & then
             // 실제로는 가입일(30일 전)과 오늘로 클램핑되어 28일치만 조회됨
             LocalDate joinedDate = member.getJoinedDate();
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             LocalDate actualStartDate = baseDate.minusDays(CALENDAR_HALF_SIZE).isAfter(joinedDate) ? baseDate.minusDays(CALENDAR_HALF_SIZE) : joinedDate;
             LocalDate actualEndDate = baseDate.plusDays(CALENDAR_HALF_SIZE).isBefore(today) ? baseDate.plusDays(CALENDAR_HALF_SIZE) : today;
             long actualSize = java.time.temporal.ChronoUnit.DAYS.between(actualStartDate, actualEndDate) + 1;
@@ -142,7 +143,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("결과가 최신순(내림차순) 정렬 확인")
         void get_history_returns_descending_order() throws Exception {
             // given
-            LocalDate baseDate = LocalDate.now();
+            LocalDate baseDate = LocalDate.now(ZoneId.of(TIMEZONE));
             long size = DAILY_SIZE;
 
             for (int i = 0; i < size; i++) {
@@ -174,7 +175,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("답변 완료 질문은 ANSWERED 상태와 answer 정보 반환")
         void answered_question_returns_answered_status() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             Question question = testQuestionUtils.createSave();
             DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave_With_Date(member, cycle, question, today);
             DailyQuestionAnswer answer = testDailyQuestionAnswerUtils.createSave(dailyQuestion, member);
@@ -198,7 +199,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("미답변 질문은 UNANSWERED 상태와 answer null 반환")
         void unanswered_question_returns_unanswered_status() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             Question question = testQuestionUtils.createSave();
             DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave_With_Date(member, cycle, question, today);
 
@@ -220,7 +221,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("DailyQuestion 없는 날짜는 NO_QUESTION 상태 반환")
         void no_daily_question_returns_no_question_status() throws Exception {
             // given - DailyQuestion 생성하지 않음
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
 
             // when & then
             mockMvc.perform(get(HISTORIES_API)
@@ -239,7 +240,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("혼합 상태 시 각 날짜별 정확한 상태 반환")
         void mixed_status_returns_correct_status_for_each_date() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             LocalDate yesterday = today.minusDays(1);
             LocalDate twoDaysAgo = today.minusDays(2);
 
@@ -279,7 +280,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("조회 시작일이 가입일 이전이면 가입일로 제한")
         void start_date_limited_to_joined_date() throws Exception {
             // given - 가입일이 10일 전인 멤버
-            LocalDate joinedDate = LocalDate.now().minusDays(10);
+            LocalDate joinedDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(10);
             Member newMember = testMemberUtils.createSave_With_JoinedDate(joinedDate);
             String newToken = testAuthUtils.createBearerToken(newMember);
             QuestionCycle questionCycle = testQuestionCycleUtils.createSave_With_StartDate(newMember, joinedDate, TIMEZONE, 1);
@@ -303,7 +304,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("조회 종료일이 오늘 이후면 오늘로 제한")
         void end_date_limited_to_today() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             LocalDate baseDate = today.minusDays(DAILY_SIZE);
             int size = 10 + DAILY_SIZE.intValue(); // 오늘 이후까지 포함하려 시도
 
@@ -322,7 +323,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("baseDate가 가입일과 같을 때 PREVIOUS 방향")
         void base_date_equals_joined_date_with_previous() throws Exception {
             // given
-            LocalDate joinedDate = LocalDate.now().minusDays(DAILY_SIZE);
+            LocalDate joinedDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(DAILY_SIZE);
             Member newMember = testMemberUtils.createSave_With_JoinedDate(joinedDate);
             String newToken = testAuthUtils.createBearerToken(newMember);
             QuestionCycle Questioncycle = testQuestionCycleUtils.createSave_With_StartDate(newMember, joinedDate, TIMEZONE, 1);
@@ -346,7 +347,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("baseDate가 오늘과 같을 때 NEXT 방향")
         void base_date_equals_today_with_next() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
 
             // when & then - 결과는 오늘 하루만
             mockMvc.perform(get(HISTORIES_API)
@@ -366,12 +367,12 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("양쪽 경계 모두 제한되는 경우")
         void both_boundaries_limited() throws Exception {
             // given - 가입일이 3일 전인 멤버
-            LocalDate joinedDate = LocalDate.now().minusDays(3);
+            LocalDate joinedDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(3);
             Member newMember = testMemberUtils.createSave_With_JoinedDate(joinedDate);
             String newToken = testAuthUtils.createBearerToken(newMember);
             QuestionCycle questionCycle = testQuestionCycleUtils.createSave_With_StartDate(newMember, joinedDate, TIMEZONE, 1);
 
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             LocalDate baseDate = questionCycle.getStartDate().plusDays(1); // 가입일 +1
 
             // when & then - 양쪽 모두 제한됨
@@ -395,7 +396,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("startDate > joinedDate면 hasPrevious=true")
         void has_previous_true_when_more_dates_exist() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
 
             // when & then - 가입일은 30일 전이므로 hasPrevious=true
             mockMvc.perform(get(HISTORIES_API)
@@ -412,7 +413,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("startDate == joinedDate면 hasPrevious=false")
         void has_previous_false_at_joined_date() throws Exception {
             // given
-            LocalDate joinedDate = LocalDate.now().minusDays(3);
+            LocalDate joinedDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(3);
             Member newMember = testMemberUtils.createSave_With_JoinedDate(joinedDate);
             String newToken = testAuthUtils.createBearerToken(newMember);
             testQuestionCycleUtils.createSave_With_StartDate(newMember, joinedDate, TIMEZONE, 1);
@@ -432,7 +433,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("endDate < today면 hasNext=true")
         void has_next_true_when_more_dates_exist() throws Exception {
             // given
-            LocalDate baseDate = LocalDate.now().minusDays(DAILY_SIZE + 5);
+            LocalDate baseDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(DAILY_SIZE + 5);
 
             // when & then
             mockMvc.perform(get(HISTORIES_API)
@@ -449,7 +450,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("endDate == today면 hasNext=false")
         void has_next_false_at_today() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
 
             // when & then
             mockMvc.perform(get(HISTORIES_API)
@@ -466,7 +467,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("양쪽 모두 더 있을 때 both flags true")
         void both_flags_true() throws Exception {
             // given - 가입일 30일 전, 중간 날짜 조회
-            LocalDate baseDate = LocalDate.now().minusDays(10);
+            LocalDate baseDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(10);
 
             // when & then
             // baseDate-CALENDAR_HALF_SIZE가 가입일보다 나중이므로 hasPrevious=true
@@ -486,7 +487,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("양쪽 모두 끝에 도달했을 때 both flags false")
         void both_flags_false() throws Exception {
             // given - 가입일이 오늘인 멤버
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             Member newMember = testMemberUtils.createSave_With_JoinedDate(today);
             String newToken = testAuthUtils.createBearerToken(newMember);
             testQuestionCycleUtils.createSave_With_StartDate(newMember, today, TIMEZONE, 1);
@@ -512,7 +513,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("미래 날짜 요청 시 400 Bad Request")
         void future_date_throws_400() throws Exception {
             // given
-            LocalDate futureDate = LocalDate.now().plusDays(1);
+            LocalDate futureDate = LocalDate.now(ZoneId.of(TIMEZONE)).plusDays(1);
 
             // when & then
             mockMvc.perform(get(HISTORIES_API)
@@ -529,7 +530,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("Timezone 헤더 누락 시 400 Bad Request")
         void missing_timezone_throws_400() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
 
             // when & then
             mockMvc.perform(get(HISTORIES_API)
@@ -544,7 +545,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("유효하지 않은 타임존 요청 시 예외")
         void invalid_timezone_throws_exception() throws Exception {
             // given
-            LocalDate pastDate = LocalDate.now().minusDays(10);
+            LocalDate pastDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(10);
 
             // when & then - 현재 구현에서는 500 에러 발생 (ZoneRulesException)
             mockMvc.perform(get(HISTORIES_API)
@@ -572,7 +573,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("유효하지 않은 historyDirection 요청 시 400 Bad Request")
         void invalid_direction_throws_400() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
 
             // when & then
             mockMvc.perform(get(HISTORIES_API)
@@ -588,7 +589,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("인증 헤더 없음 시 401 Unauthorized")
         void unauthorized_throws_401() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
 
             // when & then
             mockMvc.perform(get(HISTORIES_API)
@@ -608,7 +609,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("BOTH + 짝수 size 처리")
         void even_size_with_both_direction() throws Exception {
             // given - 클램핑 없이 순수하게 짝수 처리만 검증
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             LocalDate joinedDate = today.minusDays(60);
             LocalDate baseDate = today.minusDays(30);
 
@@ -650,7 +651,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("size=1일 때 단일 결과 반환")
         void size_one_returns_single_result() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             Question question = testQuestionUtils.createSave();
             testDailyQuestionUtils.createSave_With_Date(member, cycle, question, today);
 
@@ -670,12 +671,12 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("큰 size가 가용 범위로 제한됨")
         void large_size_clamped_to_available_range() throws Exception {
             // given - 가입일이 5일 전
-            LocalDate joinedDate = LocalDate.now().minusDays(5);
+            LocalDate joinedDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(5);
             Member newMember = testMemberUtils.createSave_With_JoinedDate(joinedDate);
             String newToken = testAuthUtils.createBearerToken(newMember);
             testQuestionCycleUtils.createSave_With_StartDate(newMember, joinedDate, TIMEZONE, 1);
 
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
 
             // when & then - size=100이지만 6일치만 반환
             mockMvc.perform(get(HISTORIES_API)
@@ -694,7 +695,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("질문 정보가 정확하게 반환됨")
         void question_info_correctly_populated() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             Question question = testQuestionUtils.createSave_With_Content("테스트 질문 내용입니다");
             DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave_With_Date(member, cycle, question, today);
 
@@ -716,7 +717,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("답변 정보가 정확하게 반환됨")
         void answer_info_correctly_populated() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             Question question = testQuestionUtils.createSave();
             DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave_With_Date(member, cycle, question, today);
             DailyQuestionAnswer answer = testDailyQuestionAnswerUtils.createSave_With_Content(
@@ -739,12 +740,12 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
         @DisplayName("다른 회원 데이터와 격리됨")
         void multiple_members_isolation() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
 
             // 다른 회원 생성 및 DailyQuestion 생성
-            Member otherMember = testMemberUtils.createSave_With_JoinedDate(LocalDate.now().minusDays(30));
+            Member otherMember = testMemberUtils.createSave_With_JoinedDate(LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(30));
             QuestionCycle otherCycle = testQuestionCycleUtils.createSave_With_StartDate(
-                    otherMember, LocalDate.now().minusDays(30), TIMEZONE, 1);
+                    otherMember, LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(30), TIMEZONE, 1);
             Question otherQuestion = testQuestionUtils.createSave();
             testDailyQuestionUtils.createSave_With_Date(otherMember, otherCycle, otherQuestion, today);
 
@@ -775,7 +776,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
             // given
             String differentTimezone = "America/New_York";
             // 과거 날짜를 사용하여 타임존 차이로 인한 미래 날짜 문제 방지
-            LocalDate pastDate = LocalDate.now().minusDays(10);
+            LocalDate pastDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(10);
 
             // when & then - 다른 타임존으로 요청해도 동작
             mockMvc.perform(get(HISTORIES_API)

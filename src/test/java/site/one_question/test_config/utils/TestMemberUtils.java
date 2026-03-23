@@ -1,6 +1,7 @@
 package site.one_question.test_config.utils;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import site.one_question.member.domain.AuthSocialProvider;
@@ -21,7 +22,7 @@ public class TestMemberUtils {
                 AuthSocialProvider.GOOGLE,
                 "provider-id-" + uniqueId++,
                 "ko-KR",
-                LocalDate.now()
+                LocalDate.now(ZoneId.of("Asia/Seoul"))
         );
         return memberRepository.save(member);
     }
@@ -33,7 +34,7 @@ public class TestMemberUtils {
                 AuthSocialProvider.GOOGLE,
                 "provider-id-" + uniqueId++,
                 "ko-KR",
-                LocalDate.now()
+                LocalDate.now(ZoneId.of("Asia/Seoul"))
         );
         return memberRepository.save(member);
     }

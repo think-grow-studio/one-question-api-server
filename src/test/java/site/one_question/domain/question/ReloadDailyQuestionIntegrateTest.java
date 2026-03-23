@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -43,7 +44,7 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("정상 새로고침 시 200 OK, 새 질문 반환")
         void reload_daily_question_success() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
             Question question = testQuestionUtils.createSave();
             testQuestionUtils.createSave(); // 새로고침용 추가 질문
@@ -63,7 +64,7 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("새로고침 후 changeCount 1 증가")
         void reload_increments_change_count() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
             Question question = testQuestionUtils.createSave();
             testQuestionUtils.createSave(); // 새로고침용 추가 질문
@@ -92,7 +93,7 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("새로고침 시 기존과 다른 질문 반환")
         void reload_returns_different_question() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
             Question originalQuestion = testQuestionUtils.createSave();
             testQuestionUtils.createSave(); // 새로고침용 추가 질문
@@ -118,7 +119,7 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("질문 리로드시 과거 및 이전 질문과 중복되지 않는다")
         void reload_multiple_days_without_duplicates() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             LocalDate firstDay = today.minusDays(2);
             LocalDate secondDay = today.minusDays(1);
             QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
@@ -187,7 +188,7 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("changeCount가 max-1일 때 마지막 새로고침 성공")
         void reload_at_max_minus_one_succeeds() throws Exception {
             // given - FREE 권한의 경우 maxChangeCount = 2, 따라서 1회 변경 후 한 번 더 가능
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
             Question question = testQuestionUtils.createSave();
             testQuestionUtils.createSave(); // 새로고침용 추가 질문
@@ -210,7 +211,7 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("changeCount가 max일 때 새로고침 실패 (400)")
         void reload_at_max_count_fails() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
             Question question = testQuestionUtils.createSave();
             DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave(member, cycle, question);
@@ -237,7 +238,7 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("DailyQuestion 없이 새로고침 시 404")
         void reload_without_daily_question_throws_404() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             // DailyQuestion 생성하지 않음
 
             // when & then
@@ -252,7 +253,7 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("답변한 질문 새로고침 시 400 (QUESTION-005)")
         void reload_answered_question_throws_400() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
             Question question = testQuestionUtils.createSave();
             DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave(member, cycle, question);
@@ -272,7 +273,7 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("변경 횟수 초과 시 400 (QUESTION-008)")
         void reload_exceeded_limit_throws_400() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
             Question question = testQuestionUtils.createSave();
             DailyQuestion dailyQuestion = testDailyQuestionUtils.createSave(member, cycle, question);

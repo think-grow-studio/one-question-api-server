@@ -1,6 +1,7 @@
 package site.one_question.test_config.utils;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import site.one_question.member.domain.Member;
@@ -20,7 +21,7 @@ public class TestDailyQuestionUtils {
                 member,
                 cycle,
                 question,
-                LocalDate.now(),
+                LocalDate.now(ZoneId.of("Asia/Seoul")),
                 "Asia/Seoul"
         );
         return dailyQuestionRepository.save(dailyQuestion);
@@ -42,7 +43,7 @@ public class TestDailyQuestionUtils {
                 member,
                 cycle,
                 question,
-                LocalDate.now(),
+                LocalDate.now(ZoneId.of("Asia/Seoul")),
                 timezone
         );
         return dailyQuestionRepository.save(dailyQuestion);

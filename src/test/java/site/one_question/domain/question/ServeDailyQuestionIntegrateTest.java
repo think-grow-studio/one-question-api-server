@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,7 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
     @DisplayName("오늘의 질문 제공 시 200 OK 응답 및 질문 정보 반환")
     void serve_daily_question_with_valid_request_then_return_200_ok() throws Exception {
         // given
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
 
         // when & then
         mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
@@ -82,7 +83,7 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("동일 날짜 2번 요청 시 같은 DailyQuestion 반환")
         void serve_same_date_twice_returns_same_daily_question() throws Exception {
             // given
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
 
             // when - 첫 번째 요청
             mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
@@ -121,14 +122,14 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("2년 후 요청 시 중간 사이클들 자동 생성")
         void request_after_2_years_creates_intermediate_cycles() throws Exception {
             // given - 2년 전에 가입한 멤버 및 첫 번째 사이클 생성
-            LocalDate twoYearsAgo = LocalDate.now().minusYears(2);
+            LocalDate twoYearsAgo = LocalDate.now(ZoneId.of(TIMEZONE)).minusYears(2);
             Member oldMember = testMemberUtils.createSave_With_JoinedDate(twoYearsAgo);
             String oldMemberToken = testAuthUtils.createBearerToken(oldMember);
 
             // 첫 번째 사이클 생성 (2년 전 시작)
             testQuestionCycleUtils.createSave_With_StartDate(oldMember, twoYearsAgo, TIMEZONE, 1);
 
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
 
             // when - 오늘 날짜로 질문 요청
             mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
@@ -177,7 +178,7 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("사이클 마지막 날 요청 시 해당 사이클 반환")
         void request_on_cycle_end_date_returns_current_cycle() throws Exception {
             // given - 1년 전에 가입해서 오늘이 사이클 마지막 날이 되도록 설정
-            LocalDate cycleStartDate = LocalDate.now().minusYears(1).plusDays(1);
+            LocalDate cycleStartDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusYears(1).plusDays(1);
             LocalDate cycleEndDate = cycleStartDate.plusYears(1).minusDays(1); // = 오늘
 
             Member memberWithCycle = testMemberUtils.createSave_With_JoinedDate(cycleStartDate);
@@ -206,7 +207,7 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("사이클 종료일 다음 날 요청 시 새 사이클 생성")
         void request_day_after_cycle_end_creates_new_cycle() throws Exception {
             // given - 사이클 종료일이 어제가 되도록 설정
-            LocalDate cycleStartDate = LocalDate.now().minusYears(1);
+            LocalDate cycleStartDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusYears(1);
             LocalDate cycleEndDate = cycleStartDate.plusYears(1).minusDays(1); // = 어제
             LocalDate dayAfterCycleEnd = cycleEndDate.plusDays(1); // = 오늘
 
@@ -247,7 +248,7 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("미래 날짜 요청 시 400 Bad Request")
         void request_future_date_throws_400_bad_request() throws Exception {
             // given
-            LocalDate futureDate = LocalDate.now().plusDays(1);
+            LocalDate futureDate = LocalDate.now(ZoneId.of(TIMEZONE)).plusDays(1);
 
             // when & then
             mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", futureDate)
@@ -269,7 +270,7 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
         @DisplayName("가입일 이전 날짜 요청 시 400 Bad Request")
         void request_before_signup_date_throws_400_bad_request() throws Exception {
             // given - 오늘 가입한 멤버에 대해 첫 사이클 생성
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
             testQuestionCycleUtils.createSave_With_StartDate(member, today, TIMEZONE, 1);
 
             LocalDate beforeSignupDate = today.minusDays(1);
