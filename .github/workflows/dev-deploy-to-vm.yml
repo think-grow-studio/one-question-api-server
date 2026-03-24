@@ -85,7 +85,7 @@ jobs:
                 -e APP_SERVER_LIVE="${{ secrets.APP_SERVER_LIVE }}" \
                 -e GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}" \
                 -e SSL_KEYSTORE_PASSWORD="${{ secrets.SSL_KEYSTORE_PASSWORD }}" \
-                -e DISCORD_WEBHOOK_URL="${{ secrets.DISCORD_LOGGING_WEBHOOK_URL }}" \
+                -e DISCORD_LOGGING_WEBHOOK_URL="${{ secrets.DISCORD_LOGGING_WEBHOOK_URL }}" \
                 $IMAGE_URL
 
               echo "⏳ [DEV VM] Waiting for container to start..."
