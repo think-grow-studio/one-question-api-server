@@ -4,6 +4,9 @@
     <property name="LOG_FILE_NAME" value="one-question-log"/>
     <property name="LOG_PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} [req:%X{requestId:-N/A}] [ip:%X{clientIp:-N/A}] [uri:%X{uri:-N/A}] [member:%X{memberId:-N/A}] [%thread] %-5level %logger{36} - %msg%n"/>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="one-question"/>
+    <springProperty scope="context" name="ACTIVE_PROFILE" source="spring.profiles.active" defaultValue="default"/>
+    <springProperty scope="context" name="DISCORD_WEBHOOK_URL" source="logging.discord.webhook-url" defaultValue=""/>
 
     <!-- 공통 appender -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -23,6 +26,15 @@
         </encoder>
     </appender>
 
+    <appender name="DISCORD" class="site.one_question.global.logging.DiscordWebhookAppender">
+        <webhookUrl>${DISCORD_WEBHOOK_URL}</webhookUrl>
+        <applicationName>${APP_NAME} (${ACTIVE_PROFILE})</applicationName>
+        <filter class="site.one_question.global.logging.DiscordSkipJwtExpiredFilter"/>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+    </appender>
+
     <!-- local: INFO + Hibernate SQL DEBUG -->
     <springProfile name="local">
         <logger name="org.hibernate.SQL" level="DEBUG"/>
@@ -30,6 +42,7 @@
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
+            <appender-ref ref="DISCORD"/>
         </root>
     </springProfile>
 
@@ -38,6 +51,7 @@
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
+            <appender-ref ref="DISCORD"/>
         </root>
     </springProfile>
 
@@ -48,6 +62,7 @@
         <root level="WARN">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
+            <appender-ref ref="DISCORD"/>
         </root>
     </springProfile>
 
@@ -55,6 +70,7 @@
     <springProfile name="default">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="DISCORD"/>
         </root>
     </springProfile>
 </configuration>
