@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import site.one_question.global.common.MdcKey;
 
 /**
  * Sends ERROR level log events to a Discord webhook so critical issues raise an immediate alert.
@@ -101,10 +102,10 @@ public class DiscordWebhookAppender extends AppenderBase<ILoggingEvent> {
         fields.add(inlineField("Logger", eventObject.getLoggerName()));
 
         Map<String, String> mdc = eventObject.getMDCPropertyMap();
-        addFieldIfPresent(fields, "Request ID", mdc.get("requestId"));
-        addFieldIfPresent(fields, "URI", mdc.get("uri"));
-        addFieldIfPresent(fields, "IP", mdc.get("clientIp"));
-        addFieldIfPresent(fields, "Member", mdc.get("memberId"));
+        addFieldIfPresent(fields, "Request ID", mdc.get(MdcKey.REQUEST_ID));
+        addFieldIfPresent(fields, "URI", mdc.get(MdcKey.REQUEST_URI));
+        addFieldIfPresent(fields, "IP", mdc.get(MdcKey.CLIENT_IP));
+        addFieldIfPresent(fields, "MemberId", mdc.get(MdcKey.MEMBER_ID));
 
         // stacktrace
         String stackTrace = buildStackTraceBlock(eventObject.getThrowableProxy());
