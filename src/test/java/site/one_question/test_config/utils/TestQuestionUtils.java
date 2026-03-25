@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.test.util.ReflectionTestUtils;
-import site.one_question.question.domain.Question;
-import site.one_question.question.domain.QuestionRepository;
-import site.one_question.question.domain.QuestionStatus;
+import site.one_question.api.question.domain.Question;
+import site.one_question.api.question.domain.QuestionRepository;
+import site.one_question.api.question.domain.QuestionStatus;
 
 @Component
 @RequiredArgsConstructor

@@ -2,10 +2,10 @@ package site.one_question.test_config.utils;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import site.one_question.member.domain.Member;
-import site.one_question.question.domain.DailyQuestion;
-import site.one_question.question.domain.DailyQuestionAnswer;
-import site.one_question.question.domain.DailyQuestionAnswerRepository;
+import site.one_question.api.member.domain.Member;
+import site.one_question.api.question.domain.DailyQuestion;
+import site.one_question.api.question.domain.DailyQuestionAnswer;
+import site.one_question.api.question.domain.DailyQuestionAnswerRepository;
 
 @Component
 @RequiredArgsConstructor

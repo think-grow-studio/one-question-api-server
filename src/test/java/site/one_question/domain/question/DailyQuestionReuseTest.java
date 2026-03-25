@@ -5,10 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.LocalDate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import site.one_question.member.domain.Member;
-import site.one_question.question.domain.DailyQuestion;
-import site.one_question.question.domain.Question;
-import site.one_question.question.domain.QuestionCycle;
+import site.one_question.api.member.domain.Member;
+import site.one_question.api.question.domain.DailyQuestion;
+import site.one_question.api.question.domain.Question;
+import site.one_question.api.question.domain.QuestionCycle;
 import site.one_question.test_config.IntegrateTest;
 
 @DisplayName("모든 질문 사용 후 중복 배정 허용 검증")

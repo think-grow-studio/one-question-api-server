@@ -1,6 +1,6 @@
 package site.one_question.global.security.service;
 
-import static site.one_question.auth.domain.exception.AuthExceptionSpec.AUTHENTICATION_FAIL;
+import static site.one_question.api.auth.domain.exception.AuthExceptionSpec.AUTHENTICATION_FAIL;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;

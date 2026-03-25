@@ -13,14 +13,14 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import site.one_question.global.common.HttpHeaderConstant;
-import site.one_question.member.domain.Member;
-import site.one_question.question.domain.DailyQuestion;
-import site.one_question.question.domain.DailyQuestionAnswer;
-import site.one_question.question.domain.HistoryDirection;
-import site.one_question.question.domain.Question;
-import site.one_question.question.domain.QuestionCycle;
-import site.one_question.question.domain.exception.QuestionExceptionSpec;
-import site.one_question.question.presentation.response.QuestionHistoryItemDto.Status;
+import site.one_question.api.member.domain.Member;
+import site.one_question.api.question.domain.DailyQuestion;
+import site.one_question.api.question.domain.DailyQuestionAnswer;
+import site.one_question.api.question.domain.HistoryDirection;
+import site.one_question.api.question.domain.Question;
+import site.one_question.api.question.domain.QuestionCycle;
+import site.one_question.api.question.domain.exception.QuestionExceptionSpec;
+import site.one_question.api.question.presentation.response.QuestionHistoryItemDto.Status;
 import site.one_question.test_config.IntegrateTest;
 
 @DisplayName("질문 히스토리 조회 통합 테스트")

@@ -1,7 +1,7 @@
 package site.one_question.global.security.filter;
 
-import static site.one_question.auth.domain.exception.AuthExceptionSpec.ACCESS_TOKEN_EXCEPTION;
-import static site.one_question.auth.domain.exception.AuthExceptionSpec.ACCESS_TOKEN_EXPIRED;
+import static site.one_question.api.auth.domain.exception.AuthExceptionSpec.ACCESS_TOKEN_EXCEPTION;
+import static site.one_question.api.auth.domain.exception.AuthExceptionSpec.ACCESS_TOKEN_EXPIRED;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -20,8 +20,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
-import site.one_question.auth.domain.OneQuestionPrincipal;
-import site.one_question.auth.domain.exception.AuthExceptionSpec;
+import site.one_question.api.auth.domain.OneQuestionPrincipal;
+import site.one_question.api.auth.domain.exception.AuthExceptionSpec;
 import site.one_question.global.common.MdcKey;
 import site.one_question.global.exception.ExceptionResponse;
 import site.one_question.global.security.service.JwtService;

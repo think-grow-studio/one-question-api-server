@@ -3,9 +3,9 @@ package site.one_question.test_config.utils;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import site.one_question.auth.domain.RefreshToken;
-import site.one_question.auth.domain.RefreshTokenRepository;
-import site.one_question.member.domain.Member;
+import site.one_question.api.auth.domain.RefreshToken;
+import site.one_question.api.auth.domain.RefreshTokenRepository;
+import site.one_question.api.member.domain.Member;
 
 @Component
 @RequiredArgsConstructor

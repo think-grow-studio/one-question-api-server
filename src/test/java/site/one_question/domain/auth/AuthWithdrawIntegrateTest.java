@@ -8,10 +8,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
-import site.one_question.member.domain.Member;
-import site.one_question.question.domain.DailyQuestion;
-import site.one_question.question.domain.Question;
-import site.one_question.question.domain.QuestionCycle;
+import site.one_question.api.member.domain.Member;
+import site.one_question.api.question.domain.DailyQuestion;
+import site.one_question.api.question.domain.Question;
+import site.one_question.api.question.domain.QuestionCycle;
 import site.one_question.test_config.IntegrateTest;
 
 @DisplayName("회원 탈퇴 API 통합 테스트")

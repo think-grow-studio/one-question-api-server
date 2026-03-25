@@ -10,8 +10,8 @@ import java.util.Date;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import site.one_question.auth.domain.OneQuestionPrincipal;
-import site.one_question.member.domain.MemberPermission;
+import site.one_question.api.auth.domain.OneQuestionPrincipal;
+import site.one_question.api.member.domain.MemberPermission;
 
 @Service
 public class JwtService {

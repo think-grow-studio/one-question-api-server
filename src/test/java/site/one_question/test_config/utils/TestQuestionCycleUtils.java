@@ -8,9 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.test.util.ReflectionTestUtils;
-import site.one_question.member.domain.Member;
-import site.one_question.question.domain.QuestionCycle;
-import site.one_question.question.domain.QuestionCycleRepository;
+import site.one_question.api.member.domain.Member;
+import site.one_question.api.question.domain.QuestionCycle;
+import site.one_question.api.question.domain.QuestionCycleRepository;
 
 @Component
 @RequiredArgsConstructor

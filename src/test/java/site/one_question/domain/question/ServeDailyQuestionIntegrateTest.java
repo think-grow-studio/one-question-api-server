@@ -15,10 +15,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import site.one_question.global.common.HttpHeaderConstant;
-import site.one_question.member.domain.Member;
-import site.one_question.question.domain.DailyQuestion;
-import site.one_question.question.domain.QuestionCycle;
-import site.one_question.question.domain.exception.QuestionExceptionSpec;
+import site.one_question.api.member.domain.Member;
+import site.one_question.api.question.domain.DailyQuestion;
+import site.one_question.api.question.domain.QuestionCycle;
+import site.one_question.api.question.domain.exception.QuestionExceptionSpec;
 import site.one_question.test_config.IntegrateTest;
 
 @DisplayName("오늘의 질문 조회 통합 테스트")

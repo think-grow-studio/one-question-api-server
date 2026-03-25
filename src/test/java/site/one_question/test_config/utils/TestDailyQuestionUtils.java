@@ -4,11 +4,11 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import site.one_question.member.domain.Member;
-import site.one_question.question.domain.DailyQuestion;
-import site.one_question.question.domain.DailyQuestionRepository;
-import site.one_question.question.domain.Question;
-import site.one_question.question.domain.QuestionCycle;
+import site.one_question.api.member.domain.Member;
+import site.one_question.api.question.domain.DailyQuestion;
+import site.one_question.api.question.domain.DailyQuestionRepository;
+import site.one_question.api.question.domain.Question;
+import site.one_question.api.question.domain.QuestionCycle;
 
 @Component
 @RequiredArgsConstructor

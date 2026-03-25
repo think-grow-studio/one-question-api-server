@@ -4,9 +4,9 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import site.one_question.member.domain.AuthSocialProvider;
-import site.one_question.member.domain.Member;
-import site.one_question.member.domain.MemberRepository;
+import site.one_question.api.member.domain.AuthSocialProvider;
+import site.one_question.api.member.domain.Member;
+import site.one_question.api.member.domain.MemberRepository;
 
 @Component
 @RequiredArgsConstructor

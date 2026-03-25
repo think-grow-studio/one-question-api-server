@@ -11,7 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import site.one_question.auth.domain.OneQuestionPrincipal;
+import site.one_question.api.auth.domain.OneQuestionPrincipal;
 
 /**
  * 인증 후에 실행되는 MDC 필터.
