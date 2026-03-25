@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import site.one_question.member.domain.AuthSocialProvider;
 
 public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Long> {
 
@@ -34,6 +35,21 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
         """)
     List<DailyQuestion> findByMemberIdAndDateBetween(
         @Param("memberId") Long memberId,
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
+        SELECT dq FROM DailyQuestion dq
+        JOIN FETCH dq.member m
+        JOIN FETCH dq.question q
+        LEFT JOIN FETCH dq.answer a
+        WHERE m.provider = :provider
+        AND dq.questionDate BETWEEN :startDate AND :endDate
+        ORDER BY dq.questionDate DESC
+        """)
+    List<DailyQuestion> findAllByMemberProviderAndDateBetween(
+        @Param("provider") AuthSocialProvider provider,
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate
     );

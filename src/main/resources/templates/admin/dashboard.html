@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - One Question</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .header {
+            background: #fff;
+            padding: 16px 24px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 20px;
+            color: #333;
+        }
+        .btn-logout {
+            padding: 8px 16px;
+            background-color: #e0e0e0;
+            color: #555;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-logout:hover {
+            background-color: #d0d0d0;
+        }
+        .content {
+            max-width: 1200px;
+            margin: 32px auto;
+            padding: 0 24px;
+        }
+        .page-title {
+            font-size: 22px;
+            margin-bottom: 24px;
+        }
+        .date-section {
+            margin-bottom: 32px;
+        }
+        .date-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: #4A90D9;
+            padding: 8px 0;
+            border-bottom: 2px solid #4A90D9;
+            margin-bottom: 12px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+        .data-table th {
+            background-color: #f8f9fa;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 13px;
+            color: #666;
+            font-weight: 600;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .data-table td {
+            padding: 12px 16px;
+            font-size: 14px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        .data-table tr:hover {
+            background-color: #f8f9ff;
+        }
+        .col-name { width: 120px; white-space: nowrap; }
+        .col-question { width: 35%; }
+        .col-answer { width: auto; }
+        .no-answer {
+            color: #bbb;
+            font-style: italic;
+        }
+        .date-filter {
+            background: #fff;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .date-filter label {
+            font-size: 14px;
+            color: #555;
+        }
+        .date-filter input[type="date"] {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+        .date-filter input[type="date"]:focus {
+            border-color: #4A90D9;
+        }
+        .btn-search {
+            padding: 8px 20px;
+            background-color: #4A90D9;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-search:hover {
+            background-color: #357ABD;
+        }
+        .empty-state {
+            background: #fff;
+            padding: 48px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            color: #888;
+        }
+        .answer-text {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>One Question Admin</h1>
+        <form method="post" action="/admin/logout">
+            <button type="submit" class="btn-logout">로그아웃</button>
+        </form>
+    </div>
+
+    <div class="content">
+        <h2 class="page-title">AI Persona 일자별 기록</h2>
+
+        <form method="get" action="/admin" class="date-filter">
+            <label for="startDate">시작일</label>
+            <input type="date" id="startDate" name="startDate" th:value="${startDate}">
+            <label for="endDate">종료일</label>
+            <input type="date" id="endDate" name="endDate" th:value="${endDate}">
+            <button type="submit" class="btn-search">조회</button>
+        </form>
+
+        <div th:if="${#maps.isEmpty(historyByDate)}" class="empty-state">
+            <p>표시할 데이터가 없습니다.</p>
+        </div>
+
+        <div th:each="entry : ${historyByDate}" class="date-section">
+            <div class="date-header" th:text="${entry.key}"></div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="col-name">이름</th>
+                        <th class="col-question">질문</th>
+                        <th class="col-answer">답변</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="row : ${entry.value}">
+                        <td class="col-name" th:text="${row.fullName()}"></td>
+                        <td class="col-question" th:text="${row.questionContent()}"></td>
+                        <td class="col-answer">
+                            <span th:if="${row.answerContent() != null}" class="answer-text" th:text="${row.answerContent()}"></span>
+                            <span th:if="${row.answerContent() == null}" class="no-answer">미답변</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

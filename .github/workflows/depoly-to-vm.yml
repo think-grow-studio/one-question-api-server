@@ -86,6 +86,7 @@ jobs:
                 -e GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}" \
                 -e SSL_KEYSTORE_PASSWORD="${{ secrets.SSL_KEYSTORE_PASSWORD }}" \
                 -e DISCORD_LOGGING_WEBHOOK_URL="${{ secrets.DISCORD_LOGGING_WEBHOOK_URL }}" \
+                -e ADMIN_EMAIL="${{ secrets.ADMIN_EMAIL }}" \
                 $IMAGE_URL
 
               echo "⏳ [MAIN VM] Waiting for container to start..."
