@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import site.one_question.api.auth.domain.OneQuestionPrincipal;
+import site.one_question.global.common.MdcKey;
 
 /**
  * 인증 후에 실행되는 MDC 필터.
@@ -19,8 +20,6 @@ import site.one_question.api.auth.domain.OneQuestionPrincipal;
  */
 @Component
 public class MdcMemberIdFilter extends OncePerRequestFilter {
-
-  private static final String MEMBER_ID_KEY = "memberId";
 
   @Override
   protected void doFilterInternal(
@@ -33,13 +32,13 @@ public class MdcMemberIdFilter extends OncePerRequestFilter {
     if (authentication != null
         && authentication.isAuthenticated()
         && authentication.getPrincipal() instanceof OneQuestionPrincipal principal) {
-      MDC.put(MEMBER_ID_KEY, String.valueOf(principal.getId()));
+      MDC.put(MdcKey.MEMBER_ID, String.valueOf(principal.getId()));
     }
 
     try {
       filterChain.doFilter(request, response);
     } finally {
-      MDC.remove(MEMBER_ID_KEY);
+      MDC.remove(MdcKey.MEMBER_ID);
     }
   }
 }

@@ -22,9 +22,9 @@ public class DiscordSkipJwtExpiredFilter extends Filter<ILoggingEvent> {
             return FilterReply.NEUTRAL;
         }
         String message = event.getFormattedMessage();
-//        if (message != null && message.contains(KEYWORD)) {
-//            return FilterReply.DENY;
-//        }
+        if (message != null && message.contains(KEYWORD)) {
+            return FilterReply.DENY;
+        }
         return FilterReply.NEUTRAL;
     }
 }
