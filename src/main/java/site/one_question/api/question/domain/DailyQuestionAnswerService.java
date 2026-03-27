@@ -19,13 +19,9 @@ public class DailyQuestionAnswerService {
         return answerRepository.save(answer);
     }
 
-    public Optional<DailyQuestionAnswer> findByDailyQuestion(DailyQuestion dailyQuestion) {
-        return answerRepository.findByDailyQuestionId(dailyQuestion);
-    }
-
-    public DailyQuestionAnswer findByDailyQuestionOrThrow(DailyQuestion dailyQuestion) {
-        return findByDailyQuestion(dailyQuestion)
-                .orElseThrow(() -> new AnswerNotFoundException(dailyQuestion.getId()));
+    public DailyQuestionAnswer findById(Long id) {
+        return answerRepository.findById(id)
+            .orElseThrow(() -> new AnswerNotFoundException(id));
     }
 
     public void deleteByMemberId(Long memberId) {

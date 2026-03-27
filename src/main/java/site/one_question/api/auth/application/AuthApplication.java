@@ -21,6 +21,8 @@ import site.one_question.api.auth.presentation.response.ReissueAuthTokenResponse
 import site.one_question.api.member.domain.AuthSocialProvider;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberService;
+import site.one_question.api.answerpost.domain.AnswerPostLikeService;
+import site.one_question.api.answerpost.domain.AnswerPostService;
 import site.one_question.api.question.domain.DailyQuestionAnswerService;
 import site.one_question.api.question.domain.DailyQuestionService;
 import site.one_question.api.question.domain.QuestionCycleService;
@@ -38,6 +40,8 @@ public class AuthApplication {
     private final QuestionCycleService questionCycleService;
     private final DailyQuestionService dailyQuestionService;
     private final DailyQuestionAnswerService dailyQuestionAnswerService;
+    private final AnswerPostLikeService answerPostLikeService;
+    private final AnswerPostService answerPostService;
 
     public AuthResponse googleAuth(GoogleAuthRequest request, String locale, String timezone) {
         GoogleIdToken.Payload payload = googleTokenVerifier.verify(request.idToken());
@@ -130,6 +134,8 @@ public class AuthApplication {
 
     public void withdraw(Long memberId) {
         refreshTokenService.deleteByMemberId(memberId);
+        answerPostLikeService.deleteByMemberId(memberId);
+        answerPostService.deleteByMemberId(memberId);
         dailyQuestionAnswerService.deleteByMemberId(memberId);
         dailyQuestionService.deleteByMemberId(memberId);
         questionCycleService.deleteByMemberId(memberId);

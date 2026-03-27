@@ -47,13 +47,13 @@ public class AnswerPost extends BaseEntity {
     public static AnswerPost create(
             DailyQuestionAnswer questionAnswer,
             Member member,
-            String anonymousNickname
+        AnonymousNickname anonymousNickname
     ) {
         return new AnswerPost(
                 null,
                 questionAnswer,
                 member,
-                anonymousNickname,
+                anonymousNickname.getValue(),
                 Instant.now(),
                 AnswerPostStatus.PUBLISHED,
                 null
