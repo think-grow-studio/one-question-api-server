@@ -11,15 +11,12 @@ import site.one_question.api.answerpost.domain.AnswerPost;
 import site.one_question.api.answerpost.domain.AnswerPostLike;
 import site.one_question.api.answerpost.domain.AnswerPostLikeService;
 import site.one_question.api.answerpost.domain.AnswerPostService;
-import site.one_question.api.answerpost.domain.exception.AnswerPostNotOwnedException;
 import site.one_question.api.answerpost.presentation.response.AnswerPostFeedItemDto;
 import site.one_question.api.answerpost.presentation.response.AnswerPostFeedResponse;
 
 import site.one_question.api.answerpost.presentation.response.ToggleLikeResponse;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberService;
-import site.one_question.api.question.domain.DailyQuestionAnswer;
-import site.one_question.api.question.domain.DailyQuestionAnswerService;
 
 @Service
 @Transactional
@@ -28,7 +25,6 @@ public class AnswerPostApplication {
 
     private final AnswerPostService answerPostService;
     private final AnswerPostLikeService answerPostLikeService;
-    private final DailyQuestionAnswerService questionAnswerService;
     private final MemberService memberService;
 
     @Transactional(readOnly = true)
