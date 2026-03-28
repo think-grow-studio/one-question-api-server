@@ -3,16 +3,15 @@ package site.one_question.api.question.domain;
 import jakarta.persistence.*;
 import java.time.Instant;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import site.one_question.api.answerpost.domain.AnswerPost;
 import site.one_question.global.common.domain.BaseEntity;
 import site.one_question.api.member.domain.Member;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(name = "daily_question_answer")
 public class DailyQuestionAnswer extends BaseEntity {
 
@@ -39,6 +38,19 @@ public class DailyQuestionAnswer extends BaseEntity {
 
     @Column(nullable = false, length = 30)
     private String timezone;
+
+    @OneToOne(mappedBy = "questionAnswer", fetch = FetchType.LAZY)
+    private AnswerPost answerPost;
+
+    private DailyQuestionAnswer(Long id, DailyQuestion dailyQuestionId, Member member,
+                                String content, Instant answeredAt, String timezone) {
+        this.id = id;
+        this.dailyQuestionId = dailyQuestionId;
+        this.member = member;
+        this.content = content;
+        this.answeredAt = answeredAt;
+        this.timezone = timezone;
+    }
 
     public static DailyQuestionAnswer create(
             DailyQuestion dailyQuestion,

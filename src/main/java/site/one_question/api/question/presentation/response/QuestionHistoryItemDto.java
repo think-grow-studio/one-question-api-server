@@ -1,6 +1,7 @@
 package site.one_question.api.question.presentation.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import site.one_question.api.answerpost.domain.AnswerPost;
 import site.one_question.api.question.domain.DailyQuestion;
 import site.one_question.api.question.domain.DailyQuestionAnswer;
 
@@ -61,10 +62,12 @@ public record QuestionHistoryItemDto(
             String content,
 
             @Schema(description = "답변 작성 시간 (수정된 경우 수정 시간)", example = "2024-01-15T14:30:00")
-            LocalDateTime answeredAt
+            LocalDateTime answeredAt,
+
+            @Schema(description = "공개 게시 여부", example = "false")
+            boolean published
     ) {
-        public static AnswerInfoDto from(DailyQuestionAnswer answer, String timezone) {
-            // updatedAt이 null이 아니면 수정 시간을, null이면 최초 작성 시간을 사용
+        public static AnswerInfoDto from(DailyQuestionAnswer answer, String timezone, boolean published) {
             var timestamp = answer.getUpdatedAt() != null
                 ? answer.getUpdatedAt()
                 : answer.getAnsweredAt();
@@ -72,7 +75,8 @@ public record QuestionHistoryItemDto(
             return new AnswerInfoDto(
                 answer.getId(),
                 answer.getContent(),
-                timestamp.atZone(ZoneId.of(timezone)).toLocalDateTime()
+                timestamp.atZone(ZoneId.of(timezone)).toLocalDateTime(),
+                published
             );
         }
     }
@@ -100,11 +104,14 @@ public record QuestionHistoryItemDto(
             );
         }
 
+        AnswerPost answerPost = answer.getAnswerPost();
+        boolean published = answerPost != null && answerPost.isPublished();
+
         return new QuestionHistoryItemDto(
             dailyQuestion.getQuestionDate(),
             Status.ANSWERED,
             questionInfo,
-            AnswerInfoDto.from(answer, timezone)
+            AnswerInfoDto.from(answer, timezone, published)
         );
     }
 }

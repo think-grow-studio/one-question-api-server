@@ -29,6 +29,7 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
         LEFT JOIN FETCH dq.question q
         LEFT JOIN FETCH dq.questionCycle qc
         LEFT JOIN FETCH dq.answer a
+        LEFT JOIN FETCH a.answerPost ap
         WHERE dq.member.id = :memberId
         AND dq.questionDate BETWEEN :startDate AND :endDate
         ORDER BY dq.questionDate DESC
