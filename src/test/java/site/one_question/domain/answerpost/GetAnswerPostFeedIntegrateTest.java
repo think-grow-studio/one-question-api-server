@@ -48,14 +48,14 @@ class GetAnswerPostFeedIntegrateTest extends IntegrateTest {
         return LocalDate.now(ZoneId.of(TIMEZONE)).minusDays(++dateOffset);
     }
 
-    private AnswerPost createAnswerPostWithPostedAt(Member postMember, QuestionCycle postCycle, Instant postedAt) {
+    private AnswerPost createPublishAnswerPostWithPostedAt(Member postMember, QuestionCycle postCycle, Instant postedAt) {
         Question question = testQuestionUtils.createSave();
         DailyQuestion dq = testDailyQuestionUtils.createSave_With_Date(postMember, postCycle, question, nextDate());
         DailyQuestionAnswer answer = testDailyQuestionAnswerUtils.createSave(dq, postMember);
         return testAnswerPostUtils.createSave_With_PostedAt(answer, postMember, postedAt);
     }
 
-    private AnswerPost createAnswerPost(Member postMember, QuestionCycle postCycle) {
+    private AnswerPost createPublishAnswerPost(Member postMember, QuestionCycle postCycle) {
         Question question = testQuestionUtils.createSave();
         DailyQuestion dq = testDailyQuestionUtils.createSave_With_Date(postMember, postCycle, question, nextDate());
         DailyQuestionAnswer answer = testDailyQuestionAnswerUtils.createSave(dq, postMember);
@@ -78,9 +78,9 @@ class GetAnswerPostFeedIntegrateTest extends IntegrateTest {
         void get_feed_returns_published_posts_in_descending_order() throws Exception {
             // given
             Instant base = Instant.now().minus(3, ChronoUnit.HOURS);
-            AnswerPost oldest = createAnswerPostWithPostedAt(member, cycle, base);
-            AnswerPost middle = createAnswerPostWithPostedAt(member, cycle, base.plus(1, ChronoUnit.HOURS));
-            AnswerPost newest = createAnswerPostWithPostedAt(member, cycle, base.plus(2, ChronoUnit.HOURS));
+            AnswerPost oldest = createPublishAnswerPostWithPostedAt(member, cycle, base);
+            AnswerPost middle = createPublishAnswerPostWithPostedAt(member, cycle, base.plus(1, ChronoUnit.HOURS));
+            AnswerPost newest = createPublishAnswerPostWithPostedAt(member, cycle, base.plus(2, ChronoUnit.HOURS));
 
             // when & then
             mockMvc.perform(get(ANSWER_POSTS_API)
@@ -97,8 +97,8 @@ class GetAnswerPostFeedIntegrateTest extends IntegrateTest {
         @DisplayName("피드에 게시 취소된 답변 미포함")
         void get_feed_excludes_unpublished_posts() throws Exception {
             // given
-            createAnswerPost(member, cycle);
-            createAnswerPost(member, cycle);
+            createPublishAnswerPost(member, cycle);
+            createPublishAnswerPost(member, cycle);
             createUnpublishedAnswerPost(member, cycle);
 
             // when & then
@@ -113,7 +113,7 @@ class GetAnswerPostFeedIntegrateTest extends IntegrateTest {
         @DisplayName("피드 아이템에 좋아요 수와 좋아요 여부 포함")
         void get_feed_includes_like_count_and_liked_status() throws Exception {
             // given
-            AnswerPost post = createAnswerPost(member, cycle);
+            AnswerPost post = createPublishAnswerPost(member, cycle);
 
             Member otherMember = testMemberUtils.createSave();
             testAnswerPostLikeUtils.createSave(post, member);
@@ -136,8 +136,8 @@ class GetAnswerPostFeedIntegrateTest extends IntegrateTest {
             Member otherMember = testMemberUtils.createSave();
             QuestionCycle otherCycle = testQuestionCycleUtils.createSave(otherMember);
 
-            createAnswerPostWithPostedAt(otherMember, otherCycle, base);
-            createAnswerPostWithPostedAt(member, cycle, base.plus(1, ChronoUnit.HOURS));
+            createPublishAnswerPostWithPostedAt(otherMember, otherCycle, base);
+            createPublishAnswerPostWithPostedAt(member, cycle, base.plus(1, ChronoUnit.HOURS));
 
             // when & then - member가 조회
             mockMvc.perform(get(ANSWER_POSTS_API)
@@ -171,7 +171,7 @@ class GetAnswerPostFeedIntegrateTest extends IntegrateTest {
         @DisplayName("커서 없이 조회 시 최신 게시물부터 반환")
         void get_feed_without_cursor_returns_latest_posts() throws Exception {
             // given
-            createAnswerPost(member, cycle);
+            createPublishAnswerPost(member, cycle);
 
             // when & then - 커서 파라미터 없이 요청
             mockMvc.perform(get(ANSWER_POSTS_API)
@@ -206,7 +206,7 @@ class GetAnswerPostFeedIntegrateTest extends IntegrateTest {
             // given - 5개 게시물 생성
             Instant base = Instant.now().minus(6, ChronoUnit.HOURS);
             for (int i = 0; i < 5; i++) {
-                createAnswerPostWithPostedAt(member, cycle, base.plus(i, ChronoUnit.HOURS));
+                createPublishAnswerPostWithPostedAt(member, cycle, base.plus(i, ChronoUnit.HOURS));
             }
 
             // when & then
@@ -225,8 +225,8 @@ class GetAnswerPostFeedIntegrateTest extends IntegrateTest {
         void get_feed_has_next_false_when_no_more_posts() throws Exception {
             // given - 2개 게시물
             Instant base = Instant.now().minus(3, ChronoUnit.HOURS);
-            createAnswerPostWithPostedAt(member, cycle, base);
-            createAnswerPostWithPostedAt(member, cycle, base.plus(1, ChronoUnit.HOURS));
+            createPublishAnswerPostWithPostedAt(member, cycle, base);
+            createPublishAnswerPostWithPostedAt(member, cycle, base.plus(1, ChronoUnit.HOURS));
 
             // when & then
             mockMvc.perform(get(ANSWER_POSTS_API)
@@ -246,7 +246,7 @@ class GetAnswerPostFeedIntegrateTest extends IntegrateTest {
             Instant base = Instant.now().minus(6, ChronoUnit.HOURS);
             List<AnswerPost> posts = new ArrayList<>();
             for (int i = 0; i < 5; i++) {
-                posts.add(createAnswerPostWithPostedAt(member, cycle, base.plus(i, ChronoUnit.HOURS)));
+                posts.add(createPublishAnswerPostWithPostedAt(member, cycle, base.plus(i, ChronoUnit.HOURS)));
             }
 
             // when - 첫 페이지 (size=3)
@@ -280,7 +280,7 @@ class GetAnswerPostFeedIntegrateTest extends IntegrateTest {
             // given - 7개 게시물
             Instant base = Instant.now().minus(8, ChronoUnit.HOURS);
             for (int i = 0; i < 7; i++) {
-                createAnswerPostWithPostedAt(member, cycle, base.plus(i, ChronoUnit.HOURS));
+                createPublishAnswerPostWithPostedAt(member, cycle, base.plus(i, ChronoUnit.HOURS));
             }
 
             int totalItems = 0;

@@ -4,7 +4,6 @@ import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.test.util.ReflectionTestUtils;
-import site.one_question.api.answerpost.domain.AnonymousNickname;
 import site.one_question.api.answerpost.domain.AnswerPost;
 import site.one_question.api.answerpost.domain.AnswerPostRepository;
 import site.one_question.api.member.domain.Member;
@@ -17,8 +16,7 @@ public class TestAnswerPostUtils {
     private final AnswerPostRepository repository;
 
     public AnswerPost createSave(DailyQuestionAnswer questionAnswer, Member member) {
-        AnonymousNickname nickname = AnonymousNickname.generate(member.getLocale());
-        return repository.save(AnswerPost.create(questionAnswer, member, nickname));
+        return repository.save(AnswerPost.createPublish(questionAnswer, member));
     }
 
     public AnswerPost createSave_Unpublished(DailyQuestionAnswer questionAnswer, Member member) {
@@ -28,8 +26,7 @@ public class TestAnswerPostUtils {
     }
 
     public AnswerPost createSave_With_PostedAt(DailyQuestionAnswer questionAnswer, Member member, Instant postedAt) {
-        AnonymousNickname nickname = AnonymousNickname.generate(member.getLocale());
-        AnswerPost answerPost = AnswerPost.create(questionAnswer, member, nickname);
+        AnswerPost answerPost = AnswerPost.createPublish(questionAnswer, member);
         ReflectionTestUtils.setField(answerPost, "postedAt", postedAt);
         return repository.save(answerPost);
     }
