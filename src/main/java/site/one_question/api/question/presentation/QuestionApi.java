@@ -273,6 +273,7 @@ public interface QuestionApi {
             description = """
                     지정한 날짜의 질문에 대한 답변을 작성합니다.
                     클라이언트의 타임존을 헤더로 전달하면, 답변 시각이 해당 타임존 기준으로 변환되어 응답됩니다.
+                    publish=true로 설정하면 답변 작성과 동시에 익명 공개 게시됩니다.
                     """
     )
     @ApiResponses({

@@ -83,7 +83,7 @@ public class QuestionController implements QuestionApi {
             @RequestBody CreateAnswerRequest request
     ) {
         log.info("[API] 답변 생성 요청 시작 - date: {}", date);
-        CreateAnswerResponse response = questionApplication.createAnswer(memberId, date, request.answer(), timezone);
+        CreateAnswerResponse response = questionApplication.createAnswer(memberId, date, request.answer(), request.shouldPublish(), timezone);
         log.info("[API] 답변 생성 요청 종료 - date: {}", date);
         return ResponseEntity.ok(response);
     }

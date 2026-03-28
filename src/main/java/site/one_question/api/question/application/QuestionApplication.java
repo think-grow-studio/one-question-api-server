@@ -25,6 +25,7 @@ import site.one_question.api.question.domain.HistoryDirection;
 import site.one_question.api.question.domain.DailyQuestionAnswer;
 import site.one_question.api.question.domain.exception.AnswerAlreadyExistsException;
 import site.one_question.api.question.domain.exception.AnswerNotFoundException;
+import site.one_question.api.answerpost.domain.AnswerPostService;
 import site.one_question.api.question.presentation.response.CreateAnswerResponse;
 import site.one_question.api.question.presentation.response.GetQuestionHistoryResponse;
 import site.one_question.api.question.presentation.response.QuestionHistoryItemDto;
@@ -40,6 +41,7 @@ public class QuestionApplication {
     private final DailyQuestionAnswerService answerService;
     private final QuestionCycleService cycleService;
     private final MemberService memberService;
+    private final AnswerPostService answerPostService;
 
     public ServeDailyQuestionResponse serveDailyQuestion(Long memberId, LocalDate date, String timezone) {
         // 멱등성: 기존 질문 있으면 반환
@@ -167,7 +169,7 @@ public class QuestionApplication {
         return new GetQuestionHistoryResponse(histories, hasPrevious, hasNext, startDate, endDate);
     }
 
-    public CreateAnswerResponse createAnswer(Long memberId, LocalDate date, String content, String timezone) {
+    public CreateAnswerResponse createAnswer(Long memberId, LocalDate date, String content, boolean publish, String timezone) {
         // 1. DailyQuestion 조회
         DailyQuestion dailyQuestion = dailyQuestionService.findByMemberIdAndDateOrThrow(memberId, date);
 
@@ -183,8 +185,13 @@ public class QuestionApplication {
         DailyQuestionAnswer answer = DailyQuestionAnswer.create(dailyQuestion, member, content, timezone);
         DailyQuestionAnswer saved = answerService.save(answer);
 
-        // 5. 응답 반환
-        return CreateAnswerResponse.from(saved, timezone);
+        // 5. 공개 게시 요청 시 AnswerPost 생성
+        if (publish) {
+            answerPostService.publish(saved, member);
+        }
+
+        // 6. 응답 반환
+        return CreateAnswerResponse.from(saved, timezone, publish);
     }
 
     public UpdateAnswerResponse updateAnswer(Long memberId, LocalDate date, String content, String timezone) {
