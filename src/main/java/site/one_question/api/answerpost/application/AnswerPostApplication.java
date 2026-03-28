@@ -2,6 +2,8 @@ package site.one_question.api.answerpost.application;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,10 +70,14 @@ public class AnswerPostApplication {
         boolean hasNext = posts.size() > size;
         List<AnswerPost> feedPosts = hasNext ? posts.subList(0, size) : posts;
 
+        List<Long> postIds = feedPosts.stream().map(AnswerPost::getId).toList();
+        Map<Long, Long> likeCounts = answerPostLikeService.countByAnswerPostIds(postIds); // <PostId,LikeCount>
+        Set<Long> likedPostIds = answerPostLikeService.findLikedPostIdsByMember(postIds, memberId);
+
         List<AnswerPostFeedItemDto> items = feedPosts.stream()
                 .map(post -> {
-                    long likeCount = answerPostLikeService.countByAnswerPost(post); // N + 1 개선 필요
-                    boolean liked = answerPostLikeService.existsByAnswerPostAndMember(post, member);
+                    long likeCount = likeCounts.getOrDefault(post.getId(), 0L);
+                    boolean liked = likedPostIds.contains(post.getId());
                     boolean mine = post.isOwnedBy(memberId);
                     return AnswerPostFeedItemDto.from(post, timezone, likeCount, liked, mine);
                 })
