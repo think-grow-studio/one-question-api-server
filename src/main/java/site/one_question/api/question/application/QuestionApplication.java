@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -25,6 +26,7 @@ import site.one_question.api.question.domain.HistoryDirection;
 import site.one_question.api.question.domain.DailyQuestionAnswer;
 import site.one_question.api.question.domain.exception.AnswerAlreadyExistsException;
 import site.one_question.api.question.domain.exception.AnswerNotFoundException;
+import site.one_question.api.answerpost.domain.AnswerPost;
 import site.one_question.api.answerpost.domain.AnswerPostService;
 import site.one_question.api.question.presentation.response.CreateAnswerResponse;
 import site.one_question.api.question.presentation.response.GetQuestionHistoryResponse;
@@ -187,27 +189,33 @@ public class QuestionApplication {
 
         // 5. 공개 게시 요청 시 AnswerPost 생성
         if (publish) {
-            answerPostService.publish(saved, member);
+            answerPostService.publishOrCreate(saved, member);
         }
 
         // 6. 응답 반환
         return CreateAnswerResponse.from(saved, timezone, publish);
     }
 
-    public UpdateAnswerResponse updateAnswer(Long memberId, LocalDate date, String content, String timezone) {
-        // 1. DailyQuestion 조회
+    public UpdateAnswerResponse updateAnswer(Long memberId, LocalDate date, String content, Boolean publish, String timezone) {
         DailyQuestion dailyQuestion = dailyQuestionService.findByMemberIdAndDateOrThrow(memberId, date);
 
-        // 2. Answer 존재 확인
         if (!dailyQuestion.hasAnswer()) {
             throw new AnswerNotFoundException(dailyQuestion.getId());
         }
         DailyQuestionAnswer answer = dailyQuestion.getAnswer();
-
-        // 3. 답변 수정
         answer.updateContent(content);
 
-        // 4. 응답 반환
-        return UpdateAnswerResponse.from(answer, timezone);
+        if (Objects.equals(Boolean.TRUE,publish)) {
+            Member member = memberService.findById(memberId);
+            answerPostService.publishOrCreate(answer, member);
+        } else if (Boolean.FALSE.equals(publish)) {
+            answerPostService.findByQuestionAnswer(answer).ifPresent(AnswerPost::unpublish);
+        }
+
+        boolean published = answerPostService.findByQuestionAnswer(answer)
+                .map(AnswerPost::isPublished)
+                .orElse(false);
+
+        return UpdateAnswerResponse.from(answer, timezone, published);
     }
 }

@@ -31,30 +31,6 @@ public class AnswerPostController implements AnswerPostApi {
     private final AnswerPostApplication answerPostApplication;
 
     @Override
-    @PostMapping
-    public ResponseEntity<Void> publish(
-            @PrincipalId Long memberId,
-            @RequestBody PublishAnswerPostRequest request
-    ) {
-        log.info("[API] 답변 공개 게시 요청 시작 - questionAnswerId: {}", request.questionAnswerId());
-        answerPostApplication.publish(memberId, request.questionAnswerId());
-        log.info("[API] 답변 공개 게시 요청 종료");
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    @Override
-    @PatchMapping("/{id}/unpublish")
-    public ResponseEntity<Void> unpublish(
-            @PrincipalId Long memberId,
-            @PathVariable Long id
-    ) {
-        log.info("[API] 공개 답변 게시 취소 요청 시작 - answerPostId: {}", id);
-        answerPostApplication.unpublish(memberId, id);
-        log.info("[API] 공개 답변 게시 취소 요청 종료 - answerPostId: {}", id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @Override
     @GetMapping
     public ResponseEntity<AnswerPostFeedResponse> getFeed(
             @PrincipalId Long memberId,

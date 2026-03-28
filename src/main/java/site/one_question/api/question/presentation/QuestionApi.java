@@ -352,6 +352,8 @@ public interface QuestionApi {
             description = """
                     지정한 날짜의 질문에 대한 답변을 수정합니다.
                     클라이언트의 타임존을 헤더로 전달하면, 수정 시각이 해당 타임존 기준으로 변환되어 응답됩니다.
+                    publish=true로 설정하면 수정과 동시에 공개 게시(재게시)되고,
+                    publish=false면 게시 취소됩니다. 미전송 시 게시 상태를 변경하지 않습니다.
                     """
     )
     @ApiResponses({

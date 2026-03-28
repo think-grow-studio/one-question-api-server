@@ -44,7 +44,7 @@ public class AnswerPost extends BaseEntity {
     @Column(name = "hidden_at")
     private Instant hiddenAt;
 
-    public static AnswerPost create(
+    public static AnswerPost createPublish(
             DailyQuestionAnswer questionAnswer,
             Member member,
         AnonymousNickname anonymousNickname

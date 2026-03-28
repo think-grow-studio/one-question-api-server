@@ -30,33 +30,6 @@ public class AnswerPostApplication {
     private final AnswerPostLikeService answerPostLikeService;
     private final DailyQuestionAnswerService questionAnswerService;
     private final MemberService memberService;
-    public void publish(Long memberId, Long questionAnswerId) {
-        DailyQuestionAnswer questionAnswer = questionAnswerService.findById(questionAnswerId);
-
-        if (!questionAnswer.isOwnedBy(memberId)) {
-            throw new AnswerPostNotOwnedException(questionAnswerId);
-        }
-
-        var existing = answerPostService.findByQuestionAnswer(questionAnswer);
-
-        if (existing.isPresent()) {
-            answerPostService.republish(existing.get());
-            return;
-        }
-
-        Member member = memberService.findById(memberId);
-        answerPostService.publish(questionAnswer, member);
-    }
-
-    public void unpublish(Long memberId, Long answerPostId) {
-        AnswerPost answerPost = answerPostService.findByIdOrThrow(answerPostId);
-
-        if (!answerPost.isOwnedBy(memberId)) {
-            throw new AnswerPostNotOwnedException(answerPostId);
-        }
-
-        answerPost.unpublish();
-    }
 
     @Transactional(readOnly = true)
     public AnswerPostFeedResponse getFeed(Long memberId, Instant cursor, int size, String timezone) {

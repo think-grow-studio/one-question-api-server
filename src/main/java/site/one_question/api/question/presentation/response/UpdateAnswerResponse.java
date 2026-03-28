@@ -14,11 +14,14 @@ public record UpdateAnswerResponse(
         String content,
 
         @Schema(description = "답변 수정 시각 (클라이언트 로컬 타임존 기준)", example = "2024-01-15T18:45:00")
-        LocalDateTime answeredAt
+        LocalDateTime answeredAt,
+
+        @Schema(description = "공개 게시 여부", example = "false")
+        boolean published
 ) {
-    public static UpdateAnswerResponse from(DailyQuestionAnswer answer, String timezone) {
+    public static UpdateAnswerResponse from(DailyQuestionAnswer answer, String timezone, boolean published) {
         LocalDateTime updatedAt = LocalDateTime.ofInstant(
                 answer.getUpdatedAt(), ZoneId.of(timezone));
-        return new UpdateAnswerResponse(answer.getId(), answer.getContent(), updatedAt);
+        return new UpdateAnswerResponse(answer.getId(), answer.getContent(), updatedAt, published);
     }
 }

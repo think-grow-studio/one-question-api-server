@@ -17,29 +17,6 @@ import site.one_question.api.answerpost.presentation.response.ToggleLikeResponse
 @Tag(name = "AnswerPost", description = "공개 답변 게시글 관련 API")
 public interface AnswerPostApi {
 
-    @Operation(summary = "답변 공개 게시", description = "작성한 답변을 익명으로 공개 게시합니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "게시 성공"),
-            @ApiResponse(responseCode = "404", description = "답변을 찾을 수 없음"),
-            @ApiResponse(responseCode = "409", description = "이미 공개된 답변")
-    })
-    ResponseEntity<Void> publish(
-            Long memberId,
-            PublishAnswerPostRequest request
-    );
-
-    @Operation(summary = "게시 취소", description = "공개된 답변의 게시를 취소합니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "게시 취소 성공"),
-            @ApiResponse(responseCode = "404", description = "공개 답변을 찾을 수 없음"),
-            @ApiResponse(responseCode = "403", description = "본인의 답변이 아님")
-    })
-    ResponseEntity<Void> unpublish(
-            Long memberId,
-            @Parameter(name = "id", description = "공개 답변 ID", required = true, in = ParameterIn.PATH)
-            Long id
-    );
-
     @Operation(summary = "공개 답변 피드 조회", description = "최신순으로 공개 답변 피드를 조회합니다. 커서 기반 무한 스크롤.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "피드 조회 성공",

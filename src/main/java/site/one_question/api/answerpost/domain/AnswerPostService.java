@@ -6,7 +6,6 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import site.one_question.api.answerpost.domain.exception.AlreadyPublishedException;
 import site.one_question.api.answerpost.domain.exception.AnswerPostNotFoundException;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.question.domain.DailyQuestionAnswer;
@@ -30,16 +29,19 @@ public class AnswerPostService {
         return answerPostRepository.findByQuestionAnswer(questionAnswer);
     }
 
-    public void publish(DailyQuestionAnswer questionAnswer, Member member) {
+    private void publish(DailyQuestionAnswer questionAnswer, Member member) {
         AnonymousNickname nickname = AnonymousNickname.generate(member.getLocale());
-        answerPostRepository.save(AnswerPost.create(questionAnswer, member, nickname));
+        answerPostRepository.save(AnswerPost.createPublish(questionAnswer, member, nickname));
     }
 
-    public void republish(AnswerPost answerPost) {
-        if (answerPost.isPublished()) {
-            throw new AlreadyPublishedException(answerPost.getId());
+    public void publishOrCreate(DailyQuestionAnswer questionAnswer, Member member) {
+        var existing = findByQuestionAnswer(questionAnswer);
+        if (existing.isPresent()) {
+            AnswerPost post = existing.get();
+            post.republish();
+        } else {
+            publish(questionAnswer, member);
         }
-        answerPost.republish();
     }
 
     public List<AnswerPost> getFeed(Instant cursor, int size) {

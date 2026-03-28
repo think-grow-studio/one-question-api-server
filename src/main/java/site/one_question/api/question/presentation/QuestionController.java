@@ -97,7 +97,7 @@ public class QuestionController implements QuestionApi {
             @RequestBody UpdateAnswerRequest request
     ) {
         log.info("[API] 답변 수정 요청 시작 - date: {}", date);
-        UpdateAnswerResponse response = questionApplication.updateAnswer(memberId, date, request.answer(), timezone);
+        UpdateAnswerResponse response = questionApplication.updateAnswer(memberId, date, request.answer(), request.publish(), timezone);
         log.info("[API] 답변 수정 요청 종료 - date: {}", date);
         return ResponseEntity.ok(response);
     }
