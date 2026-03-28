@@ -24,14 +24,6 @@ public class AnswerPostLikeService {
         return answerPostLikeRepository.findByAnswerPostAndMember(answerPost, member);
     }
 
-    public boolean existsByAnswerPostAndMember(AnswerPost answerPost, Member member) {
-        return answerPostLikeRepository.existsByAnswerPostAndMember(answerPost, member);
-    }
-
-    public long countByAnswerPost(AnswerPost answerPost) {
-        return answerPostLikeRepository.countByAnswerPost(answerPost);
-    }
-
     public Map<Long, Long> countByAnswerPostIds(List<Long> postIds) { // Map<postId,LikeCount>
         if (postIds.isEmpty()) {
             return Map.of();
