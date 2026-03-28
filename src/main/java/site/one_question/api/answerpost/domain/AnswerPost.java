@@ -73,6 +73,11 @@ public class AnswerPost extends BaseEntity {
         this.status = AnswerPostStatus.PUBLISHED;
     }
 
+    public void publishWithCustomTime(Instant postedAt) {
+        this.status = AnswerPostStatus.PUBLISHED;
+        this.postedAt = postedAt;
+    }
+
     public boolean isOwnedBy(Long memberId) {
         return this.member.getId().equals(memberId);
     }

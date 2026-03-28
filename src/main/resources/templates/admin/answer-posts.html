@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 답변 피드 관리 - One Question Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .header {
+            background: #fff;
+            padding: 16px 24px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        .header h1 { font-size: 20px; color: #333; }
+        .btn-logout {
+            padding: 8px 16px; background-color: #e0e0e0; color: #555; border: none;
+            border-radius: 6px; font-size: 14px; cursor: pointer; transition: background-color 0.2s;
+        }
+        .btn-logout:hover { background-color: #d0d0d0; }
+        .content { max-width: 1400px; margin: 32px auto; padding: 0 24px; }
+        .page-title { font-size: 22px; margin-bottom: 24px; }
+        .date-filter {
+            background: #fff; padding: 16px 20px; border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06); margin-bottom: 24px;
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+        }
+        .date-filter label { font-size: 14px; color: #555; }
+        .date-filter input[type="date"] {
+            padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;
+            font-size: 14px; outline: none;
+        }
+        .date-filter input[type="date"]:focus { border-color: #4A90D9; }
+        .btn-search {
+            padding: 8px 20px; background-color: #4A90D9; color: #fff; border: none;
+            border-radius: 6px; font-size: 14px; cursor: pointer; transition: background-color 0.2s;
+        }
+        .btn-search:hover { background-color: #357ABD; }
+        .date-section { margin-bottom: 32px; }
+        .date-header {
+            font-size: 16px; font-weight: 600; color: #4A90D9;
+            padding: 8px 0; border-bottom: 2px solid #4A90D9; margin-bottom: 12px;
+        }
+        .data-table {
+            width: 100%; border-collapse: collapse; background: #fff;
+            border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+        .data-table th {
+            background-color: #f8f9fa; padding: 12px 16px; text-align: left;
+            font-size: 13px; color: #666; font-weight: 600; border-bottom: 1px solid #e9ecef;
+            white-space: nowrap;
+        }
+        .data-table td {
+            padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f0f0f0; vertical-align: top;
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover { background-color: #f8f9ff; }
+        .col-name { width: 100px; white-space: nowrap; }
+        .col-question { width: 22%; }
+        .col-answer { width: 28%; }
+        .col-status { width: 90px; }
+        .col-time { width: 150px; white-space: nowrap; }
+        .col-action { width: 220px; }
+        .answer-text { white-space: pre-wrap; word-break: break-word; }
+        .no-answer { color: #bbb; font-style: italic; }
+        .badge {
+            display: inline-block; padding: 4px 10px; border-radius: 12px;
+            font-size: 12px; font-weight: 600;
+        }
+        .badge-published { background-color: #E3F2FD; color: #1565C0; }
+        .badge-unpublished { background-color: #F5F5F5; color: #757575; }
+        .badge-not-posted { background-color: #FFF8E1; color: #F57F17; }
+        .badge-no-answer { background-color: #FAFAFA; color: #BDBDBD; }
+        .action-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .btn-publish {
+            padding: 6px 14px; background-color: #4A90D9; color: #fff; border: none;
+            border-radius: 6px; font-size: 13px; cursor: pointer; transition: background-color 0.2s;
+        }
+        .btn-publish:hover { background-color: #357ABD; }
+        .btn-unpublish {
+            padding: 6px 14px; background-color: #FF7043; color: #fff; border: none;
+            border-radius: 6px; font-size: 13px; cursor: pointer; transition: background-color 0.2s;
+        }
+        .btn-unpublish:hover { background-color: #E64A19; }
+        .datetime-input {
+            padding: 5px 8px; border: 1px solid #ddd; border-radius: 6px;
+            font-size: 13px; outline: none;
+        }
+        .datetime-input:focus { border-color: #4A90D9; }
+        .empty-state {
+            background: #fff; padding: 48px; border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); text-align: center; color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <h1>One Question Admin</h1>
+        </div>
+        <form method="post" action="/admin/logout">
+            <button type="submit" class="btn-logout">로그아웃</button>
+        </form>
+    </div>
+
+    <div class="content">
+        <h2 class="page-title">AI 답변 피드 관리</h2>
+
+        <form method="get" action="/admin/answer-posts" class="date-filter">
+            <label for="startDate">시작일</label>
+            <input type="date" id="startDate" name="startDate" th:value="${startDate}">
+            <label for="endDate">종료일</label>
+            <input type="date" id="endDate" name="endDate" th:value="${endDate}">
+            <button type="submit" class="btn-search">조회</button>
+        </form>
+
+        <div th:if="${#maps.isEmpty(historyByDate)}" class="empty-state">
+            <p>표시할 데이터가 없습니다.</p>
+        </div>
+
+        <div th:each="entry : ${historyByDate}" class="date-section">
+            <div class="date-header" th:text="${entry.key}"></div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="col-name">이름</th>
+                        <th class="col-question">질문</th>
+                        <th class="col-answer">답변</th>
+                        <th class="col-status">게시 상태</th>
+                        <th class="col-time">게시 시각</th>
+                        <th class="col-action">액션</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="row : ${entry.value}">
+                        <td class="col-name" th:text="${row.fullName()}"></td>
+                        <td class="col-question" th:text="${row.questionContent()}"></td>
+                        <td class="col-answer">
+                            <span th:if="${row.answerContent() != null}" class="answer-text" th:text="${row.answerContent()}"></span>
+                            <span th:if="${row.answerContent() == null}" class="no-answer">미답변</span>
+                        </td>
+                        <td class="col-status">
+                            <span th:if="${row.postStatus() == 'PUBLISHED'}" class="badge badge-published">게시됨</span>
+                            <span th:if="${row.postStatus() == 'UNPUBLISHED'}" class="badge badge-unpublished">게시 취소</span>
+                            <span th:if="${row.postStatus() == 'NOT_POSTED'}" class="badge badge-not-posted">미게시</span>
+                            <span th:if="${row.postStatus() == 'NO_ANSWER'}" class="badge badge-no-answer">미답변</span>
+                        </td>
+                        <td class="col-time" th:text="${row.postedAt() != null ? row.postedAt() : '-'}"></td>
+                        <td class="col-action">
+                            <!-- 미게시 or 게시취소 → 게시 버튼 -->
+                            <div th:if="${row.postStatus() == 'NOT_POSTED' || row.postStatus() == 'UNPUBLISHED'}">
+                                <form th:action="@{/admin/answer-posts/{id}/publish(id=${row.answerId()})}" method="post" class="action-form">
+                                    <input type="hidden" name="startDate" th:value="${startDate}">
+                                    <input type="hidden" name="endDate" th:value="${endDate}">
+                                    <input type="datetime-local" name="postedAt" class="datetime-input" step="1">
+                                    <button type="submit" class="btn-publish">게시</button>
+                                </form>
+                            </div>
+                            <!-- 게시됨 → 게시 취소 버튼 -->
+                            <div th:if="${row.postStatus() == 'PUBLISHED'}">
+                                <form th:action="@{/admin/answer-posts/{id}/unpublish(id=${row.answerId()})}" method="post" class="action-form">
+                                    <input type="hidden" name="startDate" th:value="${startDate}">
+                                    <input type="hidden" name="endDate" th:value="${endDate}">
+                                    <button type="submit" class="btn-unpublish">게시 취소</button>
+                                </form>
+                            </div>
+                            <!-- 미답변 → 액션 없음 -->
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
