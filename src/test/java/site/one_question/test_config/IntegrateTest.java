@@ -11,12 +11,16 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
+import site.one_question.api.answerpost.domain.AnswerPostLikeRepository;
+import site.one_question.api.answerpost.domain.AnswerPostRepository;
 import site.one_question.api.auth.domain.RefreshTokenRepository;
 import site.one_question.api.member.domain.MemberRepository;
 import site.one_question.api.question.domain.DailyQuestionAnswerRepository;
 import site.one_question.api.question.domain.DailyQuestionRepository;
 import site.one_question.api.question.domain.QuestionCycleRepository;
 import site.one_question.api.question.domain.QuestionRepository;
+import site.one_question.test_config.utils.TestAnswerPostLikeUtils;
+import site.one_question.test_config.utils.TestAnswerPostUtils;
 import site.one_question.test_config.utils.TestAuthUtils;
 import site.one_question.test_config.utils.TestDailyQuestionAnswerUtils;
 import site.one_question.test_config.utils.TestDailyQuestionUtils;
@@ -57,6 +61,12 @@ public abstract class IntegrateTest {
     @Autowired
     protected DailyQuestionAnswerRepository dailyQuestionAnswerRepository;
 
+    @Autowired
+    protected AnswerPostRepository answerPostRepository;
+
+    @Autowired
+    protected AnswerPostLikeRepository answerPostLikeRepository;
+
     // Test Utils
     @Autowired
     protected TestMemberUtils testMemberUtils;
@@ -79,6 +89,12 @@ public abstract class IntegrateTest {
     @Autowired
     protected TestRefreshTokenUtils testRefreshTokenUtils;
 
+    @Autowired
+    protected TestAnswerPostUtils testAnswerPostUtils;
+
+    @Autowired
+    protected TestAnswerPostLikeUtils testAnswerPostLikeUtils;
+
     // 트랜잭션 관리
     @PersistenceContext
     protected EntityManager entityManager;
@@ -91,6 +107,7 @@ public abstract class IntegrateTest {
     protected static final String AUTH_API = API_V1 + "/auth";
     protected static final String MEMBERS_API = API_V1 + "/members";
     protected static final String QUESTIONS_API = API_V1 + "/questions";
+    protected static final String ANSWER_POSTS_API = API_V1 + "/answer-posts";
 
     @AfterEach
     void tearDown() {
