@@ -46,14 +46,14 @@ public class AnswerPost extends BaseEntity {
 
     public static AnswerPost createPublish(
             DailyQuestionAnswer questionAnswer,
-            Member member,
-        AnonymousNickname anonymousNickname
+            Member member
     ) {
+        AnonymousNickname nickname = AnonymousNickname.generate(member.getLocale());
         return new AnswerPost(
                 null,
                 questionAnswer,
                 member,
-                anonymousNickname.getValue(),
+                nickname.getValue(),
                 Instant.now(),
                 AnswerPostStatus.PUBLISHED,
                 null

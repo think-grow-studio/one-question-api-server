@@ -29,19 +29,17 @@ public class AnswerPostService {
         return answerPostRepository.findByQuestionAnswer(questionAnswer);
     }
 
-    private void publish(DailyQuestionAnswer questionAnswer, Member member) {
-        AnonymousNickname nickname = AnonymousNickname.generate(member.getLocale());
-        answerPostRepository.save(AnswerPost.createPublish(questionAnswer, member, nickname));
-    }
-
-    public void publishOrCreate(DailyQuestionAnswer questionAnswer, Member member) {
+    public AnswerPost publishOrCreate(DailyQuestionAnswer questionAnswer, Member member) {
+        AnswerPost answerPost;
         var existing = findByQuestionAnswer(questionAnswer);
         if (existing.isPresent()) {
-            AnswerPost post = existing.get();
-            post.republish();
+            answerPost = existing.get();
+            answerPost.republish();
         } else {
-            publish(questionAnswer, member);
+            answerPost = AnswerPost.createPublish(questionAnswer, member);
+            answerPostRepository.save(answerPost);
         }
+        return answerPost;
     }
 
     public List<AnswerPost> getFeed(Instant cursor, int size) {
