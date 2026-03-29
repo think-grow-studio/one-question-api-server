@@ -13,6 +13,9 @@ public record AnswerPostFeedItemDto(
         @Schema(description = "질문 내용", example = "오늘 하루에 제목을 붙인다면?")
         String questionContent,
 
+        @Schema(description = "질문 설명", example = "하루를 돌아보며 의미 있는 제목을 붙여보세요")
+        String description,
+
         @Schema(description = "답변 내용", example = "새로운 시작의 날")
         String answerContent,
 
@@ -37,6 +40,7 @@ public record AnswerPostFeedItemDto(
         return new AnswerPostFeedItemDto(
                 post.getId(),
                 post.getQuestionAnswer().getDailyQuestionId().getQuestion().getContent(),
+                post.getQuestionAnswer().getDailyQuestionId().getQuestion().getDescription(),
                 post.getQuestionAnswer().getContent(),
                 post.getAnonymousNickname(),
                 postedAt,
