@@ -32,7 +32,6 @@ class LinkToGoogleIntegrateTest extends IntegrateTest {
 
     @BeforeEach
     void setUp() {
-        Mockito.reset(googleTokenVerifier);
         anonymousMember = testMemberUtils.createSave_Anonymous();
         token = testAuthUtils.createBearerToken(anonymousMember);
     }

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,6 +13,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.support.TransactionTemplate;
+import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier;
+import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier;
+import site.one_question.api.auth.infrastructure.oauth.GoogleTokenVerifier;
 import site.one_question.api.answerpost.domain.AnswerPostLikeRepository;
 import site.one_question.api.answerpost.domain.AnswerPostRepository;
 import site.one_question.api.auth.domain.RefreshTokenRepository;
@@ -102,12 +107,27 @@ public abstract class IntegrateTest {
     @Autowired
     protected TransactionTemplate transactionTemplate;
 
+    // Mock Verifiers
+    @Autowired
+    protected GoogleTokenVerifier googleTokenVerifier;
+
+    @Autowired
+    protected AppleTokenVerifier appleTokenVerifier;
+
+    @Autowired
+    protected FirebaseTokenVerifier firebaseTokenVerifier;
+
     // API URL 상수
     protected static final String API_V1 = "/api/v1";
     protected static final String AUTH_API = API_V1 + "/auth";
     protected static final String MEMBERS_API = API_V1 + "/members";
     protected static final String QUESTIONS_API = API_V1 + "/questions";
     protected static final String ANSWER_POSTS_API = API_V1 + "/answer-posts";
+
+    @BeforeEach
+    void resetMocks() {
+        Mockito.reset(googleTokenVerifier, appleTokenVerifier, firebaseTokenVerifier);
+    }
 
     @AfterEach
     void tearDown() {

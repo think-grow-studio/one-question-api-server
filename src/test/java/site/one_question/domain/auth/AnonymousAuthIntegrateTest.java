@@ -9,15 +9,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import site.one_question.api.auth.domain.exception.FirebaseTokenVerificationException;
-import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier.FirebaseTokenPayload;
 import site.one_question.api.member.domain.AuthSocialProvider;
 import site.one_question.api.member.domain.Member;
@@ -29,14 +25,6 @@ import site.one_question.test_config.IntegrateTest;
 class AnonymousAuthIntegrateTest extends IntegrateTest {
 
     private final String AUTH_ANONYMOUS_URL = AUTH_API + "/anonymous";
-
-    @Autowired
-    private FirebaseTokenVerifier firebaseTokenVerifier;
-
-    @BeforeEach
-    void resetMocks() {
-        Mockito.reset(firebaseTokenVerifier);
-    }
 
     @Nested
     @DisplayName("성공 케이스")

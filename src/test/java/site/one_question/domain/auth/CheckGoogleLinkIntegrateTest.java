@@ -11,12 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import site.one_question.api.auth.domain.exception.GoogleTokenVerificationException;
-import site.one_question.api.auth.infrastructure.oauth.GoogleTokenVerifier;
 import site.one_question.api.auth.presentation.request.CheckGoogleLinkRequest;
 import site.one_question.api.member.domain.Member;
 import site.one_question.test_config.IntegrateTest;
@@ -28,15 +25,11 @@ class CheckGoogleLinkIntegrateTest extends IntegrateTest {
 
     private final String LINK_CHECK_URL = AUTH_API + "/google/link/check";
 
-    @Autowired
-    private GoogleTokenVerifier googleTokenVerifier;
-
     private Member anonymousMember;
     private String token;
 
     @BeforeEach
     void setUp() {
-        Mockito.reset(googleTokenVerifier);
         anonymousMember = testMemberUtils.createSave_Anonymous();
         token = testAuthUtils.createBearerToken(anonymousMember);
     }
