@@ -39,6 +39,18 @@ public class TestMemberUtils {
         return memberRepository.save(member);
     }
 
+    public Member createSave_Anonymous() {
+        Member member = Member.create(
+                null,
+                "Anonymous",
+                AuthSocialProvider.ANONYMOUS,
+                "firebase-uid-" + uniqueId++,
+                "ko-KR",
+                LocalDate.now(ZoneId.of("Asia/Seoul"))
+        );
+        return memberRepository.save(member);
+    }
+
     public Member createSave_With_JoinedDate(LocalDate joinedDate) {
         Member member = Member.create(
                 "test" + uniqueId + "@test.com",

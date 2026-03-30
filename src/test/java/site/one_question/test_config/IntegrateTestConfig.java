@@ -5,6 +5,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier;
+import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.GoogleTokenVerifier;
 
 @TestConfiguration
@@ -20,5 +21,11 @@ public class IntegrateTestConfig {
     @Primary
     public AppleTokenVerifier mockAppleTokenVerifier() {
         return Mockito.mock(AppleTokenVerifier.class);
+    }
+
+    @Bean
+    @Primary
+    public FirebaseTokenVerifier mockFirebaseTokenVerifier() {
+        return Mockito.mock(FirebaseTokenVerifier.class);
     }
 }
