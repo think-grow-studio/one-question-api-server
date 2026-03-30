@@ -20,6 +20,10 @@ public class MemberService {
     return memberRepository.findByProviderAndProviderId(provider, providerId);
   }
 
+  public boolean existsByProviderAndProviderId(AuthSocialProvider provider, String providerId) {
+    return memberRepository.existsByProviderAndProviderId(provider, providerId);
+  }
+
   public Member createMember(
           String email,
           String fullName,

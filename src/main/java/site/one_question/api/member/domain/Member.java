@@ -24,7 +24,7 @@ public class Member extends BaseEntity {
     @Column(name = "public_id", nullable = false, unique = true, updatable = false, length = 50)
     private String publicId;
 
-    @Column(length = 255,nullable = false)
+    @Column(length = 255)
     private String email;
 
     @Column(name = "full_name", length = 100,nullable = false)
@@ -92,5 +92,18 @@ public class Member extends BaseEntity {
 
     public boolean isPremium() {
         return this.permission == MemberPermission.PREMIUM;
+    }
+
+    public boolean isAnonymous() {
+        return this.provider == AuthSocialProvider.ANONYMOUS;
+    }
+
+    public void linkToGoogle(String email, String fullName, String providerId) {
+        this.provider = AuthSocialProvider.GOOGLE;
+        this.providerId = providerId;
+        this.email = email;
+        if (fullName != null) {
+            this.fullName = fullName;
+        }
     }
 }

@@ -67,6 +67,24 @@ public enum AuthExceptionSpec implements ExceptionSpec {
             "AUTH-010",
             "JWT(accessToken) 만료",
             "error.auth.access-token-expired"
+    ),
+    FIREBASE_VERIFICATION_FAILED(
+            HttpStatus.UNAUTHORIZED,
+            "AUTH-011",
+            "Firebase 토큰 검증 실패",
+            "error.auth.firebase-verification-failed"
+    ),
+    ACCOUNT_ALREADY_LINKED(
+            HttpStatus.BAD_REQUEST,
+            "AUTH-012",
+            "이미 연동된 계정",
+            "error.auth.account-already-linked"
+    ),
+    GOOGLE_ACCOUNT_ALREADY_EXISTS(
+            HttpStatus.CONFLICT,
+            "AUTH-013",
+            "이미 존재하는 Google 계정",
+            "error.auth.google-account-already-exists"
     );
 
 

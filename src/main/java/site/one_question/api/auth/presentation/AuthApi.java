@@ -11,10 +11,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import site.one_question.api.auth.presentation.request.AnonymousAuthRequest;
 import site.one_question.api.auth.presentation.request.AppleAuthRequest;
 import site.one_question.api.auth.presentation.request.GoogleAuthRequest;
+import site.one_question.api.auth.presentation.request.CheckGoogleLinkRequest;
+import site.one_question.api.auth.presentation.request.LinkToGoogleRequest;
 import site.one_question.api.auth.presentation.request.ReissueAuthTokenRequest;
 import site.one_question.api.auth.presentation.response.AuthResponse;
+import site.one_question.api.auth.presentation.response.CheckGoogleLinkResponse;
 import site.one_question.api.auth.presentation.response.ReissueAuthTokenResponse;
 
 @Tag(name = "Auth", description = "인증 관련 API")
@@ -138,6 +142,130 @@ public interface AuthApi {
             )
             AppleAuthRequest request
     );
+
+    @Operation(
+            summary = "익명 인증",
+            description = """
+                    Firebase 익명 인증 토큰을 검증하고 JWT 토큰을 발급합니다.
+                    신규 사용자의 경우 자동으로 회원가입이 진행됩니다.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "인증 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = AuthResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Firebase 토큰 검증 실패",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "AUTH-011",
+                                                "message": "Firebase 인증에 실패했습니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    ResponseEntity<AuthResponse> anonymousAuth(
+            @Parameter(
+                    name = "Accept-Language",
+                    description = "클라이언트 로케일 (예: ko-KR)",
+                    in = ParameterIn.HEADER,
+                    required = true,
+                    example = "ko-KR"
+            )
+            String locale,
+            @Parameter(
+                    name = "Timezone",
+                    description = "클라이언트 타임존 (예: Asia/Seoul)",
+                    in = ParameterIn.HEADER,
+                    required = true,
+                    example = "Asia/Seoul"
+            )
+            String timezone,
+            @RequestBody(
+                    description = "익명 인증 요청",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = AnonymousAuthRequest.class)
+                    )
+            )
+            AnonymousAuthRequest request
+    );
+
+    @Operation(
+            summary = "Google 계정 연결 확인",
+            description = "Google ID 토큰을 검증하여 해당 Google 계정이 이미 존재하는지 확인합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "확인 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CheckGoogleLinkResponse.class)
+                    )
+            )
+    })
+    ResponseEntity<CheckGoogleLinkResponse> checkGoogleLinking(Long memberId, CheckGoogleLinkRequest request);
+
+    @Operation(
+            summary = "Google 계정 연결",
+            description = """
+                    익명 사용자의 계정을 Google 계정으로 연결합니다.
+                    연결 후 새로운 JWT 토큰이 발급됩니다.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "연결 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = AuthResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "이미 연동된 계정 (익명이 아닌 사용자)",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "AUTH-012",
+                                                "message": "이미 연동된 계정입니다."
+                                            }
+                                            """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "이미 존재하는 Google 계정",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "AUTH-013",
+                                                "message": "이미 사용 중인 Google 계정입니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    ResponseEntity<AuthResponse> linkToGoogle(Long memberId, LinkToGoogleRequest request);
 
     @Operation(
             summary = "토큰 재발급",

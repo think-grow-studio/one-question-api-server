@@ -44,6 +44,9 @@ dependencies {
 	// Google OAuth
 	implementation 'com.google.api-client:google-api-client:2.2.0'
 
+	// Firebase Admin SDK
+	implementation 'com.google.firebase:firebase-admin:9.4.3'
+
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'com.oracle.database.jdbc:ojdbc11:23.3.0.23.09'

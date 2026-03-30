@@ -14,10 +14,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import site.one_question.api.auth.application.AuthApplication;
 import site.one_question.api.auth.infrastructure.annotation.PrincipalId;
+import site.one_question.api.auth.presentation.request.AnonymousAuthRequest;
 import site.one_question.api.auth.presentation.request.AppleAuthRequest;
 import site.one_question.api.auth.presentation.request.GoogleAuthRequest;
+import site.one_question.api.auth.presentation.request.CheckGoogleLinkRequest;
+import site.one_question.api.auth.presentation.request.LinkToGoogleRequest;
 import site.one_question.api.auth.presentation.request.ReissueAuthTokenRequest;
 import site.one_question.api.auth.presentation.response.AuthResponse;
+import site.one_question.api.auth.presentation.response.CheckGoogleLinkResponse;
 import site.one_question.api.auth.presentation.response.ReissueAuthTokenResponse;
 import site.one_question.global.common.HttpHeaderConstant;
 
@@ -52,6 +56,43 @@ public class AuthController implements AuthApi {
         log.info("[API] 애플 로그인 요청 시작");
         AuthResponse response = authApplication.appleAuth(request, locale, timezone);
         log.info("[API] 애플 로그인 요청 종료 - isNewMember: {}", response.isNewMember());
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    @PostMapping("/anonymous")
+    public ResponseEntity<AuthResponse> anonymousAuth(
+            @RequestHeader(ACCEPT_LANGUAGE) String locale,
+            @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone,
+            @Valid @RequestBody AnonymousAuthRequest request
+    ) {
+        log.info("[API] 익명 로그인 요청 시작");
+        AuthResponse response = authApplication.anonymousAuth(request, locale, timezone);
+        log.info("[API] 익명 로그인 요청 종료 - isNewMember: {}", response.isNewMember());
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    @PostMapping("/google/link/check")
+    public ResponseEntity<CheckGoogleLinkResponse> checkGoogleLinking(
+            @PrincipalId Long memberId,
+            @Valid @RequestBody CheckGoogleLinkRequest request
+    ) {
+        log.info("[API] Google 계정 연결 확인 요청 시작");
+        CheckGoogleLinkResponse response = authApplication.checkGoogleLinking(request);
+        log.info("[API] Google 계정 연결 확인 요청 종료 - exists: {}", response.exists());
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    @PostMapping("/google/link")
+    public ResponseEntity<AuthResponse> linkToGoogle(
+            @PrincipalId Long memberId,
+            @Valid @RequestBody LinkToGoogleRequest request
+    ) {
+        log.info("[API] Google 계정 연결 요청 시작 - memberId: {}", memberId);
+        AuthResponse response = authApplication.linkToGoogle(memberId, request);
+        log.info("[API] Google 계정 연결 요청 종료");
         return ResponseEntity.ok(response);
     }
 

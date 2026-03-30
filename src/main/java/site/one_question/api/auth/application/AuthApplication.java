@@ -8,15 +8,23 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.one_question.api.auth.domain.RefreshTokenService;
+import site.one_question.api.auth.domain.exception.AccountAlreadyLinkedException;
+import site.one_question.api.auth.domain.exception.GoogleAccountAlreadyExistsException;
 import site.one_question.api.auth.domain.exception.InvalidTokenException;
 import site.one_question.global.security.service.JwtService;
 import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier.AppleTokenPayload;
+import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier;
+import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier.FirebaseTokenPayload;
 import site.one_question.api.auth.infrastructure.oauth.GoogleTokenVerifier;
+import site.one_question.api.auth.presentation.request.AnonymousAuthRequest;
 import site.one_question.api.auth.presentation.request.AppleAuthRequest;
 import site.one_question.api.auth.presentation.request.GoogleAuthRequest;
+import site.one_question.api.auth.presentation.request.CheckGoogleLinkRequest;
+import site.one_question.api.auth.presentation.request.LinkToGoogleRequest;
 import site.one_question.api.auth.presentation.request.ReissueAuthTokenRequest;
 import site.one_question.api.auth.presentation.response.AuthResponse;
+import site.one_question.api.auth.presentation.response.CheckGoogleLinkResponse;
 import site.one_question.api.auth.presentation.response.ReissueAuthTokenResponse;
 import site.one_question.api.member.domain.AuthSocialProvider;
 import site.one_question.api.member.domain.Member;
@@ -34,6 +42,7 @@ public class AuthApplication {
 
     private final GoogleTokenVerifier googleTokenVerifier;
     private final AppleTokenVerifier appleTokenVerifier;
+    private final FirebaseTokenVerifier firebaseTokenVerifier;
     private final JwtService jwtService;
     private final MemberService memberService;
     private final RefreshTokenService refreshTokenService;
@@ -107,6 +116,60 @@ public class AuthApplication {
         refreshTokenService.save(member, refreshToken, jwtService.extractExpiration(refreshToken));
 
         return new AuthResponse(accessToken, refreshToken, isNewMember);
+    }
+
+    public AuthResponse anonymousAuth(AnonymousAuthRequest request, String locale, String timezone) {
+        FirebaseTokenPayload payload = firebaseTokenVerifier.verify(request.idToken());
+
+        String providerId = payload.uid();
+        LocalDate joinedDate = LocalDate.now(ZoneId.of(timezone));
+
+        return loginOrSignup(
+                AuthSocialProvider.ANONYMOUS,
+                providerId,
+                null,
+                "Anonymous",
+                locale,
+                joinedDate,
+                timezone
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public CheckGoogleLinkResponse checkGoogleLinking(CheckGoogleLinkRequest request) {
+        GoogleIdToken.Payload payload = googleTokenVerifier.verify(request.idToken());
+        String providerId = payload.getSubject();
+
+        boolean exists = memberService.existsByProviderAndProviderId(AuthSocialProvider.GOOGLE, providerId);
+        return new CheckGoogleLinkResponse(exists);
+    }
+
+    public AuthResponse linkToGoogle(Long memberId, LinkToGoogleRequest request) {
+        Member member = memberService.findById(memberId);
+
+        if (!member.isAnonymous()) {
+            throw new AccountAlreadyLinkedException();
+        }
+
+        GoogleIdToken.Payload payload = googleTokenVerifier.verify(request.idToken());
+        String googleProviderId = payload.getSubject();
+        String email = payload.getEmail();
+        String name = request.name() != null ? request.name() : (String) payload.get("name");
+
+        Optional<Member> existing = memberService.findByProviderAndProviderId(
+                AuthSocialProvider.GOOGLE, googleProviderId
+        );
+        if (existing.isPresent()) {
+            throw new GoogleAccountAlreadyExistsException();
+        }
+
+        member.linkToGoogle(email, name, googleProviderId);
+
+        String accessToken = jwtService.issueAccessToken(member.getId(), member.getEmail(), member.getPermission());
+        String refreshToken = jwtService.issueRefreshToken(member.getId(), member.getEmail(), member.getPermission());
+        refreshTokenService.save(member, refreshToken, jwtService.extractExpiration(refreshToken));
+
+        return new AuthResponse(accessToken, refreshToken, false);
     }
 
     public ReissueAuthTokenResponse reissueToken(ReissueAuthTokenRequest request) {
