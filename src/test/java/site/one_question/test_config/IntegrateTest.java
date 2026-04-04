@@ -18,6 +18,7 @@ import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.GoogleTokenVerifier;
 import site.one_question.api.answerpost.domain.AnswerPostLikeRepository;
 import site.one_question.api.answerpost.domain.AnswerPostRepository;
+import site.one_question.api.question.domain.DailyQuestionLikeRepository;
 import site.one_question.api.auth.domain.RefreshTokenRepository;
 import site.one_question.api.member.domain.MemberRepository;
 import site.one_question.api.question.domain.DailyQuestionAnswerRepository;
@@ -26,6 +27,7 @@ import site.one_question.api.question.domain.QuestionCycleRepository;
 import site.one_question.api.question.domain.QuestionRepository;
 import site.one_question.test_config.utils.TestAnswerPostLikeUtils;
 import site.one_question.test_config.utils.TestAnswerPostUtils;
+import site.one_question.test_config.utils.TestDailyQuestionLikeUtils;
 import site.one_question.test_config.utils.TestAuthUtils;
 import site.one_question.test_config.utils.TestDailyQuestionAnswerUtils;
 import site.one_question.test_config.utils.TestDailyQuestionUtils;
@@ -72,6 +74,9 @@ public abstract class IntegrateTest {
     @Autowired
     protected AnswerPostLikeRepository answerPostLikeRepository;
 
+    @Autowired
+    protected DailyQuestionLikeRepository dailyQuestionLikeRepository;
+
     // Test Utils
     @Autowired
     protected TestMemberUtils testMemberUtils;
@@ -99,6 +104,9 @@ public abstract class IntegrateTest {
 
     @Autowired
     protected TestAnswerPostLikeUtils testAnswerPostLikeUtils;
+
+    @Autowired
+    protected TestDailyQuestionLikeUtils testDailyQuestionLikeUtils;
 
     // 트랜잭션 관리
     @PersistenceContext
