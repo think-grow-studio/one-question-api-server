@@ -17,6 +17,7 @@ import site.one_question.api.question.presentation.request.UpdateAnswerRequest;
 import site.one_question.api.question.presentation.response.CreateAnswerResponse;
 import site.one_question.api.question.presentation.response.GetQuestionHistoryResponse;
 import site.one_question.api.question.presentation.response.ServeDailyQuestionResponse;
+import site.one_question.api.question.presentation.response.ToggleLikeResponse;
 import site.one_question.api.question.presentation.response.UpdateAnswerResponse;
 
 import java.time.LocalDate;
@@ -422,5 +423,51 @@ public interface QuestionApi {
                     )
             )
             UpdateAnswerRequest request
+    );
+
+    @Operation(
+            summary = "질문 좋아요 토글",
+            description = """
+                    오늘의 질문에 대한 좋아요를 토글합니다.
+                    좋아요가 없으면 생성(liked=true), 좋아요가 있으면 취소(liked=false)합니다.
+                    본인에게 할당된 질문에만 좋아요를 누를 수 있습니다.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "좋아요 토글 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ToggleLikeResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "해당 질문이 존재하지 않음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "QUESTION-002",
+                                                "message": "해당 날짜의 질문을 찾을 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    ResponseEntity<ToggleLikeResponse> toggleLike(
+            Long memberId,
+
+            @Parameter(
+                    name = "dailyQuestionId",
+                    description = "좋아요를 누를 오늘의 질문 ID (ServeDailyQuestionResponse.dailyQuestionId)",
+                    example = "43",
+                    required = true,
+                    in = ParameterIn.PATH
+            )
+            Long dailyQuestionId
     );
 }

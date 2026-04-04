@@ -21,6 +21,7 @@ import site.one_question.api.question.presentation.request.UpdateAnswerRequest;
 import site.one_question.api.question.presentation.response.CreateAnswerResponse;
 import site.one_question.api.question.presentation.response.ServeDailyQuestionResponse;
 import site.one_question.api.question.presentation.response.GetQuestionHistoryResponse;
+import site.one_question.api.question.presentation.response.ToggleLikeResponse;
 import site.one_question.api.question.presentation.response.UpdateAnswerResponse;
 
 import java.time.LocalDate;
@@ -85,6 +86,18 @@ public class QuestionController implements QuestionApi {
         log.info("[API] 답변 생성 요청 시작 - date: {}", date);
         CreateAnswerResponse response = questionApplication.createAnswer(memberId, date, request.answer(), request.shouldPublish(), timezone);
         log.info("[API] 답변 생성 요청 종료 - date: {}", date);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    @PostMapping("/{dailyQuestionId}/like")
+    public ResponseEntity<ToggleLikeResponse> toggleLike(
+            @PrincipalId Long memberId,
+            @PathVariable Long dailyQuestionId
+    ) {
+        log.info("[API] 질문 좋아요 토글 요청 시작 - dailyQuestionId: {}", dailyQuestionId);
+        ToggleLikeResponse response = questionApplication.toggleLike(memberId, dailyQuestionId);
+        log.info("[API] 질문 좋아요 토글 요청 종료 - dailyQuestionId: {}, liked: {}", dailyQuestionId, response.liked());
         return ResponseEntity.ok(response);
     }
 

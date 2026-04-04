@@ -55,6 +55,8 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
         @Param("endDate") LocalDate endDate
     );
 
+    Optional<DailyQuestion> findByIdAndMemberId(Long id, Long memberId);
+
     @Modifying
     @Query("DELETE FROM DailyQuestion dq WHERE dq.member.id = :memberId")
     int deleteByMemberId(@Param("memberId") Long memberId);

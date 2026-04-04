@@ -16,6 +16,8 @@ import site.one_question.api.member.domain.MemberService;
 import site.one_question.api.question.domain.DatePolicy;
 import site.one_question.api.question.domain.DailyQuestion;
 import site.one_question.api.question.domain.DailyQuestionAnswerService;
+import site.one_question.api.question.domain.DailyQuestionLike;
+import site.one_question.api.question.domain.DailyQuestionLikeService;
 import site.one_question.api.question.domain.DailyQuestionService;
 import site.one_question.api.question.domain.exception.AlreadyAnsweredException;
 import site.one_question.api.question.domain.exception.ReloadLimitExceededException;
@@ -32,6 +34,7 @@ import site.one_question.api.question.presentation.response.CreateAnswerResponse
 import site.one_question.api.question.presentation.response.GetQuestionHistoryResponse;
 import site.one_question.api.question.presentation.response.QuestionHistoryItemDto;
 import site.one_question.api.question.presentation.response.ServeDailyQuestionResponse;
+import site.one_question.api.question.presentation.response.ToggleLikeResponse;
 import site.one_question.api.question.presentation.response.UpdateAnswerResponse;
 
 @Service
@@ -44,6 +47,7 @@ public class QuestionApplication {
     private final QuestionCycleService cycleService;
     private final MemberService memberService;
     private final AnswerPostService answerPostService;
+    private final DailyQuestionLikeService dailyQuestionLikeService;
 
     public ServeDailyQuestionResponse serveDailyQuestion(Long memberId, LocalDate date, String timezone) {
         // 멱등성: 기존 질문 있으면 반환
@@ -194,6 +198,22 @@ public class QuestionApplication {
 
         // 6. 응답 반환
         return CreateAnswerResponse.from(saved, timezone, publish);
+    }
+
+    public ToggleLikeResponse toggleLike(Long memberId, Long dailyQuestionId) {
+        DailyQuestion dailyQuestion = dailyQuestionService.findByIdAndMemberIdOrThrow(dailyQuestionId, memberId);
+        Member member = memberService.findById(memberId);
+        var existingLike = dailyQuestionLikeService.findByDailyQuestionAndMember(dailyQuestion, member);
+
+        boolean liked;
+        if (existingLike.isPresent()) {
+            dailyQuestionLikeService.delete(existingLike.get());
+            liked = false;
+        } else {
+            dailyQuestionLikeService.save(DailyQuestionLike.create(dailyQuestion, member));
+            liked = true;
+        }
+        return new ToggleLikeResponse(liked);
     }
 
     public UpdateAnswerResponse updateAnswer(Long memberId, LocalDate date, String content, Boolean publish, String timezone) {
