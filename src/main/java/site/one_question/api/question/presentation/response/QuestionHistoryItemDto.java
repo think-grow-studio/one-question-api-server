@@ -40,6 +40,9 @@ public record QuestionHistoryItemDto(
         @Schema(description = "일일 질문 ID", example = "43")
         Long dailyQuestionId,
 
+        @Schema(description = "질문 ID", example = "7")
+        Long questionId,
+
         @Schema(description = "질문 내용", example = "오늘 하루에 제목을 붙인다면?")
         String content,
 
@@ -88,6 +91,7 @@ public record QuestionHistoryItemDto(
     public static QuestionHistoryItemDto from(DailyQuestion dailyQuestion, String timezone) {
         QuestionInfoDto questionInfo = new QuestionInfoDto(
             dailyQuestion.getId(),
+            dailyQuestion.getQuestion().getId(),
             dailyQuestion.getQuestion().getContent(),
             dailyQuestion.getQuestion().getDescription(),
             (long) dailyQuestion.getQuestionCycle().getCycleNumber(),

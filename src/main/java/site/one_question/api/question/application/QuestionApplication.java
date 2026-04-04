@@ -16,8 +16,9 @@ import site.one_question.api.member.domain.MemberService;
 import site.one_question.api.question.domain.DatePolicy;
 import site.one_question.api.question.domain.DailyQuestion;
 import site.one_question.api.question.domain.DailyQuestionAnswerService;
-import site.one_question.api.question.domain.DailyQuestionLike;
-import site.one_question.api.question.domain.DailyQuestionLikeService;
+import site.one_question.api.question.domain.QuestionLike;
+import site.one_question.api.question.domain.QuestionLikeService;
+import site.one_question.api.question.domain.QuestionService;
 import site.one_question.api.question.domain.DailyQuestionService;
 import site.one_question.api.question.domain.exception.AlreadyAnsweredException;
 import site.one_question.api.question.domain.exception.ReloadLimitExceededException;
@@ -47,7 +48,8 @@ public class QuestionApplication {
     private final QuestionCycleService cycleService;
     private final MemberService memberService;
     private final AnswerPostService answerPostService;
-    private final DailyQuestionLikeService dailyQuestionLikeService;
+    private final QuestionLikeService questionLikeService;
+    private final QuestionService questionService;
 
     public ServeDailyQuestionResponse serveDailyQuestion(Long memberId, LocalDate date, String timezone) {
         // 멱등성: 기존 질문 있으면 반환
@@ -200,17 +202,17 @@ public class QuestionApplication {
         return CreateAnswerResponse.from(saved, timezone, publish);
     }
 
-    public ToggleLikeResponse toggleLike(Long memberId, Long dailyQuestionId) {
-        DailyQuestion dailyQuestion = dailyQuestionService.findByIdAndMemberIdOrThrow(dailyQuestionId, memberId);
+    public ToggleLikeResponse toggleLike(Long memberId, Long questionId) {
+        Question question = questionService.findByIdOrThrow(questionId);
         Member member = memberService.findById(memberId);
-        var existingLike = dailyQuestionLikeService.findByDailyQuestionAndMember(dailyQuestion, member);
+        var existingLike = questionLikeService.findByQuestionAndMember(question, member);
 
         boolean liked;
         if (existingLike.isPresent()) {
-            dailyQuestionLikeService.delete(existingLike.get());
+            questionLikeService.delete(existingLike.get());
             liked = false;
         } else {
-            dailyQuestionLikeService.save(DailyQuestionLike.create(dailyQuestion, member));
+            questionLikeService.save(QuestionLike.create(question, member));
             liked = true;
         }
         return new ToggleLikeResponse(liked);

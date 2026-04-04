@@ -25,11 +25,6 @@ public class DailyQuestionService {
             .orElseThrow(DailyQuestionNotFoundException::new);
     }
 
-    public DailyQuestion findByIdAndMemberIdOrThrow(Long id, Long memberId) {
-        return dailyQuestionRepository.findByIdAndMemberId(id, memberId)
-            .orElseThrow(DailyQuestionNotFoundException::new);
-    }
-
     /**
      * 사이클 내에서 아직 제공되지 않은 질문 중 랜덤으로 하나를 선택한다.
      * 모든 질문이 이미 제공된 경우, 전체 질문에서 중복을 허용하여 선택한다.

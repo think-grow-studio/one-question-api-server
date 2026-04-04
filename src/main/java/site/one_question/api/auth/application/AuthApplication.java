@@ -31,6 +31,7 @@ import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberService;
 import site.one_question.api.answerpost.domain.AnswerPostLikeService;
 import site.one_question.api.answerpost.domain.AnswerPostService;
+import site.one_question.api.question.domain.QuestionLikeService;
 import site.one_question.api.question.domain.DailyQuestionAnswerService;
 import site.one_question.api.question.domain.DailyQuestionService;
 import site.one_question.api.question.domain.QuestionCycleService;
@@ -50,6 +51,7 @@ public class AuthApplication {
     private final DailyQuestionService dailyQuestionService;
     private final DailyQuestionAnswerService dailyQuestionAnswerService;
     private final AnswerPostLikeService answerPostLikeService;
+    private final QuestionLikeService questionLikeService;
     private final AnswerPostService answerPostService;
 
     public AuthResponse googleAuth(GoogleAuthRequest request, String locale, String timezone) {
@@ -198,6 +200,7 @@ public class AuthApplication {
     public void withdraw(Long memberId) {
         refreshTokenService.deleteByMemberId(memberId);
         answerPostLikeService.deleteByMemberId(memberId);
+        questionLikeService.deleteByMemberId(memberId);
         answerPostService.deleteByMemberId(memberId);
         dailyQuestionAnswerService.deleteByMemberId(memberId);
         dailyQuestionService.deleteByMemberId(memberId);

@@ -7,11 +7,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import site.one_question.api.member.domain.Member;
 
-public interface DailyQuestionLikeRepository extends JpaRepository<DailyQuestionLike, Long> {
+public interface QuestionLikeRepository extends JpaRepository<QuestionLike, Long> {
 
-    Optional<DailyQuestionLike> findByDailyQuestionAndMember(DailyQuestion dailyQuestion, Member member);
+    Optional<QuestionLike> findByQuestionAndMember(Question question, Member member);
 
     @Modifying
-    @Query("DELETE FROM DailyQuestionLike dql WHERE dql.member.id = :memberId")
+    @Query("DELETE FROM QuestionLike ql WHERE ql.member.id = :memberId")
     int deleteByMemberId(@Param("memberId") Long memberId);
 }

@@ -7,8 +7,11 @@ import site.one_question.api.question.domain.QuestionCycle;
 
 @Schema(description = "오늘의 질문 응답")
 public record ServeDailyQuestionResponse(
-        @Schema(description = "질문 ID", example = "43")
+        @Schema(description = "오늘의 질문 ID", example = "43")
         Long dailyQuestionId,
+
+        @Schema(description = "질문 ID", example = "7")
+        Long questionId,
 
         @Schema(description = "질문 내용", example = "오늘 하루에 제목을 붙인다면?")
         String content,
@@ -29,6 +32,7 @@ public record ServeDailyQuestionResponse(
     ) {
         return new ServeDailyQuestionResponse(
                 dailyQuestion.getId(),
+                question.getId(),
                 question.getContent(),
                 question.getDescription(),
                 (long) cycle.getCycleNumber(),

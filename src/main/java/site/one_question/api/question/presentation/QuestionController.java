@@ -90,14 +90,14 @@ public class QuestionController implements QuestionApi {
     }
 
     @Override
-    @PostMapping("/{dailyQuestionId}/like")
+    @PostMapping("/{questionId}/like")
     public ResponseEntity<ToggleLikeResponse> toggleLike(
             @PrincipalId Long memberId,
-            @PathVariable Long dailyQuestionId
+            @PathVariable Long questionId
     ) {
-        log.info("[API] 질문 좋아요 토글 요청 시작 - dailyQuestionId: {}", dailyQuestionId);
-        ToggleLikeResponse response = questionApplication.toggleLike(memberId, dailyQuestionId);
-        log.info("[API] 질문 좋아요 토글 요청 종료 - dailyQuestionId: {}, liked: {}", dailyQuestionId, response.liked());
+        log.info("[API] 질문 좋아요 토글 요청 시작 - questionId: {}", questionId);
+        ToggleLikeResponse response = questionApplication.toggleLike(memberId, questionId);
+        log.info("[API] 질문 좋아요 토글 요청 종료 - questionId: {}, liked: {}", questionId, response.liked());
         return ResponseEntity.ok(response);
     }
 

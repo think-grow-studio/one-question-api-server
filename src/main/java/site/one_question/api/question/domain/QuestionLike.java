@@ -13,18 +13,18 @@ import site.one_question.global.common.domain.BaseEntity;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(name = "daily_question_like", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_daily_question_like", columnNames = {"daily_question_id", "member_id"})
+@Table(name = "question_like", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_question_like", columnNames = {"question_id", "member_id"})
 })
-public class DailyQuestionLike extends BaseEntity {
+public class QuestionLike extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "daily_question_id", nullable = false)
-    private DailyQuestion dailyQuestion;
+    @JoinColumn(name = "question_id", nullable = false)
+    private Question question;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
@@ -33,10 +33,10 @@ public class DailyQuestionLike extends BaseEntity {
     @Column(name = "liked_at", nullable = false)
     private Instant likedAt;
 
-    public static DailyQuestionLike create(DailyQuestion dailyQuestion, Member member) {
-        return new DailyQuestionLike(
+    public static QuestionLike create(Question question, Member member) {
+        return new QuestionLike(
                 null,
-                dailyQuestion,
+                question,
                 member,
                 Instant.now()
         );

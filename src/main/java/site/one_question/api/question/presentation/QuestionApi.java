@@ -114,6 +114,7 @@ public interface QuestionApi {
                                                         "status": "ANSWERED",
                                                         "question": {
                                                             "dailyQuestionId": 43,
+                                                            "questionId": 7,
                                                             "content": "오늘 하루에 제목을 붙인다면?",
                                                             "description": "ex) 폭풍 전야",
                                                             "questionCycle": 1,
@@ -130,6 +131,7 @@ public interface QuestionApi {
                                                         "status": "UNANSWERED",
                                                         "question": {
                                                             "dailyQuestionId": 42,
+                                                            "questionId": 3,
                                                             "content": "오늘 가장 감사했던 순간은?",
                                                             "description": null,
                                                             "questionCycle": 1,
@@ -428,9 +430,8 @@ public interface QuestionApi {
     @Operation(
             summary = "질문 좋아요 토글",
             description = """
-                    오늘의 질문에 대한 좋아요를 토글합니다.
+                    질문에 대한 좋아요를 토글합니다.
                     좋아요가 없으면 생성(liked=true), 좋아요가 있으면 취소(liked=false)합니다.
-                    본인에게 할당된 질문에만 좋아요를 누를 수 있습니다.
                     """
     )
     @ApiResponses({
@@ -450,8 +451,8 @@ public interface QuestionApi {
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                                "code": "QUESTION-002",
-                                                "message": "해당 날짜의 질문을 찾을 수 없습니다."
+                                                "code": "QUESTION-001",
+                                                "message": "질문을 찾을 수 없습니다."
                                             }
                                             """
                             )
@@ -462,12 +463,12 @@ public interface QuestionApi {
             Long memberId,
 
             @Parameter(
-                    name = "dailyQuestionId",
-                    description = "좋아요를 누를 오늘의 질문 ID (ServeDailyQuestionResponse.dailyQuestionId)",
-                    example = "43",
+                    name = "questionId",
+                    description = "좋아요를 누를 질문 ID (ServeDailyQuestionResponse.questionId)",
+                    example = "7",
                     required = true,
                     in = ParameterIn.PATH
             )
-            Long dailyQuestionId
+            Long questionId
     );
 }
