@@ -506,6 +506,97 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
     }
 
     @Nested
+    @DisplayName("좋아요 여부 테스트")
+    class LikedTest {
+
+        @Test
+        @DisplayName("좋아요를 누르지 않은 질문은 liked=false 반환")
+        void history_returns_liked_false_when_not_liked() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            Question question = testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave_With_Date(member, cycle, question, today);
+
+            mockMvc.perform(get(HISTORIES_API)
+                            .param("baseDate", today.toString())
+                            .param("historyDirection", HistoryDirection.BOTH.name())
+                            .param("size", "1")
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.histories[0].question.liked").value(false));
+        }
+
+        @Test
+        @DisplayName("좋아요를 누른 질문은 liked=true 반환")
+        void history_returns_liked_true_when_liked() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            Question question = testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave_With_Date(member, cycle, question, today);
+            testQuestionLikeUtils.createSave(question, member);
+
+            mockMvc.perform(get(HISTORIES_API)
+                            .param("baseDate", today.toString())
+                            .param("historyDirection", HistoryDirection.BOTH.name())
+                            .param("size", "1")
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.histories[0].question.liked").value(true));
+        }
+
+        @Test
+        @DisplayName("여러 질문 중 좋아요 누른 것만 liked=true 반환")
+        void history_returns_correct_liked_status_for_multiple_questions() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            LocalDate yesterday = today.minusDays(1);
+
+            Question likedQuestion = testQuestionUtils.createSave();
+            Question notLikedQuestion = testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave_With_Date(member, cycle, likedQuestion, today);
+            testDailyQuestionUtils.createSave_With_Date(member, cycle, notLikedQuestion, yesterday);
+            testQuestionLikeUtils.createSave(likedQuestion, member);
+
+            mockMvc.perform(get(HISTORIES_API)
+                            .param("baseDate", today.toString())
+                            .param("historyDirection", HistoryDirection.PREVIOUS.name())
+                            .param("size", "2")
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.histories[0].question.liked").value(true))   // today (최신순)
+                    .andExpect(jsonPath("$.histories[1].question.liked").value(false));  // yesterday
+        }
+
+        @Test
+        @DisplayName("사이클이 넘어가도 이전 사이클에서 좋아요한 질문은 히스토리에서 liked=true 반환")
+        void history_returns_liked_true_for_same_question_across_cycles() throws Exception {
+            // given - cycle (사이클 1): setup()에서 30일 전 시작으로 이미 생성됨
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            LocalDate cycleOneDate = today.minusDays(1); // 사이클 1 날짜 (30일 전 ~ 오늘-1)
+
+            // 사이클 1에서 질문 할당 및 좋아요 (사이클 2 생성 전 → 좋아요는 사이클과 무관)
+            Question sharedQuestion = testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave_With_Date(member, cycle, sharedQuestion, cycleOneDate);
+            testQuestionLikeUtils.createSave(sharedQuestion, member);
+
+            // 사이클 2 생성 후 동일 질문 할당 → liked=true 유지되어야 함
+            QuestionCycle cycleTwo = testQuestionCycleUtils.createSave_With_StartDate(member, today, TIMEZONE, 2);
+            testDailyQuestionUtils.createSave_With_Date(member, cycleTwo, sharedQuestion, today);
+
+            // when - 사이클 2 날짜(오늘) 기준 히스토리 조회
+            mockMvc.perform(get(HISTORIES_API)
+                            .param("baseDate", today.toString())
+                            .param("historyDirection", HistoryDirection.BOTH.name())
+                            .param("size", "1")
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.histories[0].question.questionCycle").value(2))
+                    .andExpect(jsonPath("$.histories[0].question.liked").value(true));
+        }
+    }
+
+    @Nested
     @DisplayName("예외 케이스 테스트")
     class ExceptionTest {
 

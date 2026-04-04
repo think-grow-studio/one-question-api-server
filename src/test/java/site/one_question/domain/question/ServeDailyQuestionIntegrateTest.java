@@ -17,6 +17,7 @@ import org.springframework.http.HttpHeaders;
 import site.one_question.global.common.HttpHeaderConstant;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.question.domain.DailyQuestion;
+import site.one_question.api.question.domain.Question;
 import site.one_question.api.question.domain.QuestionCycle;
 import site.one_question.api.question.domain.exception.QuestionExceptionSpec;
 import site.one_question.test_config.IntegrateTest;
@@ -237,6 +238,74 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
             assertThat(newCycle.getStartDate())
                     .as("새 사이클의 시작일이 사이클 종료일 다음 날과 일치해야 함 (기대 날짜: %s)", dayAfterCycleEnd)
                     .isEqualTo(dayAfterCycleEnd);
+        }
+    }
+
+    @Nested
+    @DisplayName("좋아요 여부 테스트")
+    class LikedTest {
+
+        @Test
+        @DisplayName("좋아요를 누르지 않은 질문 조회 시 liked=false 반환")
+        void serve_returns_liked_false_when_not_liked() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.liked").value(false));
+        }
+
+        @Test
+        @DisplayName("좋아요를 누른 질문 조회 시 liked=true 반환")
+        void serve_returns_liked_true_when_liked() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question question = testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave(member, cycle, question);
+            testQuestionLikeUtils.createSave(question, member);
+
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.liked").value(true));
+        }
+
+        @Test
+        @DisplayName("사이클이 넘어가도 이전 사이클에서 좋아요한 질문은 liked=true 반환")
+        void serve_returns_liked_true_for_same_question_across_cycles() throws Exception {
+            // given - 1년 전 사이클 1 시작, 오늘 사이클 2 시작
+            LocalDate cycleOneStartDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusYears(1);
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            Member cycleMember = testMemberUtils.createSave_With_JoinedDate(cycleOneStartDate);
+            String cycleMemberToken = testAuthUtils.createBearerToken(cycleMember);
+
+            // 사이클 1: 1년 전 시작
+            QuestionCycle cycleOne = testQuestionCycleUtils.createSave_With_StartDate(cycleMember, cycleOneStartDate, TIMEZONE, 1);
+
+            // 질문 풀 생성 (serveDailyQuestion이 랜덤 선택하므로 충분한 수 필요)
+            Question sharedQuestion = testQuestionUtils.createSave();
+            for (int i = 0; i < 9; i++) {
+                testQuestionUtils.createSave();
+            }
+
+            // 사이클 2 생성 전에 좋아요 → 좋아요는 사이클과 무관
+            testQuestionLikeUtils.createSave(sharedQuestion, cycleMember);
+
+            // 사이클 2: 오늘 시작, 해당 질문을 오늘의 질문으로 직접 할당
+            QuestionCycle cycleTwo = testQuestionCycleUtils.createSave_With_StartDate(cycleMember, today, TIMEZONE, 2);
+            testDailyQuestionUtils.createSave(cycleMember, cycleTwo, sharedQuestion);
+
+            // when - 사이클 2에서 오늘의 질문 조회
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, cycleMemberToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.questionCycle").value(2))
+                    .andExpect(jsonPath("$.liked").value(true));
         }
     }
 

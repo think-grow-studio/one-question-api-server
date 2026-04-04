@@ -231,6 +231,74 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
     }
 
     @Nested
+    @DisplayName("좋아요 여부 테스트")
+    class LikedTest {
+
+        @Test
+        @DisplayName("리로드 후 받은 질문에 좋아요를 누르지 않은 경우 liked=false 반환")
+        void reload_returns_liked_false_when_not_liked() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question question = testQuestionUtils.createSave();
+            testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave(member, cycle, question);
+
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.liked").value(false));
+        }
+
+        @Test
+        @DisplayName("리로드 후 받은 질문에 좋아요를 누른 경우 liked=true 반환")
+        void reload_returns_liked_true_when_new_question_is_liked() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question original = testQuestionUtils.createSave();
+            Question newQuestion = testQuestionUtils.createSave(); // 리로드 후 선택될 질문 (original 제외)
+            testDailyQuestionUtils.createSave(member, cycle, original);
+            testQuestionLikeUtils.createSave(newQuestion, member);
+
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.liked").value(true));
+        }
+
+        @Test
+        @DisplayName("이전 사이클에서 좋아요한 질문으로 리로드 시 liked=true 반환")
+        void reload_returns_liked_true_when_new_question_was_liked_in_previous_cycle() throws Exception {
+            // given - 1년 전 사이클 1 시작, 오늘 사이클 2 시작
+            LocalDate cycleOneStartDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusYears(1);
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            Member cycleMember = testMemberUtils.createSave_With_JoinedDate(cycleOneStartDate);
+            String cycleMemberToken = testAuthUtils.createBearerToken(cycleMember);
+
+            // 질문 풀: original(현재 할당) + sharedQuestion(리로드 후 선택될 유일한 후보)
+            Question original = testQuestionUtils.createSave();
+            Question sharedQuestion = testQuestionUtils.createSave();
+
+            // 사이클 2 생성 전에 좋아요 → 좋아요는 사이클과 무관
+            testQuestionLikeUtils.createSave(sharedQuestion, cycleMember);
+
+            // 사이클 2 생성 후 original을 오늘의 질문으로 할당
+            QuestionCycle cycleTwo = testQuestionCycleUtils.createSave_With_StartDate(cycleMember, today, TIMEZONE, 2);
+            testDailyQuestionUtils.createSave(cycleMember, cycleTwo, original);
+
+            // when - 리로드 시 original 제외 → sharedQuestion 선택
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, cycleMemberToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.questionCycle").value(2))
+                    .andExpect(jsonPath("$.liked").value(true));
+        }
+    }
+
+    @Nested
     @DisplayName("예외 테스트")
     class ExceptionTest {
 
