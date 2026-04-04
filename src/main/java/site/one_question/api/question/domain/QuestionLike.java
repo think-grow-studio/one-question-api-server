@@ -1,7 +1,6 @@
 package site.one_question.api.question.domain;
 
 import jakarta.persistence.*;
-import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,15 +29,7 @@ public class QuestionLike extends BaseEntity {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @Column(name = "liked_at", nullable = false)
-    private Instant likedAt;
-
     public static QuestionLike create(Question question, Member member) {
-        return new QuestionLike(
-                null,
-                question,
-                member,
-                Instant.now()
-        );
+        return new QuestionLike(null, question, member);
     }
 }

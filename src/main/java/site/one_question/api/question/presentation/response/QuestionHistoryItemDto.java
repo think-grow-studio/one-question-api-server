@@ -53,7 +53,10 @@ public record QuestionHistoryItemDto(
         Long questionCycle,
 
         @Schema(description = "질문 변경 횟수", example = "2")
-        Long changeCount
+        Long changeCount,
+
+        @Schema(description = "좋아요 여부", example = "false")
+        boolean liked
     ) {}
 
     @Schema(description = "답변 정보")
@@ -88,14 +91,15 @@ public record QuestionHistoryItemDto(
         return new QuestionHistoryItemDto(date, Status.NO_QUESTION, null, null);
     }
 
-    public static QuestionHistoryItemDto from(DailyQuestion dailyQuestion, String timezone) {
+    public static QuestionHistoryItemDto from(DailyQuestion dailyQuestion, String timezone, boolean liked) {
         QuestionInfoDto questionInfo = new QuestionInfoDto(
             dailyQuestion.getId(),
             dailyQuestion.getQuestion().getId(),
             dailyQuestion.getQuestion().getContent(),
             dailyQuestion.getQuestion().getDescription(),
             (long) dailyQuestion.getQuestionCycle().getCycleNumber(),
-            (long) dailyQuestion.getChangeCount()
+            (long) dailyQuestion.getChangeCount(),
+            liked
         );
 
         DailyQuestionAnswer answer = dailyQuestion.getAnswer();

@@ -23,12 +23,16 @@ public record ServeDailyQuestionResponse(
         Long questionCycle,
 
         @Schema(description = "질문 변경 횟수", example = "2")
-        Long changeCount
+        Long changeCount,
+
+        @Schema(description = "좋아요 여부", example = "false")
+        boolean liked
 ) {
     public static ServeDailyQuestionResponse from(
             DailyQuestion dailyQuestion,
             Question question,
-            QuestionCycle cycle
+            QuestionCycle cycle,
+            boolean liked
     ) {
         return new ServeDailyQuestionResponse(
                 dailyQuestion.getId(),
@@ -36,7 +40,8 @@ public record ServeDailyQuestionResponse(
                 question.getContent(),
                 question.getDescription(),
                 (long) cycle.getCycleNumber(),
-                (long) dailyQuestion.getChangeCount()
+                (long) dailyQuestion.getChangeCount(),
+                liked
         );
     }
 }

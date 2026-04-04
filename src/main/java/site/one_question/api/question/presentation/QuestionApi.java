@@ -118,7 +118,8 @@ public interface QuestionApi {
                                                             "content": "오늘 하루에 제목을 붙인다면?",
                                                             "description": "ex) 폭풍 전야",
                                                             "questionCycle": 1,
-                                                            "changeCount": 2
+                                                            "changeCount": 2,
+                                                            "liked": true
                                                         },
                                                         "answer": {
                                                             "dailyAnswerId": 156,
@@ -135,7 +136,8 @@ public interface QuestionApi {
                                                             "content": "오늘 가장 감사했던 순간은?",
                                                             "description": null,
                                                             "questionCycle": 1,
-                                                            "changeCount": 0
+                                                            "changeCount": 0,
+                                                            "liked": false
                                                         },
                                                         "answer": null
                                                     },
