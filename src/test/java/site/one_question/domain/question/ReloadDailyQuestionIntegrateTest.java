@@ -79,7 +79,9 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.changeCount").value(1));
+                    .andExpect(jsonPath("$.changeCount").value(1))
+                    .andExpect(jsonPath("$.candidates.length()").value(2))
+                    .andExpect(jsonPath("$.candidates[1].selected").value(true));
 
             // then
             entityManager.clear();

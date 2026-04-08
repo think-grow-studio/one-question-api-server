@@ -13,8 +13,11 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
 
     @Query("""
         SELECT dq FROM DailyQuestion dq
+        JOIN FETCH dq.member m
+        LEFT JOIN FETCH dq.question q
+        LEFT JOIN FETCH dq.questionCycle qc
         LEFT JOIN FETCH dq.answer
-        WHERE dq.member.id = :memberId AND dq.questionDate = :date
+        WHERE m.id = :memberId AND dq.questionDate = :date
         """)
     Optional<DailyQuestion> findByMemberIdAndDate(
         @Param("memberId") Long memberId,

@@ -55,7 +55,11 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
                 .andExpect(jsonPath("$.dailyQuestionId").exists())
                 .andExpect(jsonPath("$.content").exists())
                 .andExpect(jsonPath("$.questionCycle").value(1))
-                .andExpect(jsonPath("$.changeCount").value(0));
+                .andExpect(jsonPath("$.changeCount").value(0))
+                .andExpect(jsonPath("$.candidates").isArray())
+                .andExpect(jsonPath("$.candidates.length()").value(1))
+                .andExpect(jsonPath("$.candidates[0].receivedOrder").value(1))
+                .andExpect(jsonPath("$.candidates[0].selected").value(true));
 
         // DB 검증 - DailyQuestion 생성 확인
         assertThat(dailyQuestionRepository.findAll())

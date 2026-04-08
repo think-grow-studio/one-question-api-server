@@ -4,10 +4,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import site.one_question.api.answerpost.domain.AnswerPost;
 import site.one_question.api.question.domain.DailyQuestion;
 import site.one_question.api.question.domain.DailyQuestionAnswer;
+import site.one_question.api.question.domain.DailyQuestionCandidate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Schema(description = "질문 히스토리 항목")
 public record QuestionHistoryItemDto(
@@ -22,7 +26,10 @@ public record QuestionHistoryItemDto(
         QuestionInfoDto question,
 
         @Schema(description = "답변 정보 (status가 ANSWERED일 때만 존재)")
-        AnswerInfoDto answer
+        AnswerInfoDto answer,
+
+        @Schema(description = "후보 질문 목록 (UNANSWERED일 때만 존재, 나머지는 null)")
+        List<CandidateDto> candidates
 ) {
     public enum Status {
         @Schema(description = "질문 받음 + 답변 완료")
@@ -34,6 +41,27 @@ public record QuestionHistoryItemDto(
         @Schema(description = "질문 없음")
         NO_QUESTION
     }
+
+    @Schema(description = "후보 질문 항목")
+    public record CandidateDto(
+            @Schema(description = "질문 ID", example = "7")
+            Long questionId,
+
+            @Schema(description = "질문 내용", example = "오늘 하루에 제목을 붙인다면?")
+            String content,
+
+            @Schema(description = "질문 보충 설명", example = "ex) 폭풍 전야", nullable = true)
+            String description,
+
+            @Schema(description = "받은 순서 (1=최초, 2=첫 번째 리로드, ...)", example = "1")
+            int receivedOrder,
+
+            @Schema(description = "좋아요 여부", example = "false")
+            boolean liked,
+
+            @Schema(description = "현재 선택된 질문 여부", example = "true")
+            boolean selected
+    ) {}
 
     @Schema(description = "질문 정보")
     public record QuestionInfoDto(
@@ -88,10 +116,16 @@ public record QuestionHistoryItemDto(
     }
 
     public static QuestionHistoryItemDto noQuestion(LocalDate date) {
-        return new QuestionHistoryItemDto(date, Status.NO_QUESTION, null, null);
+        return new QuestionHistoryItemDto(date, Status.NO_QUESTION, null, null, null);
     }
 
-    public static QuestionHistoryItemDto from(DailyQuestion dailyQuestion, String timezone, boolean liked) {
+    public static QuestionHistoryItemDto from(
+            DailyQuestion dailyQuestion,
+            String timezone,
+            boolean liked,
+            List<DailyQuestionCandidate> candidates,
+            Set<Long> likedQuestionIds
+    ) {
         QuestionInfoDto questionInfo = new QuestionInfoDto(
             dailyQuestion.getId(),
             dailyQuestion.getQuestion().getId(),
@@ -104,11 +138,23 @@ public record QuestionHistoryItemDto(
 
         DailyQuestionAnswer answer = dailyQuestion.getAnswer();
         if (answer == null) {
+            Long currentQuestionId = dailyQuestion.getQuestion().getId();
+            List<CandidateDto> candidateDtos = candidates.stream()
+                .map(c -> new CandidateDto(
+                    c.getQuestion().getId(),
+                    c.getQuestion().getContent(),
+                    c.getQuestion().getDescription(),
+                    c.getReceivedOrder(),
+                    likedQuestionIds.contains(c.getQuestion().getId()),
+                    c.getQuestion().getId().equals(currentQuestionId)
+                ))
+                .collect(Collectors.toList());
             return new QuestionHistoryItemDto(
                 dailyQuestion.getQuestionDate(),
                 Status.UNANSWERED,
                 questionInfo,
-                null
+                null,
+                candidateDtos
             );
         }
 
@@ -119,7 +165,8 @@ public record QuestionHistoryItemDto(
             dailyQuestion.getQuestionDate(),
             Status.ANSWERED,
             questionInfo,
-            AnswerInfoDto.from(answer, timezone, published)
+            AnswerInfoDto.from(answer, timezone, published),
+            null
         );
     }
 }

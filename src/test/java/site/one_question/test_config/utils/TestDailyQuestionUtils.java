@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.question.domain.DailyQuestion;
+import site.one_question.api.question.domain.DailyQuestionCandidate;
+import site.one_question.api.question.domain.DailyQuestionCandidateRepository;
 import site.one_question.api.question.domain.DailyQuestionRepository;
 import site.one_question.api.question.domain.Question;
 import site.one_question.api.question.domain.QuestionCycle;
@@ -15,6 +17,7 @@ import site.one_question.api.question.domain.QuestionCycle;
 public class TestDailyQuestionUtils {
 
     private final DailyQuestionRepository dailyQuestionRepository;
+    private final DailyQuestionCandidateRepository candidateRepository;
 
     public DailyQuestion createSave(Member member, QuestionCycle cycle, Question question) {
         DailyQuestion dailyQuestion = DailyQuestion.create(
@@ -24,7 +27,9 @@ public class TestDailyQuestionUtils {
                 LocalDate.now(ZoneId.of("Asia/Seoul")),
                 "Asia/Seoul"
         );
-        return dailyQuestionRepository.save(dailyQuestion);
+        DailyQuestion saved = dailyQuestionRepository.save(dailyQuestion);
+        candidateRepository.save(DailyQuestionCandidate.create(saved, question, 1));
+        return saved;
     }
 
     public DailyQuestion createSave_With_Date(Member member, QuestionCycle cycle, Question question, LocalDate date) {
@@ -35,7 +40,9 @@ public class TestDailyQuestionUtils {
                 date,
                 "Asia/Seoul"
         );
-        return dailyQuestionRepository.save(dailyQuestion);
+        DailyQuestion saved = dailyQuestionRepository.save(dailyQuestion);
+        candidateRepository.save(DailyQuestionCandidate.create(saved, question, 1));
+        return saved;
     }
 
     public DailyQuestion createSave_With_Timezone(Member member, QuestionCycle cycle, Question question, String timezone) {
@@ -46,6 +53,8 @@ public class TestDailyQuestionUtils {
                 LocalDate.now(ZoneId.of("Asia/Seoul")),
                 timezone
         );
-        return dailyQuestionRepository.save(dailyQuestion);
+        DailyQuestion saved = dailyQuestionRepository.save(dailyQuestion);
+        candidateRepository.save(DailyQuestionCandidate.create(saved, question, 1));
+        return saved;
     }
 }

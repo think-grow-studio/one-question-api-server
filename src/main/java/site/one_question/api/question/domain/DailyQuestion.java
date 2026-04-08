@@ -84,6 +84,10 @@ public class DailyQuestion extends BaseEntity {
         this.changeCount++;
     }
 
+    public void selectQuestion(Question candidateQuestion) {
+        this.question = candidateQuestion;
+    }
+
     public boolean canChangeQuestion() {
         return changeCount < member.getPermission().getMaxQuestionChangeCount();
     }

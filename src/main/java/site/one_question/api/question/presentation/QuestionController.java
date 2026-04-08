@@ -17,6 +17,7 @@ import site.one_question.global.common.HttpHeaderConstant;
 import site.one_question.api.question.application.QuestionApplication;
 import site.one_question.api.question.presentation.request.CreateAnswerRequest;
 import site.one_question.api.question.domain.HistoryDirection;
+import site.one_question.api.question.presentation.request.SelectCandidateRequest;
 import site.one_question.api.question.presentation.request.UpdateAnswerRequest;
 import site.one_question.api.question.presentation.response.CreateAnswerResponse;
 import site.one_question.api.question.presentation.response.ServeDailyQuestionResponse;
@@ -72,6 +73,19 @@ public class QuestionController implements QuestionApi {
         log.info("[API] 질문 재요청 시작 - date: {}", date);
         ServeDailyQuestionResponse response = questionApplication.reloadDailyQuestion(memberId, date, timezone);
         log.info("[API] 질문 재요청 요청 종료 - date: {}", date);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    @PatchMapping("/daily/{date}/candidate")
+    public ResponseEntity<ServeDailyQuestionResponse> selectCandidate(
+            @PrincipalId Long memberId,
+            @PathVariable LocalDate date,
+            @RequestBody SelectCandidateRequest request
+    ) {
+        log.info("[API] 후보 질문 선택 요청 시작 - date: {}, questionId: {}", date, request.questionId());
+        ServeDailyQuestionResponse response = questionApplication.selectCandidate(memberId, date, request.questionId());
+        log.info("[API] 후보 질문 선택 요청 종료 - date: {}", date);
         return ResponseEntity.ok(response);
     }
 

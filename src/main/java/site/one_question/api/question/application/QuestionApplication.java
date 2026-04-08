@@ -17,6 +17,8 @@ import site.one_question.api.member.domain.MemberService;
 import site.one_question.api.question.domain.DatePolicy;
 import site.one_question.api.question.domain.DailyQuestion;
 import site.one_question.api.question.domain.DailyQuestionAnswerService;
+import site.one_question.api.question.domain.DailyQuestionCandidate;
+import site.one_question.api.question.domain.DailyQuestionCandidateRepository;
 import site.one_question.api.question.domain.QuestionLike;
 import site.one_question.api.question.domain.QuestionLikeService;
 import site.one_question.api.question.domain.QuestionService;
@@ -51,14 +53,19 @@ public class QuestionApplication {
     private final AnswerPostService answerPostService;
     private final QuestionLikeService questionLikeService;
     private final QuestionService questionService;
+    private final DailyQuestionCandidateRepository candidateRepository;
 
     public ServeDailyQuestionResponse serveDailyQuestion(Long memberId, LocalDate date, String timezone) {
         // 멱등성: 기존 질문 있으면 반환
         Optional<DailyQuestion> existing = dailyQuestionService.findByMemberIdAndDate(memberId, date);
         if (existing.isPresent()) {
             DailyQuestion dailyQuestion = existing.get();
-            boolean liked = questionLikeService.existsByQuestionIdAndMemberId(dailyQuestion.getQuestion().getId(), memberId);
-            return ServeDailyQuestionResponse.from(dailyQuestion, dailyQuestion.getQuestion(), dailyQuestion.getQuestionCycle(), liked);
+            List<DailyQuestionCandidate> candidates =
+                dailyQuestionService.findCandidatesByDailyQuestion(dailyQuestion);
+            List<Long> questionIds = candidates.stream()
+                .map(c -> c.getQuestion().getId()).collect(Collectors.toList());
+            Set<Long> likedIds = questionLikeService.findLikedQuestionIdsByMember(questionIds, memberId);
+            return ServeDailyQuestionResponse.from(dailyQuestion, candidates, likedIds);
         }
 
         Member member = memberService.findById(memberId);
@@ -74,7 +81,11 @@ public class QuestionApplication {
         );
         DailyQuestion saved = dailyQuestionService.save(dailyQuestion);
 
-        return ServeDailyQuestionResponse.from(saved, selectedQuestion, cycle, false);
+        DailyQuestionCandidate initial = dailyQuestionService.saveCandidate(saved, selectedQuestion, 1);
+
+        List<Long> questionIds = List.of(selectedQuestion.getId());
+        Set<Long> likedIds = questionLikeService.findLikedQuestionIdsByMember(questionIds, memberId);
+        return ServeDailyQuestionResponse.from(saved, List.of(initial), likedIds);
     }
 
     public ServeDailyQuestionResponse reloadDailyQuestion(Long memberId, LocalDate date, String timezone) {
@@ -92,18 +103,53 @@ public class QuestionApplication {
                 dailyQuestion.getMember().getPermission().getMaxQuestionChangeCount());
         }
 
-        // 4. 새 질문 선택 (현재 질문 제외)
+        // 4. 기존 후보 전체 조회
+        List<DailyQuestionCandidate> candidates =
+            dailyQuestionService.findCandidatesByDailyQuestion(dailyQuestion);
+        List<Long> candidateIds = candidates.stream()
+            .map(c -> c.getQuestion().getId()).collect(Collectors.toList());
+
+        // 5. 기존 후보 제외하고 새 질문 선택
         Question newQuestion = dailyQuestionService.selectRandomQuestionExcluding(
             dailyQuestion.getQuestionCycle(),
-            dailyQuestion.getQuestion()
+            candidateIds
         );
 
-        // 5. 질문 변경
+        // 6. 새 후보 저장
+        int nextOrder = candidates.size() + 1;
+        DailyQuestionCandidate newCandidate = dailyQuestionService.saveCandidate(dailyQuestion, newQuestion, nextOrder);
+
+        // 7. 질문 변경 (자동 선택 + changeCount++)
         dailyQuestion.changeQuestion(newQuestion);
 
-        // 6. 응답 반환
-        boolean liked = questionLikeService.existsByQuestionIdAndMemberId(newQuestion.getId(), memberId);
-        return ServeDailyQuestionResponse.from(dailyQuestion, newQuestion, dailyQuestion.getQuestionCycle(), liked);
+        // 8. 응답 반환 (기존 후보 + 새 후보 in-memory 합산)
+        List<DailyQuestionCandidate> allCandidates = new ArrayList<>(candidates);
+        allCandidates.add(newCandidate);
+        List<Long> questionIds = allCandidates.stream()
+            .map(c -> c.getQuestion().getId()).collect(Collectors.toList());
+        Set<Long> likedIds = questionLikeService.findLikedQuestionIdsByMember(questionIds, memberId);
+        return ServeDailyQuestionResponse.from(dailyQuestion, allCandidates, likedIds);
+    }
+
+    public ServeDailyQuestionResponse selectCandidate(Long memberId, LocalDate date, Long questionId) {
+        DailyQuestion dailyQuestion = dailyQuestionService.findByMemberIdAndDateOrThrow(memberId, date);
+
+        if (dailyQuestion.hasAnswer()) {
+            throw new AlreadyAnsweredException();
+        }
+
+        // 후보 목록에 있는지 검증
+        DailyQuestionCandidate candidate = dailyQuestionService.findCandidateOrThrow(dailyQuestion, questionId);
+
+        Question question = candidate.getQuestion();
+        dailyQuestion.selectQuestion(question);
+
+        List<DailyQuestionCandidate> allCandidates =
+            dailyQuestionService.findCandidatesByDailyQuestion(dailyQuestion);
+        List<Long> questionIds = allCandidates.stream()
+            .map(c -> c.getQuestion().getId()).collect(Collectors.toList());
+        Set<Long> likedIds = questionLikeService.findLikedQuestionIdsByMember(questionIds, memberId);
+        return ServeDailyQuestionResponse.from(dailyQuestion, allCandidates, likedIds);
     }
 
     @Transactional(readOnly = true)
@@ -154,27 +200,52 @@ public class QuestionApplication {
         List<DailyQuestion> dailyQuestions = dailyQuestionService.findByMemberIdAndDateBetween(
             memberId, startDate, endDate);
 
-        // 좋아요 여부 배치 조회
-        List<Long> questionIds = dailyQuestions.stream()
+        // UNANSWERED dailyQuestion ID 배치 수집
+        List<Long> unansweredIds = dailyQuestions.stream()
+            .filter(dq -> !dq.hasAnswer())
+            .map(DailyQuestion::getId)
+            .collect(Collectors.toList());
+
+        // UNANSWERED candidates 배치 조회 및 그룹화
+        Map<Long, List<DailyQuestionCandidate>> dqIdWithCandidates;
+        if (unansweredIds.isEmpty()) {
+            dqIdWithCandidates = Map.of();
+        } else {
+            dqIdWithCandidates = dailyQuestionService.findCandidatesByDailyQuestionIds(unansweredIds)
+                .stream()
+                .collect(Collectors.groupingBy(c -> c.getDailyQuestion().getId()));
+        }
+
+        // 좋아요 배치 조회용 ID 수집
+        // - 각 날짜의 선택된 질문 ID (answered/unanswered 모두)
+        List<Long> selectedQuestionIds = dailyQuestions.stream()
             .map(dq -> dq.getQuestion().getId())
             .collect(Collectors.toList());
-        Set<Long> likedQuestionIds = questionLikeService.findLikedQuestionIdsByMember(questionIds, memberId);
+        // - 미답변 날짜의 후보 질문 ID (answered는 후보 삭제되어 없음)
+        List<Long> candidateQuestionIds = dqIdWithCandidates.values().stream()
+            .flatMap(List::stream)
+            .map(c -> c.getQuestion().getId())
+            .collect(Collectors.toList());
+        List<Long> allQuestionIds = new ArrayList<>(selectedQuestionIds);
+        allQuestionIds.addAll(candidateQuestionIds);
+        Set<Long> likedQuestionIds = questionLikeService.findLikedQuestionIdsByMember(allQuestionIds, memberId);
 
         // DailyQuestion을 날짜 기준 Map으로 변환
-        Map<LocalDate, DailyQuestion> dailyQuestionMap = dailyQuestions.stream()
+        Map<LocalDate, DailyQuestion> dateWithQuestions = dailyQuestions.stream()
             .collect(Collectors.toMap(DailyQuestion::getQuestionDate, Function.identity()));
 
         // 날짜별 히스토리 아이템 생성 (최신순)
         List<QuestionHistoryItemDto> histories = new ArrayList<>();
         LocalDate currentDate = endDate;
         while (!currentDate.isBefore(startDate)) {
-            DailyQuestion dq = dailyQuestionMap.get(currentDate);
+            DailyQuestion dq = dateWithQuestions.get(currentDate);
 
             if (dq == null) {
                 histories.add(QuestionHistoryItemDto.noQuestion(currentDate));
             } else {
                 boolean liked = likedQuestionIds.contains(dq.getQuestion().getId());
-                histories.add(QuestionHistoryItemDto.from(dq, timezone, liked));
+                List<DailyQuestionCandidate> candidates = dqIdWithCandidates.getOrDefault(dq.getId(), List.of());
+                histories.add(QuestionHistoryItemDto.from(dq, timezone, liked, candidates, likedQuestionIds));
             }
             currentDate = currentDate.minusDays(1);
         }
@@ -202,7 +273,10 @@ public class QuestionApplication {
         DailyQuestionAnswer answer = DailyQuestionAnswer.create(dailyQuestion, member, content, timezone);
         DailyQuestionAnswer saved = answerService.save(answer);
 
-        // 5. 공개 게시 요청 시 AnswerPost 생성
+        // 5. 후보 삭제
+        dailyQuestionService.deleteCandidatesBy(dailyQuestion);
+
+        // 6. 공개 게시 요청 시 AnswerPost 생성
         if (publish) {
             answerPostService.publishOrCreate(saved, member);
         }
@@ -236,7 +310,7 @@ public class QuestionApplication {
         DailyQuestionAnswer answer = dailyQuestion.getAnswer();
         answer.updateContent(content);
 
-        if (Objects.equals(Boolean.TRUE,publish)) {
+        if (Objects.equals(Boolean.TRUE, publish)) {
             Member member = memberService.findById(memberId);
             answerPostService.publishOrCreate(answer, member);
         } else if (Boolean.FALSE.equals(publish)) {

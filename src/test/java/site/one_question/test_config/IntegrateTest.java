@@ -22,6 +22,7 @@ import site.one_question.api.question.domain.QuestionLikeRepository;
 import site.one_question.api.auth.domain.RefreshTokenRepository;
 import site.one_question.api.member.domain.MemberRepository;
 import site.one_question.api.question.domain.DailyQuestionAnswerRepository;
+import site.one_question.api.question.domain.DailyQuestionCandidateRepository;
 import site.one_question.api.question.domain.DailyQuestionRepository;
 import site.one_question.api.question.domain.QuestionCycleRepository;
 import site.one_question.api.question.domain.QuestionRepository;
@@ -67,6 +68,9 @@ public abstract class IntegrateTest {
 
     @Autowired
     protected DailyQuestionAnswerRepository dailyQuestionAnswerRepository;
+
+    @Autowired
+    protected DailyQuestionCandidateRepository dailyQuestionCandidateRepository;
 
     @Autowired
     protected AnswerPostRepository answerPostRepository;

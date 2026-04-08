@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +73,8 @@ class DailyQuestionServiceTest {
         Long secondDayId = secondDayQuestion.getId();
         Long thirdDayInitialId = thirdDayQuestion.getId();
 
-        Question firstReload = dailyQuestionService.selectRandomQuestionExcluding(cycle, todayDailyQuestion.getQuestion());
+        List<Long> firstCandidateIds = List.of(thirdDayQuestion.getId());
+        Question firstReload = dailyQuestionService.selectRandomQuestionExcluding(cycle, firstCandidateIds);
 
         assertThat(firstReload.getId())
                 .as("첫 번째 새로고침 후 질문이 첫째 날 질문과 달라야 함 (첫째 날 ID: %d)", firstDayId)
@@ -85,7 +87,8 @@ class DailyQuestionServiceTest {
         todayDailyQuestion.changeQuestion(firstReload);
         dailyQuestionRepository.save(todayDailyQuestion);
 
-        Question secondReload = dailyQuestionService.selectRandomQuestionExcluding(cycle, todayDailyQuestion.getQuestion());
+        List<Long> secondCandidateIds = List.of(thirdDayQuestion.getId(), firstReload.getId());
+        Question secondReload = dailyQuestionService.selectRandomQuestionExcluding(cycle, secondCandidateIds);
 
         assertThat(secondReload.getId())
                 .as("두 번째 새로고침 후 질문이 첫째 날 질문과 달라야 함 (첫째 날 ID: %d)", firstDayId)
@@ -107,7 +110,8 @@ class DailyQuestionServiceTest {
         testDailyQuestionUtils.createSave_With_Date(member, cycle, onlyQuestion, today.minusDays(1));
         DailyQuestion todayDailyQuestion = testDailyQuestionUtils.createSave_With_Date(member, cycle, onlyQuestion, today);
 
-        assertThatThrownBy(() -> dailyQuestionService.selectRandomQuestionExcluding(cycle, todayDailyQuestion.getQuestion()))
+        List<Long> candidateIds = List.of(onlyQuestion.getId());
+        assertThatThrownBy(() -> dailyQuestionService.selectRandomQuestionExcluding(cycle, candidateIds))
                 .as("후보 질문이 없을 때 QuestionNotFoundException이 발생해야 함")
                 .isInstanceOf(QuestionNotFoundException.class);
     }

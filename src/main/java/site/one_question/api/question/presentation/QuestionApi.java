@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import site.one_question.api.question.presentation.request.CreateAnswerRequest;
 import site.one_question.api.question.domain.HistoryDirection;
+import site.one_question.api.question.presentation.request.SelectCandidateRequest;
 import site.one_question.api.question.presentation.request.UpdateAnswerRequest;
 import site.one_question.api.question.presentation.response.CreateAnswerResponse;
 import site.one_question.api.question.presentation.response.GetQuestionHistoryResponse;
@@ -136,10 +137,28 @@ public interface QuestionApi {
                                                             "content": "오늘 가장 감사했던 순간은?",
                                                             "description": null,
                                                             "questionCycle": 1,
-                                                            "changeCount": 0,
+                                                            "changeCount": 1,
                                                             "liked": false
                                                         },
-                                                        "answer": null
+                                                        "answer": null,
+                                                        "candidates": [
+                                                            {
+                                                                "questionId": 5,
+                                                                "content": "오늘 아침 기분은 어땠나요?",
+                                                                "description": null,
+                                                                "receivedOrder": 1,
+                                                                "liked": false,
+                                                                "selected": false
+                                                            },
+                                                            {
+                                                                "questionId": 3,
+                                                                "content": "오늘 가장 감사했던 순간은?",
+                                                                "description": null,
+                                                                "receivedOrder": 2,
+                                                                "liked": false,
+                                                                "selected": true
+                                                            }
+                                                        ]
                                                     },
                                                     {
                                                         "date": "2024-01-13",
@@ -427,6 +446,76 @@ public interface QuestionApi {
                     )
             )
             UpdateAnswerRequest request
+    );
+
+    @Operation(
+            summary = "후보 질문 선택",
+            description = """
+                    이미 받은 후보 질문 중 하나를 오늘의 질문으로 선택합니다.
+                    리로드 횟수를 소모하지 않습니다.
+                    답변이 완료된 경우 선택이 불가합니다.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "선택 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ServeDailyQuestionResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "이미 답변한 질문",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "QUESTION-005",
+                                                "message": "이미 답변한 질문은 변경할 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "후보 질문을 찾을 수 없음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "QUESTION-010",
+                                                "message": "해당 후보 질문을 찾을 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    ResponseEntity<ServeDailyQuestionResponse> selectCandidate(
+            Long memberId,
+
+            @Parameter(
+                    name = "date",
+                    description = "날짜 (yyyy-MM-dd 형식)",
+                    example = "2024-01-15",
+                    required = true,
+                    in = ParameterIn.PATH
+            )
+            LocalDate date,
+
+            @RequestBody(
+                    description = "선택할 후보 질문 정보",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = SelectCandidateRequest.class)
+                    )
+            )
+            SelectCandidateRequest request
     );
 
     @Operation(
