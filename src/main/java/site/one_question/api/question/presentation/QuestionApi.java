@@ -54,7 +54,7 @@ public interface QuestionApi {
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                                "code": "QUESTION_NOT_FOUND",
+                                                "code": "QUESTION-001",
                                                 "message": "해당 날짜의 질문을 찾을 수 없습니다."
                                             }
                                             """
@@ -237,7 +237,7 @@ public interface QuestionApi {
                                             name = "재할당 횟수 초과",
                                             value = """
                                                     {
-                                                        "code": "RELOAD_LIMIT_EXCEEDED",
+                                                        "code": "QUESTION-008",
                                                         "message": "질문 변경 횟수를 초과했습니다. (최대 2회)"
                                                     }
                                                     """
@@ -262,7 +262,7 @@ public interface QuestionApi {
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                                "code": "DAILY_QUESTION_NOT_FOUND",
+                                                "code": "QUESTION-002",
                                                 "message": "해당 날짜의 질문을 찾을 수 없습니다."
                                             }
                                             """
@@ -339,7 +339,7 @@ public interface QuestionApi {
                                             name = "질문 없음",
                                             value = """
                                                     {
-                                                        "code": "DAILY_QUESTION_NOT_FOUND",
+                                                        "code": "QUESTION-002",
                                                         "message": "해당 날짜의 질문을 찾을 수 없습니다."
                                                     }
                                                     """
@@ -404,7 +404,7 @@ public interface QuestionApi {
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                                "code": "ANSWER_ALREADY_EXISTS",
+                                                "code": "QUESTION-004",
                                                 "message": "해당 질문에 이미 답변이 존재합니다."
                                             }
                                             """
@@ -419,7 +419,7 @@ public interface QuestionApi {
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                                "code": "DAILY_QUESTION_NOT_FOUND",
+                                                "code": "QUESTION-002",
                                                 "message": "해당 날짜의 질문을 찾을 수 없습니다."
                                             }
                                             """
@@ -486,7 +486,7 @@ public interface QuestionApi {
                                             name = "질문 없음",
                                             value = """
                                                     {
-                                                        "code": "DAILY_QUESTION_NOT_FOUND",
+                                                        "code": "QUESTION-002",
                                                         "message": "해당 날짜의 질문을 찾을 수 없습니다."
                                                     }
                                                     """
@@ -495,7 +495,7 @@ public interface QuestionApi {
                                             name = "답변 없음",
                                             value = """
                                                     {
-                                                        "code": "ANSWER_NOT_FOUND",
+                                                        "code": "QUESTION-003",
                                                         "message": "해당 질문에 대한 답변을 찾을 수 없습니다."
                                                     }
                                                     """
