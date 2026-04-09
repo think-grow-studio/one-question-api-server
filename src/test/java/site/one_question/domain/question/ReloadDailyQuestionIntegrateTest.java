@@ -1,6 +1,7 @@
 package site.one_question.domain.question;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -81,6 +82,9 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.changeCount").value(1))
                     .andExpect(jsonPath("$.candidates.length()").value(2))
+                    .andExpect(jsonPath("$.candidates[0].receivedOrder").value(1))
+                    .andExpect(jsonPath("$.candidates[0].selected").value(false))
+                    .andExpect(jsonPath("$.candidates[1].receivedOrder").value(2))
                     .andExpect(jsonPath("$.candidates[1].selected").value(true));
 
             // then
@@ -301,6 +305,157 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
     }
 
     @Nested
+    @DisplayName("후보 제외 및 fallback 테스트")
+    class CandidateExclusionTest {
+
+        @Test
+        @DisplayName("이전 날 DailyQuestion의 후보로 노출됐던 질문은 오늘 reload 시 나오지 않는다")
+        void reload_excludes_previous_day_candidate_question() throws Exception {
+            // given - 질문 4개: 어제 serve+reload(2개), 오늘 serve(1개), 미사용 fresh(1개)
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            LocalDate yesterday = today.minusDays(1);
+
+            Member newMember = testMemberUtils.createSave_With_JoinedDate(yesterday);
+            String newToken = testAuthUtils.createBearerToken(newMember);
+
+            long q1Id = testQuestionUtils.createSave().getId();
+            long q2Id = testQuestionUtils.createSave().getId();
+            long q3Id = testQuestionUtils.createSave().getId();
+            long q4Id = testQuestionUtils.createSave().getId();
+
+            // 어제: serve → reload (후보 2개 생성)
+            String yServeRes = mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", yesterday)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            long yServedId = objectMapper.readTree(yServeRes).get("questionId").asLong();
+
+            String yReloadRes = mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", yesterday)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            long yReloadId = objectMapper.readTree(yReloadRes).get("questionId").asLong();
+
+            // 오늘: serve (serve는 served+candidatesInCycle 모두 제외하므로 미사용 질문이 배정됨)
+            String tServeRes = mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            long tServedId = objectMapper.readTree(tServeRes).get("questionId").asLong();
+
+            // when - 오늘 reload (candidateQInCycle에 어제 후보 2개가 포함되어 모두 제외됨)
+            String todayReloadRes = mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            long todayReloadedId = objectMapper.readTree(todayReloadRes).get("questionId").asLong();
+
+            // then - 4개 중 사용된 3개를 제외한 나머지 fresh 질문이 결정적으로 선택됨
+            long freshId = java.util.stream.Stream.of(q1Id, q2Id, q3Id, q4Id)
+                    .filter(id -> id != yServedId && id != yReloadId && id != tServedId)
+                    .findFirst().orElseThrow();
+            assertThat(todayReloadedId)
+                    .as("어제 후보(serve+reload) 및 오늘 serve가 모두 제외되고 미사용 fresh 질문(ID: %d)이 선택되어야 함", freshId)
+                    .isEqualTo(freshId);
+        }
+
+        @Test
+        @DisplayName("served+candidate 모두 제외 시 served만 제외 fallback 동작 - 질문 풀 소진 상황")
+        void reload_falls_back_to_served_only_when_pool_exhausted() throws Exception {
+            // given - 질문 3개: 어제 serve→reload(2개), 오늘 serve(1개 - 유일하게 남은 질문)
+            // allExcluded(servedInCycle + candidatesInCycle + todayExclude) = 전체 3개 → 빈 풀
+            // fallback 1: servedInCycle만 제외 = [어제reload결과, 오늘serve결과] → 어제최초(yServedId) 선택
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            LocalDate yesterday = today.minusDays(1);
+
+            Member newMember = testMemberUtils.createSave_With_JoinedDate(yesterday);
+            String newToken = testAuthUtils.createBearerToken(newMember);
+
+            testQuestionUtils.createSave();
+            testQuestionUtils.createSave();
+            testQuestionUtils.createSave();
+
+            // 어제: serve → reload
+            String yServeRes = mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", yesterday)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            long yServedId = objectMapper.readTree(yServeRes).get("questionId").asLong();
+
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", yesterday)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            // 오늘: serve (serve가 served+candidatesInCycle 모두 제외 → 3번째 질문이 결정적으로 배정됨)
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            // when - 오늘 reload
+            String todayReloadRes = mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            long todayReloadedId = objectMapper.readTree(todayReloadRes).get("questionId").asLong();
+
+            // then - fallback 1: servedInCycle 제외 후 어제 최초 제공된 질문(현재 served 아님,candidate 임)이 선택됨
+            assertThat(todayReloadedId)
+                    .as("fallback 1: 어제 최초 제공된 질문(yServedId: %d)이 선택되어야 함", yServedId)
+                    .isEqualTo(yServedId);
+        }
+
+        @Test
+        @DisplayName("served만 제외해도 비면 오늘 후보만 제외하는 fallback 2로 이전 제공 질문 재사용")
+        void reload_falls_back_to_excluding_only_today_candidates() throws Exception {
+            // given - 질문 2개: 어제 serve(1개), 오늘 serve(1개 - 유일하게 남은 질문)
+            // allExcluded = 전체 → fallback 1: servedInCycle[어제,오늘] = 전체 → fallback 2: todayExclude[오늘] → 어제(yServedId)
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            LocalDate yesterday = today.minusDays(1);
+
+            Member newMember = testMemberUtils.createSave_With_JoinedDate(yesterday);
+            String newToken = testAuthUtils.createBearerToken(newMember);
+
+            testQuestionUtils.createSave();
+            testQuestionUtils.createSave();
+
+            // 어제: serve
+            String yServeRes = mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", yesterday)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            long yServedId = objectMapper.readTree(yServeRes).get("questionId").asLong();
+
+            // 오늘: serve (유일하게 남은 질문이 결정적으로 배정됨)
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            // when - 오늘 reload (fallback 2 동작)
+            String todayReloadRes = mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            long todayReloadedId = objectMapper.readTree(todayReloadRes).get("questionId").asLong();
+
+            // then - fallback 2: 오늘 후보만 제외 → 어제 제공 질문이 재사용됨
+            assertThat(todayReloadedId)
+                    .as("fallback 2: 어제 제공 질문(yServedId: %d)이 재사용되어야 함", yServedId)
+                    .isEqualTo(yServedId);
+        }
+    }
+
+    @Nested
     @DisplayName("예외 테스트")
     class ExceptionTest {
 
@@ -359,6 +514,26 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.RELOAD_LIMIT_EXCEEDED.getCode()));
+        }
+
+        @Test
+        @DisplayName("선택 가능한 질문이 더 없으면 404 QUESTION_NOT_FOUND")
+        void reload_when_no_question_available_throws_404() throws Exception {
+            // given - 활성 질문이 1개뿐인 상태에서 serve API로 이미 할당됨
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            testQuestionUtils.createSave();
+
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            // when & then - 풀에 더 이상 선택 가능한 질문 없음
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.QUESTION_NOT_FOUND.getCode()));
         }
     }
 }
