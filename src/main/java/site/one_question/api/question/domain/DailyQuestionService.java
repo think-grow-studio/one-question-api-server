@@ -131,6 +131,14 @@ public class DailyQuestionService {
             .orElseThrow(CandidateNotFoundException::new);
     }
 
+    public List<LocalDate> findAssignedDatesInCycleBefore(QuestionCycle cycle, Long questionId, LocalDate beforeDate) {
+        return dailyQuestionRepository.findAssignedDatesByCycleIdAndQuestionIdBeforeDate(
+            cycle.getId(),
+            questionId,
+            beforeDate
+        );
+    }
+
     public DailyQuestionCandidate saveCandidate(DailyQuestion dailyQuestion, Question question, int order) {
         return dailyQuestionCandidateRepository.save(
             DailyQuestionCandidate.create(dailyQuestion, question, order));

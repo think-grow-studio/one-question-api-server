@@ -11,10 +11,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import site.one_question.api.question.presentation.request.CheckCandidateCycleRequest;
 import site.one_question.api.question.presentation.request.CreateAnswerRequest;
 import site.one_question.api.question.domain.HistoryDirection;
-import site.one_question.api.question.presentation.request.SelectCandidateRequest;
+import site.one_question.api.question.presentation.request.SelectQuestionRequest;
 import site.one_question.api.question.presentation.request.UpdateAnswerRequest;
+import site.one_question.api.question.presentation.response.CheckCandidateCycleResponse;
 import site.one_question.api.question.presentation.response.CreateAnswerResponse;
 import site.one_question.api.question.presentation.response.GetQuestionHistoryResponse;
 import site.one_question.api.question.presentation.response.ServeDailyQuestionResponse;
@@ -244,7 +246,7 @@ public interface QuestionApi {
                                             name = "이미 답변한 질문",
                                             value = """
                                                     {
-                                                        "code": "ALREADY_ANSWERED",
+                                                        "code": "QUESTION-005",
                                                         "message": "이미 답변한 질문은 변경할 수 없습니다."
                                                     }
                                                     """
@@ -288,6 +290,93 @@ public interface QuestionApi {
                     in = ParameterIn.HEADER
             )
             String timezone
+    );
+
+    @Operation(
+            summary = "후보 질문 cycle 중복 확인",
+            description = """
+                    오늘 후보 질문으로 노출된 특정 questionId가 같은 사이클 내 이전 날짜에 이미 배정된 적이 있는지 확인합니다.
+                    같은 사이클 내 이전 날짜에 이미 배정된 적이 있으면 alreadyAssignedInCycle=true와 해당 날짜 목록을 반환합니다.
+                    오늘 날짜의 후보 노출 자체는 과거 배정 이력에 포함하지 않습니다.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "후보 질문 cycle 중복 확인 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CheckCandidateCycleResponse.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "사이클 내 기존 배정 이력 있음",
+                                            value = """
+                                                    {
+                                                        "alreadyAssignedInCycle": true,
+                                                        "previouslyAssignedDates": ["2026-04-07"]
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "사이클 내 기존 배정 이력 없음",
+                                            value = """
+                                                    {
+                                                        "alreadyAssignedInCycle": false,
+                                                        "previouslyAssignedDates": []
+                                                    }
+                                                    """
+                                    )
+                            }
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "해당 날짜의 질문이 없거나 오늘 후보에 없는 질문",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = {
+                                    @ExampleObject(
+                                            name = "질문 없음",
+                                            value = """
+                                                    {
+                                                        "code": "DAILY_QUESTION_NOT_FOUND",
+                                                        "message": "해당 날짜의 질문을 찾을 수 없습니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "후보 없음",
+                                            value = """
+                                                    {
+                                                        "code": "QUESTION-010",
+                                                        "message": "해당 후보 질문을 찾을 수 없습니다."
+                                                    }
+                                                    """
+                                    )
+                            }
+                    )
+            )
+    })
+    ResponseEntity<CheckCandidateCycleResponse> checkCandidateCycle(
+            Long memberId,
+
+            @Parameter(
+                    name = "date",
+                    description = "후보 질문을 확인할 날짜 (yyyy-MM-dd 형식)",
+                    example = "2026-04-09",
+                    required = true,
+                    in = ParameterIn.PATH
+            )
+            LocalDate date,
+
+            @RequestBody(
+                    description = "cycle 중복 여부를 확인할 후보 질문 정보",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CheckCandidateCycleRequest.class)
+                    )
+            )
+            CheckCandidateCycleRequest request
     );
 
     @Operation(
@@ -447,9 +536,9 @@ public interface QuestionApi {
     );
 
     @Operation(
-            summary = "후보 질문 선택",
+            summary = "오늘 질문 선택",
             description = """
-                    이미 받은 후보 질문 중 하나를 오늘의 질문으로 선택합니다.
+                    이미 받은 후보 질문 중 하나를 선택해 오늘의 질문으로 확정합니다.
                     리로드 횟수를 소모하지 않습니다.
                     답변이 완료된 경우 선택이 불가합니다.
                     """
@@ -494,7 +583,7 @@ public interface QuestionApi {
                     )
             )
     })
-    ResponseEntity<ServeDailyQuestionResponse> selectCandidate(
+    ResponseEntity<ServeDailyQuestionResponse> selectQuestion(
             Long memberId,
 
             @Parameter(
@@ -507,13 +596,13 @@ public interface QuestionApi {
             LocalDate date,
 
             @RequestBody(
-                    description = "선택할 후보 질문 정보",
+                    description = "오늘 질문으로 선택할 후보 질문 정보",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = SelectCandidateRequest.class)
+                            schema = @Schema(implementation = SelectQuestionRequest.class)
                     )
             )
-            SelectCandidateRequest request
+            SelectQuestionRequest request
     );
 
     @Operation(

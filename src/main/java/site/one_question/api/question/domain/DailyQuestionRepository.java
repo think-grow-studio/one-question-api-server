@@ -28,6 +28,19 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
     List<Long> findQuestionIdsByCycleId(@Param("questionCycleId") Long questionCycleId);
 
     @Query("""
+        SELECT dq.questionDate FROM DailyQuestion dq
+        WHERE dq.questionCycle.id = :questionCycleId
+        AND dq.question.id = :questionId
+        AND dq.questionDate < :beforeDate
+        ORDER BY dq.questionDate ASC
+        """)
+    List<LocalDate> findAssignedDatesByCycleIdAndQuestionIdBeforeDate(
+        @Param("questionCycleId") Long questionCycleId,
+        @Param("questionId") Long questionId,
+        @Param("beforeDate") LocalDate beforeDate
+    );
+
+    @Query("""
         SELECT dq FROM DailyQuestion dq
         LEFT JOIN FETCH dq.question q
         LEFT JOIN FETCH dq.questionCycle qc

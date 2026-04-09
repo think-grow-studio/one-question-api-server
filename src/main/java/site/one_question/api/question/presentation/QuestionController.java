@@ -15,10 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 import site.one_question.api.auth.infrastructure.annotation.PrincipalId;
 import site.one_question.global.common.HttpHeaderConstant;
 import site.one_question.api.question.application.QuestionApplication;
+import site.one_question.api.question.presentation.request.CheckCandidateCycleRequest;
 import site.one_question.api.question.presentation.request.CreateAnswerRequest;
 import site.one_question.api.question.domain.HistoryDirection;
-import site.one_question.api.question.presentation.request.SelectCandidateRequest;
+import site.one_question.api.question.presentation.request.SelectQuestionRequest;
 import site.one_question.api.question.presentation.request.UpdateAnswerRequest;
+import site.one_question.api.question.presentation.response.CheckCandidateCycleResponse;
 import site.one_question.api.question.presentation.response.CreateAnswerResponse;
 import site.one_question.api.question.presentation.response.ServeDailyQuestionResponse;
 import site.one_question.api.question.presentation.response.GetQuestionHistoryResponse;
@@ -77,15 +79,29 @@ public class QuestionController implements QuestionApi {
     }
 
     @Override
-    @PatchMapping("/daily/{date}/candidate")
-    public ResponseEntity<ServeDailyQuestionResponse> selectCandidate(
+    @PatchMapping("/daily/{date}")
+    public ResponseEntity<ServeDailyQuestionResponse> selectQuestion(
             @PrincipalId Long memberId,
             @PathVariable LocalDate date,
-            @RequestBody SelectCandidateRequest request
+            @RequestBody SelectQuestionRequest request
     ) {
-        log.info("[API] 후보 질문 선택 요청 시작 - date: {}, questionId: {}", date, request.questionId());
-        ServeDailyQuestionResponse response = questionApplication.selectCandidate(memberId, date, request.questionId());
-        log.info("[API] 후보 질문 선택 요청 종료 - date: {}", date);
+        log.info("[API] 오늘 질문 선택 요청 시작 - date: {}, questionId: {}", date, request.questionId());
+        ServeDailyQuestionResponse response = questionApplication.selectQuestion(memberId, date, request.questionId());
+        log.info("[API] 오늘 질문 선택 요청 종료 - date: {}", date);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    @PostMapping("/daily/{date}/candidates/cycle-check")
+    public ResponseEntity<CheckCandidateCycleResponse> checkCandidateCycle(
+            @PrincipalId Long memberId,
+            @PathVariable LocalDate date,
+            @RequestBody CheckCandidateCycleRequest request
+    ) {
+        log.info("[API] 후보 질문 cycle 중복 확인 요청 시작 - date: {}, questionId: {}", date, request.questionId());
+        CheckCandidateCycleResponse response = questionApplication.checkCandidateCycle(
+                memberId, date, request.questionId());
+        log.info("[API] 후보 질문 cycle 중복 확인 요청 종료 - date: {}, questionId: {}", date, request.questionId());
         return ResponseEntity.ok(response);
     }
 

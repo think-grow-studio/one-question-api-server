@@ -35,6 +35,7 @@ import site.one_question.api.question.domain.exception.AnswerNotFoundException;
 import site.one_question.api.answerpost.domain.AnswerPost;
 import site.one_question.api.answerpost.domain.AnswerPostService;
 import site.one_question.api.question.presentation.response.CreateAnswerResponse;
+import site.one_question.api.question.presentation.response.CheckCandidateCycleResponse;
 import site.one_question.api.question.presentation.response.GetQuestionHistoryResponse;
 import site.one_question.api.question.presentation.response.QuestionHistoryItemDto;
 import site.one_question.api.question.presentation.response.ServeDailyQuestionResponse;
@@ -129,7 +130,7 @@ public class QuestionApplication {
         return ServeDailyQuestionResponse.from(dailyQuestion, allCandidates, likedIds);
     }
 
-    public ServeDailyQuestionResponse selectCandidate(Long memberId, LocalDate date, Long questionId) {
+    public ServeDailyQuestionResponse selectQuestion(Long memberId, LocalDate date, Long questionId) {
         DailyQuestion dailyQuestion = dailyQuestionService.findByMemberIdAndDateOrThrow(memberId, date);
 
         if (dailyQuestion.hasAnswer()) {
@@ -147,6 +148,19 @@ public class QuestionApplication {
         Set<Long> likedIds = questionLikeService.findLikedQuestionIdsByMember(
             List.of(question.getId()), memberId);
         return ServeDailyQuestionResponse.from(dailyQuestion, allCandidates, likedIds);
+    }
+
+    @Transactional(readOnly = true)
+    public CheckCandidateCycleResponse checkCandidateCycle(Long memberId, LocalDate date, Long questionId) {
+        DailyQuestion dailyQuestion = dailyQuestionService.findByMemberIdAndDateOrThrow(memberId, date);
+
+        // 오늘 후보에 실제 포함된 질문만 확인 대상이다.
+        dailyQuestionService.findCandidateOrThrow(dailyQuestion, questionId);
+
+        List<LocalDate> assignedDates = dailyQuestionService.findAssignedDatesInCycleBefore(
+            dailyQuestion.getQuestionCycle(), questionId, date
+        );
+        return CheckCandidateCycleResponse.from(assignedDates);
     }
 
     @Transactional(readOnly = true)
