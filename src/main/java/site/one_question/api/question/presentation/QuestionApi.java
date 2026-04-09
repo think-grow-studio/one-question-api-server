@@ -147,7 +147,6 @@ public interface QuestionApi {
                                                                 "content": "오늘 아침 기분은 어땠나요?",
                                                                 "description": null,
                                                                 "receivedOrder": 1,
-                                                                "liked": false,
                                                                 "selected": false
                                                             },
                                                             {
@@ -155,7 +154,6 @@ public interface QuestionApi {
                                                                 "content": "오늘 가장 감사했던 순간은?",
                                                                 "description": null,
                                                                 "receivedOrder": 2,
-                                                                "liked": false,
                                                                 "selected": true
                                                             }
                                                         ]

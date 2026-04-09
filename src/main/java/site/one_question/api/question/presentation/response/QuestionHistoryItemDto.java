@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Schema(description = "질문 히스토리 항목")
@@ -55,9 +54,6 @@ public record QuestionHistoryItemDto(
 
             @Schema(description = "받은 순서 (1=최초, 2=첫 번째 리로드, ...)", example = "1")
             int receivedOrder,
-
-            @Schema(description = "좋아요 여부", example = "false")
-            boolean liked,
 
             @Schema(description = "현재 선택된 질문 여부", example = "true")
             boolean selected
@@ -123,8 +119,7 @@ public record QuestionHistoryItemDto(
             DailyQuestion dailyQuestion,
             String timezone,
             boolean liked,
-            List<DailyQuestionCandidate> candidates,
-            Set<Long> likedQuestionIds
+            List<DailyQuestionCandidate> candidates
     ) {
         QuestionInfoDto questionInfo = new QuestionInfoDto(
             dailyQuestion.getId(),
@@ -145,7 +140,6 @@ public record QuestionHistoryItemDto(
                     c.getQuestion().getContent(),
                     c.getQuestion().getDescription(),
                     c.getReceivedOrder(),
-                    likedQuestionIds.contains(c.getQuestion().getId()),
                     c.getQuestion().getId().equals(currentQuestionId)
                 ))
                 .collect(Collectors.toList());
