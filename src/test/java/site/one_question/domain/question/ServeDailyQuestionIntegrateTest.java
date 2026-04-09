@@ -384,7 +384,7 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
                     .andExpect(status().isOk());
 
             // 초기 질문(order=1)으로 재선택
-            mockMvc.perform(patch(QUESTIONS_API + "/daily/{date}/candidate", today)
+            mockMvc.perform(patch(QUESTIONS_API + "/daily/{date}", today)
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(Map.of("questionId", initialQuestionId))))
