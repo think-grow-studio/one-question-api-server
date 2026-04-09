@@ -8,11 +8,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import site.one_question.global.common.HttpHeaderConstant;
 import site.one_question.api.member.domain.Member;
@@ -21,6 +25,7 @@ import site.one_question.api.question.domain.DailyQuestion;
 import site.one_question.api.question.domain.Question;
 import site.one_question.api.question.domain.QuestionCycle;
 import site.one_question.api.question.domain.exception.QuestionExceptionSpec;
+import site.one_question.api.question.presentation.request.CreateAnswerRequest;
 import site.one_question.test_config.IntegrateTest;
 
 @DisplayName("오늘의 질문 새로고침 통합 테스트")
@@ -413,6 +418,113 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
         }
 
         @Test
+        @DisplayName("질문 10개가 모두 한 번씩 노출된 뒤 reload 시 served가 아닌 과거 candidate-only 질문에서 선택된다")
+        void reload_selects_from_candidate_only_pool_before_reusing_served_questions() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            LocalDate fiveDaysAgo = today.minusDays(5);
+            LocalDate fourDaysAgo = today.minusDays(4);
+            LocalDate threeDaysAgo = today.minusDays(3);
+            LocalDate twoDaysAgo = today.minusDays(2);
+            LocalDate yesterday = today.minusDays(1);
+
+            Member newMember = testMemberUtils.createSave_With_JoinedDate(fiveDaysAgo);
+            String newToken = testAuthUtils.createBearerToken(newMember);
+            testQuestionCycleUtils.createSave_With_StartDate(newMember, fiveDaysAgo, TIMEZONE, 1);
+
+            for (int i = 0; i < 10; i++) {
+                testQuestionUtils.createSave();
+            }
+
+            Set<Long> exposedQuestionIds = new HashSet<>();
+            Set<Long> servedIds = new HashSet<>();
+            Set<Long> candidateOnlyIds = new HashSet<>();
+
+            String answerBody = objectMapper.writeValueAsString(new CreateAnswerRequest("테스트 답변", false));
+
+            // 5일,4일,3일전 질문 제공 + 질문 답변
+            for (LocalDate answeredDate : List.of(fiveDaysAgo, fourDaysAgo, threeDaysAgo)) {
+                long servedId = extractQuestionId(mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", answeredDate)
+                                .header(HttpHeaders.AUTHORIZATION, newToken)
+                                .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                        .andExpect(status().isOk())
+                        .andReturn().getResponse().getContentAsString());
+
+                exposedQuestionIds.add(servedId);
+                servedIds.add(servedId);
+
+                mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/answer", answeredDate)
+                                .header(HttpHeaders.AUTHORIZATION, newToken)
+                                .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(answerBody))
+                        .andExpect(status().isOk());
+            }
+
+            // 2일, 1일전 질문 제공 + 리로드 2번
+            for (LocalDate reloadedDate : List.of(twoDaysAgo, yesterday)) {
+                long initialId = extractQuestionId(mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", reloadedDate)
+                                .header(HttpHeaders.AUTHORIZATION, newToken)
+                                .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                        .andExpect(status().isOk())
+                        .andReturn().getResponse().getContentAsString());
+
+                long firstReloadId = extractQuestionId(mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", reloadedDate)
+                                .header(HttpHeaders.AUTHORIZATION, newToken)
+                                .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                        .andExpect(status().isOk())
+                        .andReturn().getResponse().getContentAsString());
+
+                long secondReloadId = extractQuestionId(mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", reloadedDate)
+                                .header(HttpHeaders.AUTHORIZATION, newToken)
+                                .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                        .andExpect(status().isOk())
+                        .andReturn().getResponse().getContentAsString());
+
+                exposedQuestionIds.add(initialId);
+                exposedQuestionIds.add(firstReloadId);
+                exposedQuestionIds.add(secondReloadId);
+
+                candidateOnlyIds.add(initialId);
+                candidateOnlyIds.add(firstReloadId);
+                servedIds.add(secondReloadId);
+            }
+
+            long todayServedId = extractQuestionId(mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString());
+            exposedQuestionIds.add(todayServedId);
+            servedIds.add(todayServedId);
+
+            assertThat(exposedQuestionIds)
+                    .as("serve 6회 + reload 4회로 질문 10개가 모두 한 번씩 노출되어야 함")
+                    .hasSize(10);
+            assertThat(servedIds)
+                    .as("답변 완료 3개 + reload 2회 완료일의 최종 선택 2개 + 오늘 serve 1개")
+                    .hasSize(6);
+            assertThat(candidateOnlyIds)
+                    .as("reload 2회씩 수행한 2일에서 최종 선택되지 않은 후보 4개")
+                    .hasSize(4);
+            assertThat(candidateOnlyIds)
+                    .as("candidate-only 집합은 served 집합과 겹치면 안 됨")
+                    .doesNotContainAnyElementsOf(servedIds);
+
+            long todayReloadedId = extractQuestionId(mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, newToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString());
+
+            assertThat(servedIds)
+                    .as("fallback 1에서는 served 질문이 다시 선택되면 안 됨")
+                    .doesNotContain(todayReloadedId);
+            assertThat(candidateOnlyIds)
+                    .as("primary pool이 비고 fallback 1이 동작하므로 과거 candidate-only 질문 중 하나가 선택되어야 함")
+                    .contains(todayReloadedId);
+        }
+
+        @Test
         @DisplayName("served만 제외해도 비면 오늘 후보만 제외하는 fallback 2로 이전 제공 질문 재사용")
         void reload_falls_back_to_excluding_only_today_candidates() throws Exception {
             // given - 질문 2개: 어제 serve(1개), 오늘 serve(1개 - 유일하게 남은 질문)
@@ -535,5 +647,9 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.QUESTION_NOT_FOUND.getCode()));
         }
+    }
+
+    private long extractQuestionId(String responseBody) throws Exception {
+        return objectMapper.readTree(responseBody).get("questionId").asLong();
     }
 }
