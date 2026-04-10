@@ -31,13 +31,13 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
         SELECT dq.questionDate FROM DailyQuestion dq
         WHERE dq.questionCycle.id = :questionCycleId
         AND dq.question.id = :questionId
-        AND dq.questionDate < :beforeDate
+        AND dq.questionDate != :excludeDate
         ORDER BY dq.questionDate ASC
         """)
-    List<LocalDate> findAssignedDatesByCycleIdAndQuestionIdBeforeDate(
+    List<LocalDate> findAssignedDatesByCycleIdAndQuestionIdExcludingDate(
         @Param("questionCycleId") Long questionCycleId,
         @Param("questionId") Long questionId,
-        @Param("beforeDate") LocalDate beforeDate
+        @Param("excludeDate") LocalDate excludeDate
     );
 
     @Query("""

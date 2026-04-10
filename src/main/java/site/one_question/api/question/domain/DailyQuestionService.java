@@ -131,11 +131,11 @@ public class DailyQuestionService {
             .orElseThrow(CandidateNotFoundException::new);
     }
 
-    public List<LocalDate> findAssignedDatesInCycleBefore(QuestionCycle cycle, Long questionId, LocalDate beforeDate) {
-        return dailyQuestionRepository.findAssignedDatesByCycleIdAndQuestionIdBeforeDate(
+    public List<LocalDate> findAssignedDatesInCycleExcluding(QuestionCycle cycle, Long questionId, LocalDate excludeDate) {
+        return dailyQuestionRepository.findAssignedDatesByCycleIdAndQuestionIdExcludingDate(
             cycle.getId(),
             questionId,
-            beforeDate
+            excludeDate
         );
     }
 

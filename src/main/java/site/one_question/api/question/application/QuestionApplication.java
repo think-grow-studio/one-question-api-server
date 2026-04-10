@@ -157,7 +157,7 @@ public class QuestionApplication {
         // 오늘 후보에 실제 포함된 질문만 확인 대상이다.
         dailyQuestionService.findCandidateOrThrow(dailyQuestion, questionId);
 
-        List<LocalDate> assignedDates = dailyQuestionService.findAssignedDatesInCycleBefore(
+        List<LocalDate> assignedDates = dailyQuestionService.findAssignedDatesInCycleExcluding(
             dailyQuestion.getQuestionCycle(), questionId, date
         );
         return CheckCandidateCycleResponse.from(assignedDates);
