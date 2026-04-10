@@ -74,6 +74,118 @@ class CreateAnswerIntegrateTest extends IntegrateTest {
             assertThat(answerPostRepository.findAll())
                     .as("publish=false이므로 AnswerPost가 생성되지 않아야 함")
                     .isEmpty();
+            assertThat(dailyQuestionCandidateRepository.findAll())
+                    .as("답변 작성 후 DailyQuestionCandidate가 모두 삭제되어야 함")
+                    .isEmpty();
+        }
+
+        @Test
+        @DisplayName("reload 후 후보 2개인 상태에서 답변 작성 시 모든 후보 삭제")
+        void create_answer_after_reload_deletes_all_candidates() throws Exception {
+            // given - reload하여 후보를 2개로 만든다
+            testQuestionUtils.createSave(); // reload용 추가 질문
+
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            assertThat(dailyQuestionCandidateRepository.findAll())
+                    .as("reload 후 후보가 2개여야 함")
+                    .hasSize(2);
+
+            // when - 답변 작성
+            CreateAnswerRequest request = new CreateAnswerRequest("리로드 후 답변", false);
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/answer", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk());
+
+            // then - 모든 후보 삭제 확인
+            assertThat(dailyQuestionCandidateRepository.findAll())
+                    .as("답변 작성 후 모든 DailyQuestionCandidate가 삭제되어야 함")
+                    .isEmpty();
+        }
+
+        @Test
+        @DisplayName("이전 날 후보가 있어도 오늘 답변 작성 시 오늘 후보만 삭제")
+        void create_answer_deletes_only_today_candidates_when_previous_day_candidates_exist() throws Exception {
+            // given
+            LocalDate yesterday = today.minusDays(1);
+            QuestionCycle cycle = dailyQuestion.getQuestionCycle();
+            Question yesterdayQuestion = testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave_With_Date(member, cycle, yesterdayQuestion, yesterday);
+
+            for (int i = 0; i < 8; i++) {
+                testQuestionUtils.createSave();
+            }
+
+            assertThat(questionRepository.findAll())
+                    .as("테스트 질문 풀은 총 10개여야 함")
+                    .hasSize(10);
+
+            for (int i = 0; i < 2; i++) {
+                mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", yesterday)
+                                .header(HttpHeaders.AUTHORIZATION, token)
+                                .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                        .andExpect(status().isOk());
+            }
+
+            for (int i = 0; i < 2; i++) {
+                mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                                .header(HttpHeaders.AUTHORIZATION, token)
+                                .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                        .andExpect(status().isOk());
+            }
+
+            entityManager.clear();
+            DailyQuestion yesterdayDailyQuestion = dailyQuestionRepository.findByMemberIdAndDate(member.getId(), yesterday)
+                    .orElseThrow();
+            DailyQuestion todayDailyQuestion = dailyQuestionRepository.findByMemberIdAndDate(member.getId(), today)
+                    .orElseThrow();
+
+            assertThat(dailyQuestionCandidateRepository.findAllByDailyQuestionOrderByReceivedOrderAsc(yesterdayDailyQuestion))
+                    .as("이전 날 후보가 3개여야 함")
+                    .hasSize(3);
+            assertThat(dailyQuestionCandidateRepository.findAllByDailyQuestionOrderByReceivedOrderAsc(todayDailyQuestion))
+                    .as("오늘 후보가 3개여야 함")
+                    .hasSize(3);
+
+            // when
+            CreateAnswerRequest request = new CreateAnswerRequest("오늘 답변", false);
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/answer", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content").value("오늘 답변"))
+                    .andExpect(jsonPath("$.published").value(false));
+
+            // then
+            entityManager.clear();
+            DailyQuestion answeredToday = dailyQuestionRepository.findByMemberIdAndDate(member.getId(), today)
+                    .orElseThrow();
+            DailyQuestion previousDay = dailyQuestionRepository.findByMemberIdAndDate(member.getId(), yesterday)
+                    .orElseThrow();
+
+            assertThat(answeredToday.hasAnswer())
+                    .as("오늘 DailyQuestion에는 답변이 연결되어야 함")
+                    .isTrue();
+            assertThat(dailyQuestionAnswerRepository.findAll())
+                    .as("오늘 답변이 1개 생성되어야 함")
+                    .hasSize(1);
+            assertThat(dailyQuestionCandidateRepository.findAllByDailyQuestionOrderByReceivedOrderAsc(answeredToday))
+                    .as("오늘 후보는 모두 삭제되어야 함")
+                    .isEmpty();
+            assertThat(dailyQuestionCandidateRepository.findAllByDailyQuestionOrderByReceivedOrderAsc(previousDay))
+                    .as("이전 날 후보 3개는 그대로 남아야 함")
+                    .hasSize(3);
+            assertThat(dailyQuestionCandidateRepository.findAll())
+                    .as("남은 후보는 이전 날 후보 3개뿐이어야 함")
+                    .hasSize(3);
         }
 
         @Test

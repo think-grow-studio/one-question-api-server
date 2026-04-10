@@ -33,6 +33,7 @@ import site.one_question.api.answerpost.domain.AnswerPostLikeService;
 import site.one_question.api.answerpost.domain.AnswerPostService;
 import site.one_question.api.question.domain.QuestionLikeService;
 import site.one_question.api.question.domain.DailyQuestionAnswerService;
+import site.one_question.api.question.domain.DailyQuestionCandidateRepository;
 import site.one_question.api.question.domain.DailyQuestionService;
 import site.one_question.api.question.domain.QuestionCycleService;
 
@@ -50,6 +51,7 @@ public class AuthApplication {
     private final QuestionCycleService questionCycleService;
     private final DailyQuestionService dailyQuestionService;
     private final DailyQuestionAnswerService dailyQuestionAnswerService;
+    private final DailyQuestionCandidateRepository dailyQuestionCandidateRepository;
     private final AnswerPostLikeService answerPostLikeService;
     private final QuestionLikeService questionLikeService;
     private final AnswerPostService answerPostService;
@@ -203,6 +205,7 @@ public class AuthApplication {
         questionLikeService.deleteByMemberId(memberId);
         answerPostService.deleteByMemberId(memberId);
         dailyQuestionAnswerService.deleteByMemberId(memberId);
+        dailyQuestionCandidateRepository.deleteByMemberId(memberId);
         dailyQuestionService.deleteByMemberId(memberId);
         questionCycleService.deleteByMemberId(memberId);
         memberService.withdraw(memberId);

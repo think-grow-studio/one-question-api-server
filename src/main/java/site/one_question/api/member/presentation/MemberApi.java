@@ -33,14 +33,35 @@ public interface MemberApi {
                     description = "인증 실패",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    value = """
-                                            {
-                                                "code": "UNAUTHORIZED",
-                                                "message": "인증이 필요합니다."
-                                            }
-                                            """
-                            )
+                            examples = {
+                                    @ExampleObject(
+                                            name = "인증 정보 없음",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-007",
+                                                        "message": "로그인이 필요합니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "토큰 무효",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-009",
+                                                        "message": "유효하지 않은 토큰입니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "토큰 만료",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-010",
+                                                        "message": "토큰이 만료되었습니다."
+                                                    }
+                                                    """
+                                    )
+                            }
                     )
             )
     })
@@ -63,14 +84,35 @@ public interface MemberApi {
                     description = "인증 실패",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    value = """
-                                            {
-                                                "code": "UNAUTHORIZED",
-                                                "message": "인증이 필요합니다."
-                                            }
-                                            """
-                            )
+                            examples = {
+                                    @ExampleObject(
+                                            name = "인증 정보 없음",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-007",
+                                                        "message": "로그인이 필요합니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "토큰 무효",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-009",
+                                                        "message": "유효하지 않은 토큰입니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "토큰 만료",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-010",
+                                                        "message": "토큰이 만료되었습니다."
+                                                    }
+                                                    """
+                                    )
+                            }
                     )
             )
     })

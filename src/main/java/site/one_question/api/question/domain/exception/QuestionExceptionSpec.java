@@ -61,6 +61,12 @@ public enum QuestionExceptionSpec implements ExceptionSpec {
         "QUESTION-009",
         "첫 번째 질문 사이클을 찾을 수 없음",
         "error.question.first-cycle-not-found"
+    ),
+    CANDIDATE_NOT_FOUND(
+        HttpStatus.NOT_FOUND,
+        "QUESTION-010",
+        "후보 질문을 찾을 수 없음",
+        "error.question.candidate-not-found"
     );
 
     private final HttpStatus status;

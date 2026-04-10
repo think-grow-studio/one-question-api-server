@@ -285,17 +285,47 @@ public interface AuthApi {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "리프레시 토큰이 유효하지 않음",
+                    description = "리프레시 토큰 관련 인증 실패",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    value = """
-                                            {
-                                                "code": "AUTH-001",
-                                                "message": "인증 토큰이 유효하지 않습니다."
-                                            }
-                                            """
-                            )
+                            examples = {
+                                    @ExampleObject(
+                                            name = "토큰 형식 오류",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-001",
+                                                        "message": "로그인을 다시 해주세요."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "리프레시 토큰 없음",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-002",
+                                                        "message": "로그인을 다시 해주세요."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "리프레시 토큰 만료",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-003",
+                                                        "message": "로그인을 다시 해주세요."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "리프레시 토큰 불일치",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-006",
+                                                        "message": "로그인을 다시 해주세요."
+                                                    }
+                                                    """
+                                    )
+                            }
                     )
             )
     })
@@ -324,14 +354,35 @@ public interface AuthApi {
                     description = "인증 실패",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    value = """
-                                            {
-                                                "code": "UNAUTHORIZED",
-                                                "message": "인증이 필요합니다."
-                                            }
-                                            """
-                            )
+                            examples = {
+                                    @ExampleObject(
+                                            name = "인증 정보 없음",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-007",
+                                                        "message": "로그인이 필요합니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "토큰 무효",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-009",
+                                                        "message": "유효하지 않은 토큰입니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "토큰 만료",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-010",
+                                                        "message": "토큰이 만료되었습니다."
+                                                    }
+                                                    """
+                                    )
+                            }
                     )
             )
     })
@@ -351,14 +402,35 @@ public interface AuthApi {
                     description = "인증 실패",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    value = """
-                                            {
-                                                "code": "UNAUTHORIZED",
-                                                "message": "인증이 필요합니다."
-                                            }
-                                            """
-                            )
+                            examples = {
+                                    @ExampleObject(
+                                            name = "인증 정보 없음",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-007",
+                                                        "message": "로그인이 필요합니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "토큰 무효",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-009",
+                                                        "message": "유효하지 않은 토큰입니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "토큰 만료",
+                                            value = """
+                                                    {
+                                                        "code": "AUTH-010",
+                                                        "message": "토큰이 만료되었습니다."
+                                                    }
+                                                    """
+                                    )
+                            }
                     )
             ),
             @ApiResponse(

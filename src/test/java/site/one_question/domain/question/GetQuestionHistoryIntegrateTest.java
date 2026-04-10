@@ -2,6 +2,7 @@ package site.one_question.domain.question;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -12,6 +13,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import site.one_question.api.question.presentation.request.CreateAnswerRequest;
 import site.one_question.global.common.HttpHeaderConstant;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.question.domain.DailyQuestion;
@@ -172,7 +175,7 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
     class StatusTest {
 
         @Test
-        @DisplayName("답변 완료 질문은 ANSWERED 상태와 answer 정보 반환")
+        @DisplayName("답변 완료 질문은 ANSWERED 상태와 answer 정보 반환, candidates는 null")
         void answered_question_returns_answered_status() throws Exception {
             // given
             LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
@@ -192,11 +195,13 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
                     .andExpect(jsonPath("$.histories[0].question").exists())
                     .andExpect(jsonPath("$.histories[0].question.dailyQuestionId").value(dailyQuestion.getId()))
                     .andExpect(jsonPath("$.histories[0].answer").exists())
-                    .andExpect(jsonPath("$.histories[0].answer.dailyAnswerId").value(answer.getId()));
+                    .andExpect(jsonPath("$.histories[0].answer.dailyAnswerId").value(answer.getId()))
+                    // 답변 완료된 DailyQuestion은 createAnswer 시 candidates 삭제되므로 null
+                    .andExpect(jsonPath("$.histories[0].candidates").doesNotExist());
         }
 
         @Test
-        @DisplayName("미답변 질문은 UNANSWERED 상태와 answer null 반환")
+        @DisplayName("미답변 질문은 UNANSWERED 상태와 answer null, candidates 배열 반환")
         void unanswered_question_returns_unanswered_status() throws Exception {
             // given
             LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
@@ -214,7 +219,12 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
                     .andExpect(jsonPath("$.histories[0].status").value(Status.UNANSWERED.name()))
                     .andExpect(jsonPath("$.histories[0].question").exists())
                     .andExpect(jsonPath("$.histories[0].question.dailyQuestionId").value(dailyQuestion.getId()))
-                    .andExpect(jsonPath("$.histories[0].answer").doesNotExist());
+                    .andExpect(jsonPath("$.histories[0].answer").doesNotExist())
+                    // 미답변 DailyQuestion은 candidates 배열이 존재하며 초기 질문(order=1) 포함
+                    .andExpect(jsonPath("$.histories[0].candidates").isArray())
+                    .andExpect(jsonPath("$.histories[0].candidates.length()").value(1))
+                    .andExpect(jsonPath("$.histories[0].candidates[0].receivedOrder").value(1))
+                    .andExpect(jsonPath("$.histories[0].candidates[0].selected").value(true));
         }
 
         @Test
@@ -269,6 +279,83 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
                     .andExpect(jsonPath("$.histories[1].status").value(Status.UNANSWERED.name()))
                     .andExpect(jsonPath("$.histories[2].date").value(twoDaysAgo.toString()))
                     .andExpect(jsonPath("$.histories[2].status").value(Status.NO_QUESTION.name()));
+        }
+
+        @Test
+        @DisplayName("3개 날짜 혼합: 답변 완료 / 리로드 2회 미답변 / 리로드 없이 미답변 - candidates 정확히 반환")
+        void three_days_mixed_answered_two_reloads_and_no_reload() throws Exception {
+            // given - 질문 풀 생성 (serve 3회 + reload 2회 = 최소 5개, 여유있게 10개)
+            for (int i = 0; i < 10; i++) {
+                testQuestionUtils.createSave();
+            }
+
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            LocalDate yesterday = today.minusDays(1);
+            LocalDate twoDaysAgo = today.minusDays(2);
+
+            String answerBody = objectMapper.writeValueAsString(new CreateAnswerRequest("테스트 답변", false));
+
+            // [twoDaysAgo] 질문 제공 → 답변 완료
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", twoDaysAgo)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/answer", twoDaysAgo)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(answerBody))
+                    .andExpect(status().isOk());
+
+            // [yesterday] 질문 제공 → 리로드 2회 → 미답변 (후보 3개)
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", yesterday)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", yesterday)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", yesterday)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            // [today] 질문 제공 → 미답변, 리로드 없음 (후보 1개)
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            // when & then - 히스토리 조회 (최신순: today → yesterday → twoDaysAgo)
+            mockMvc.perform(get(HISTORIES_API)
+                            .param("baseDate", today.toString())
+                            .param("historyDirection", HistoryDirection.PREVIOUS.name())
+                            .param("size", "3")
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.histories.length()").value(3))
+                    // [0] today - 리로드 없음, 후보 1개
+                    .andExpect(jsonPath("$.histories[0].date").value(today.toString()))
+                    .andExpect(jsonPath("$.histories[0].status").value(Status.UNANSWERED.name()))
+                    .andExpect(jsonPath("$.histories[0].candidates.length()").value(1))
+                    .andExpect(jsonPath("$.histories[0].candidates[0].receivedOrder").value(1))
+                    .andExpect(jsonPath("$.histories[0].candidates[0].selected").value(true))
+                    // [1] yesterday - 리로드 2회, 후보 3개, 마지막 reload 질문이 현재 선택
+                    .andExpect(jsonPath("$.histories[1].date").value(yesterday.toString()))
+                    .andExpect(jsonPath("$.histories[1].status").value(Status.UNANSWERED.name()))
+                    .andExpect(jsonPath("$.histories[1].candidates.length()").value(3))
+                    .andExpect(jsonPath("$.histories[1].candidates[0].receivedOrder").value(1))
+                    .andExpect(jsonPath("$.histories[1].candidates[0].selected").value(false))
+                    .andExpect(jsonPath("$.histories[1].candidates[1].receivedOrder").value(2))
+                    .andExpect(jsonPath("$.histories[1].candidates[1].selected").value(false))
+                    .andExpect(jsonPath("$.histories[1].candidates[2].receivedOrder").value(3))
+                    .andExpect(jsonPath("$.histories[1].candidates[2].selected").value(true))
+                    // [2] twoDaysAgo - 답변 완료, candidates null
+                    .andExpect(jsonPath("$.histories[2].date").value(twoDaysAgo.toString()))
+                    .andExpect(jsonPath("$.histories[2].status").value(Status.ANSWERED.name()))
+                    .andExpect(jsonPath("$.histories[2].candidates").doesNotExist());
         }
     }
 

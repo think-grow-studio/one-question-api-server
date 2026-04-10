@@ -11,9 +11,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import site.one_question.api.question.presentation.request.CheckCandidateCycleRequest;
 import site.one_question.api.question.presentation.request.CreateAnswerRequest;
 import site.one_question.api.question.domain.HistoryDirection;
+import site.one_question.api.question.presentation.request.SelectQuestionRequest;
 import site.one_question.api.question.presentation.request.UpdateAnswerRequest;
+import site.one_question.api.question.presentation.response.CheckCandidateCycleResponse;
 import site.one_question.api.question.presentation.response.CreateAnswerResponse;
 import site.one_question.api.question.presentation.response.GetQuestionHistoryResponse;
 import site.one_question.api.question.presentation.response.ServeDailyQuestionResponse;
@@ -51,7 +54,7 @@ public interface QuestionApi {
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                                "code": "QUESTION_NOT_FOUND",
+                                                "code": "QUESTION-001",
                                                 "message": "해당 날짜의 질문을 찾을 수 없습니다."
                                             }
                                             """
@@ -136,10 +139,26 @@ public interface QuestionApi {
                                                             "content": "오늘 가장 감사했던 순간은?",
                                                             "description": null,
                                                             "questionCycle": 1,
-                                                            "changeCount": 0,
+                                                            "changeCount": 1,
                                                             "liked": false
                                                         },
-                                                        "answer": null
+                                                        "answer": null,
+                                                        "candidates": [
+                                                            {
+                                                                "questionId": 5,
+                                                                "content": "오늘 아침 기분은 어땠나요?",
+                                                                "description": null,
+                                                                "receivedOrder": 1,
+                                                                "selected": false
+                                                            },
+                                                            {
+                                                                "questionId": 3,
+                                                                "content": "오늘 가장 감사했던 순간은?",
+                                                                "description": null,
+                                                                "receivedOrder": 2,
+                                                                "selected": true
+                                                            }
+                                                        ]
                                                     },
                                                     {
                                                         "date": "2024-01-13",
@@ -218,7 +237,7 @@ public interface QuestionApi {
                                             name = "재할당 횟수 초과",
                                             value = """
                                                     {
-                                                        "code": "RELOAD_LIMIT_EXCEEDED",
+                                                        "code": "QUESTION-008",
                                                         "message": "질문 변경 횟수를 초과했습니다. (최대 2회)"
                                                     }
                                                     """
@@ -227,7 +246,7 @@ public interface QuestionApi {
                                             name = "이미 답변한 질문",
                                             value = """
                                                     {
-                                                        "code": "ALREADY_ANSWERED",
+                                                        "code": "QUESTION-005",
                                                         "message": "이미 답변한 질문은 변경할 수 없습니다."
                                                     }
                                                     """
@@ -243,7 +262,7 @@ public interface QuestionApi {
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                                "code": "DAILY_QUESTION_NOT_FOUND",
+                                                "code": "QUESTION-002",
                                                 "message": "해당 날짜의 질문을 찾을 수 없습니다."
                                             }
                                             """
@@ -274,6 +293,93 @@ public interface QuestionApi {
     );
 
     @Operation(
+            summary = "후보 질문 cycle 중복 확인",
+            description = """
+                    오늘 후보 질문으로 노출된 특정 questionId가 같은 사이클 내 이전 날짜에 이미 배정된 적이 있는지 확인합니다.
+                    같은 사이클 내 이전 날짜에 이미 배정된 적이 있으면 alreadyAssignedInCycle=true와 해당 날짜 목록을 반환합니다.
+                    오늘 날짜의 후보 노출 자체는 과거 배정 이력에 포함하지 않습니다.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "후보 질문 cycle 중복 확인 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CheckCandidateCycleResponse.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "사이클 내 기존 배정 이력 있음",
+                                            value = """
+                                                    {
+                                                        "alreadyAssignedInCycle": true,
+                                                        "previouslyAssignedDates": ["2026-04-07"]
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "사이클 내 기존 배정 이력 없음",
+                                            value = """
+                                                    {
+                                                        "alreadyAssignedInCycle": false,
+                                                        "previouslyAssignedDates": []
+                                                    }
+                                                    """
+                                    )
+                            }
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "해당 날짜의 질문이 없거나 오늘 후보에 없는 질문",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = {
+                                    @ExampleObject(
+                                            name = "질문 없음",
+                                            value = """
+                                                    {
+                                                        "code": "QUESTION-002",
+                                                        "message": "해당 날짜의 질문을 찾을 수 없습니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "후보 없음",
+                                            value = """
+                                                    {
+                                                        "code": "QUESTION-010",
+                                                        "message": "해당 후보 질문을 찾을 수 없습니다."
+                                                    }
+                                                    """
+                                    )
+                            }
+                    )
+            )
+    })
+    ResponseEntity<CheckCandidateCycleResponse> checkCandidateCycle(
+            Long memberId,
+
+            @Parameter(
+                    name = "date",
+                    description = "후보 질문을 확인할 날짜 (yyyy-MM-dd 형식)",
+                    example = "2026-04-09",
+                    required = true,
+                    in = ParameterIn.PATH
+            )
+            LocalDate date,
+
+            @RequestBody(
+                    description = "cycle 중복 여부를 확인할 후보 질문 정보",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CheckCandidateCycleRequest.class)
+                    )
+            )
+            CheckCandidateCycleRequest request
+    );
+
+    @Operation(
             summary = "답변 작성",
             description = """
                     지정한 날짜의 질문에 대한 답변을 작성합니다.
@@ -298,7 +404,7 @@ public interface QuestionApi {
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                                "code": "ANSWER_ALREADY_EXISTS",
+                                                "code": "QUESTION-004",
                                                 "message": "해당 질문에 이미 답변이 존재합니다."
                                             }
                                             """
@@ -313,7 +419,7 @@ public interface QuestionApi {
                             examples = @ExampleObject(
                                     value = """
                                             {
-                                                "code": "DAILY_QUESTION_NOT_FOUND",
+                                                "code": "QUESTION-002",
                                                 "message": "해당 날짜의 질문을 찾을 수 없습니다."
                                             }
                                             """
@@ -380,7 +486,7 @@ public interface QuestionApi {
                                             name = "질문 없음",
                                             value = """
                                                     {
-                                                        "code": "DAILY_QUESTION_NOT_FOUND",
+                                                        "code": "QUESTION-002",
                                                         "message": "해당 날짜의 질문을 찾을 수 없습니다."
                                                     }
                                                     """
@@ -389,7 +495,7 @@ public interface QuestionApi {
                                             name = "답변 없음",
                                             value = """
                                                     {
-                                                        "code": "ANSWER_NOT_FOUND",
+                                                        "code": "QUESTION-003",
                                                         "message": "해당 질문에 대한 답변을 찾을 수 없습니다."
                                                     }
                                                     """
@@ -427,6 +533,76 @@ public interface QuestionApi {
                     )
             )
             UpdateAnswerRequest request
+    );
+
+    @Operation(
+            summary = "오늘 질문 선택",
+            description = """
+                    이미 받은 후보 질문 중 하나를 선택해 오늘의 질문으로 확정합니다.
+                    리로드 횟수를 소모하지 않습니다.
+                    답변이 완료된 경우 선택이 불가합니다.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "선택 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ServeDailyQuestionResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "이미 답변한 질문",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "QUESTION-005",
+                                                "message": "이미 답변한 질문은 변경할 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "후보 질문을 찾을 수 없음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "QUESTION-010",
+                                                "message": "해당 후보 질문을 찾을 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    ResponseEntity<ServeDailyQuestionResponse> selectQuestion(
+            Long memberId,
+
+            @Parameter(
+                    name = "date",
+                    description = "날짜 (yyyy-MM-dd 형식)",
+                    example = "2024-01-15",
+                    required = true,
+                    in = ParameterIn.PATH
+            )
+            LocalDate date,
+
+            @RequestBody(
+                    description = "오늘 질문으로 선택할 후보 질문 정보",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = SelectQuestionRequest.class)
+                    )
+            )
+            SelectQuestionRequest request
     );
 
     @Operation(

@@ -2,6 +2,8 @@ package site.one_question.domain.question;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,13 +15,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import java.util.Map;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import site.one_question.global.common.HttpHeaderConstant;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.question.domain.DailyQuestion;
 import site.one_question.api.question.domain.Question;
 import site.one_question.api.question.domain.QuestionCycle;
 import site.one_question.api.question.domain.exception.QuestionExceptionSpec;
+import site.one_question.api.question.presentation.request.CreateAnswerRequest;
 import site.one_question.test_config.IntegrateTest;
 
 @DisplayName("오늘의 질문 조회 통합 테스트")
@@ -55,7 +60,11 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
                 .andExpect(jsonPath("$.dailyQuestionId").exists())
                 .andExpect(jsonPath("$.content").exists())
                 .andExpect(jsonPath("$.questionCycle").value(1))
-                .andExpect(jsonPath("$.changeCount").value(0));
+                .andExpect(jsonPath("$.changeCount").value(0))
+                .andExpect(jsonPath("$.candidates").isArray())
+                .andExpect(jsonPath("$.candidates.length()").value(1))
+                .andExpect(jsonPath("$.candidates[0].receivedOrder").value(1))
+                .andExpect(jsonPath("$.candidates[0].selected").value(true));
 
         // DB 검증 - DailyQuestion 생성 확인
         assertThat(dailyQuestionRepository.findAll())
@@ -306,6 +315,138 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.questionCycle").value(2))
                     .andExpect(jsonPath("$.liked").value(true));
+        }
+    }
+
+    @Nested
+    @DisplayName("후보 상태 반영 테스트")
+    class CandidateStateTest {
+
+        @Test
+        @DisplayName("기존 DailyQuestion에 후보가 여러 개면 order 순으로 모두 반환")
+        void serve_existing_daily_question_returns_all_candidates_in_order() throws Exception {
+            // given - BeforeEach에서 10개 질문 이미 생성됨
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            // serve → 초기 질문 제공 (order=1, current)
+            String serveResult = mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            Long dailyQuestionId = objectMapper.readTree(serveResult).get("dailyQuestionId").asLong();
+            Long initialQuestionId = objectMapper.readTree(serveResult).get("questionId").asLong();
+
+            // reload → 새 질문 추가 (order=2, current 변경)
+            String reloadResult = mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            Long reloadedQuestionId = objectMapper.readTree(reloadResult).get("questionId").asLong();
+
+            // when - serve 재조회 (멱등: 같은 DailyQuestion 반환)
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.dailyQuestionId").value(dailyQuestionId))
+                    .andExpect(jsonPath("$.questionId").value(reloadedQuestionId))
+                    .andExpect(jsonPath("$.changeCount").value(1))
+                    .andExpect(jsonPath("$.candidates.length()").value(2))
+                    .andExpect(jsonPath("$.candidates[0].questionId").value(initialQuestionId))
+                    .andExpect(jsonPath("$.candidates[0].receivedOrder").value(1))
+                    .andExpect(jsonPath("$.candidates[0].selected").value(false))
+                    .andExpect(jsonPath("$.candidates[1].questionId").value(reloadedQuestionId))
+                    .andExpect(jsonPath("$.candidates[1].receivedOrder").value(2))
+                    .andExpect(jsonPath("$.candidates[1].selected").value(true));
+        }
+
+        @Test
+        @DisplayName("후보 재선택 상태면 현재 선택 질문 기준으로 응답 반환")
+        void serve_existing_daily_question_reflects_reselected_candidate() throws Exception {
+            // given - BeforeEach에서 10개 질문 이미 생성됨
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            // serve → 초기 질문 (order=1, current)
+            String serveResult = mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            Long dailyQuestionId = objectMapper.readTree(serveResult).get("dailyQuestionId").asLong();
+            Long initialQuestionId = objectMapper.readTree(serveResult).get("questionId").asLong();
+
+            // reload → 새 질문 (order=2), current 변경
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            // 초기 질문(order=1)으로 재선택
+            mockMvc.perform(patch(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(Map.of("questionId", initialQuestionId))))
+                    .andExpect(status().isOk());
+
+            // when - serve 재조회: 초기 질문이 current
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.dailyQuestionId").value(dailyQuestionId))
+                    .andExpect(jsonPath("$.questionId").value(initialQuestionId))
+                    .andExpect(jsonPath("$.changeCount").value(1))
+                    .andExpect(jsonPath("$.candidates.length()").value(2))
+                    .andExpect(jsonPath("$.candidates[0].questionId").value(initialQuestionId))
+                    .andExpect(jsonPath("$.candidates[0].selected").value(true))
+                    .andExpect(jsonPath("$.candidates[1].selected").value(false));
+        }
+    }
+
+    @Nested
+    @DisplayName("답변 완료 상태 테스트")
+    class AnsweredStateTest {
+
+        @Test
+        @DisplayName("답변 완료 후 조회 시 candidates는 빈 배열이고 liked는 현재 질문 기준으로 반환")
+        void serve_answered_daily_question_returns_empty_candidates_and_current_liked() throws Exception {
+            // given - BeforeEach에서 10개 질문 이미 생성됨
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            // serve → dailyQuestionId, questionId 캡처
+            String serveRes = mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            long dailyQuestionId = objectMapper.readTree(serveRes).get("dailyQuestionId").asLong();
+            long questionId = objectMapper.readTree(serveRes).get("questionId").asLong();
+
+            // 좋아요 토글 (liked=true)
+            mockMvc.perform(post(QUESTIONS_API + "/{questionId}/like", questionId)
+                            .header(HttpHeaders.AUTHORIZATION, token))
+                    .andExpect(status().isOk());
+
+            // 답변 작성 → candidates 삭제됨
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/answer", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(new CreateAnswerRequest("답변 완료", false))))
+                    .andExpect(status().isOk());
+
+            // when & then - 답변 완료 후 조회: candidates 비어있고 liked=true 유지
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.dailyQuestionId").value(dailyQuestionId))
+                    .andExpect(jsonPath("$.questionId").value(questionId))
+                    .andExpect(jsonPath("$.liked").value(true))
+                    .andExpect(jsonPath("$.candidates").isArray())
+                    .andExpect(jsonPath("$.candidates.length()").value(0));
         }
     }
 

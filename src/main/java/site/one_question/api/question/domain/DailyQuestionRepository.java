@@ -13,8 +13,11 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
 
     @Query("""
         SELECT dq FROM DailyQuestion dq
+        JOIN FETCH dq.member m
+        LEFT JOIN FETCH dq.question q
+        LEFT JOIN FETCH dq.questionCycle qc
         LEFT JOIN FETCH dq.answer
-        WHERE dq.member.id = :memberId AND dq.questionDate = :date
+        WHERE m.id = :memberId AND dq.questionDate = :date
         """)
     Optional<DailyQuestion> findByMemberIdAndDate(
         @Param("memberId") Long memberId,
@@ -23,6 +26,19 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
 
     @Query("SELECT dq.question.id FROM DailyQuestion dq WHERE dq.questionCycle.id = :questionCycleId")
     List<Long> findQuestionIdsByCycleId(@Param("questionCycleId") Long questionCycleId);
+
+    @Query("""
+        SELECT dq.questionDate FROM DailyQuestion dq
+        WHERE dq.questionCycle.id = :questionCycleId
+        AND dq.question.id = :questionId
+        AND dq.questionDate != :excludeDate
+        ORDER BY dq.questionDate ASC
+        """)
+    List<LocalDate> findAssignedDatesByCycleIdAndQuestionIdExcludingDate(
+        @Param("questionCycleId") Long questionCycleId,
+        @Param("questionId") Long questionId,
+        @Param("excludeDate") LocalDate excludeDate
+    );
 
     @Query("""
         SELECT dq FROM DailyQuestion dq
