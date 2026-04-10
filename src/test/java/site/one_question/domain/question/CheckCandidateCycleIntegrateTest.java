@@ -28,43 +28,52 @@ class CheckCandidateCycleIntegrateTest extends IntegrateTest {
     private Member member;
     private String token;
     private LocalDate today;
+    private LocalDate tomorrow;
     private LocalDate twoDaysAgo;
     private LocalDate yesterday;
     private Question repeatedQuestion;
     private Question todayQuestion;
     private Question freshCandidateQuestion;
     private Question nonCandidateQuestion;
+    private Question futureAssignedQuestion;
 
     @BeforeEach
     void setup() {
         today = LocalDate.now(ZoneId.of(TIMEZONE));
+        tomorrow = today.plusDays(1);
         yesterday = today.minusDays(1);
         twoDaysAgo = today.minusDays(2);
 
         member = testMemberUtils.createSave_With_JoinedDate(twoDaysAgo);
         token = testAuthUtils.createBearerToken(member);
 
-        // 모든 날짜를 같은 cycle 안에 묶어 "같은 cycle 내 과거 배정 여부"를 검증한다.
+        // 모든 날짜를 같은 cycle 안에 묶어 "같은 cycle 내 배정 여부"를 검증한다.
         QuestionCycle cycle = testQuestionCycleUtils.createSave_With_StartDate(member, twoDaysAgo, TIMEZONE, 1);
 
         // repeatedQuestion: 과거(2일 전, 어제)에 이미 배정된 질문. 오늘 후보에도 포함시켜 duplicate 케이스를 만든다.
         // todayQuestion: 오늘 current question. 오늘 배정만으로는 duplicate로 보지 않는 케이스를 검증한다.
-        // freshCandidateQuestion: 오늘 후보이지만 과거 배정 이력이 없는 질문이다.
+        // freshCandidateQuestion: 오늘 후보이지만 배정 이력이 없는 질문이다.
         // nonCandidateQuestion: 오늘 후보에 포함되지 않은 질문으로 404 케이스를 검증한다.
+        // futureAssignedQuestion: 내일 날짜에 이미 배정된 질문. 미래 날짜 중복도 검출하는지 검증한다.
         repeatedQuestion = testQuestionUtils.createSave();
         todayQuestion = testQuestionUtils.createSave();
         freshCandidateQuestion = testQuestionUtils.createSave();
         nonCandidateQuestion = testQuestionUtils.createSave();
+        futureAssignedQuestion = testQuestionUtils.createSave();
 
         // 동일한 질문을 이전 날짜에 넣어, check가 제대로 동작하는지 확인한다.
         testDailyQuestionUtils.createSave_With_Date(member, cycle, repeatedQuestion, twoDaysAgo);
         testDailyQuestionUtils.createSave_With_Date(member, cycle, repeatedQuestion, yesterday);
 
-        // 오늘 DailyQuestion에는 현재 선택 질문(order=1)과 추가 후보(order=2,3)를 함께 둔다.
+        // 내일 날짜에 futureAssignedQuestion을 배정해 미래 날짜 중복 케이스를 준비한다.
+        testDailyQuestionUtils.createSave_With_Date(member, cycle, futureAssignedQuestion, tomorrow);
+
+        // 오늘 DailyQuestion에는 현재 선택 질문(order=1)과 추가 후보(order=2,3,4)를 함께 둔다.
         // cycle-check는 "오늘 후보에 포함된 질문인지"를 먼저 검증하므로 후보 구성이 중요하다.
         DailyQuestion todayDailyQuestion = testDailyQuestionUtils.createSave_With_Date(member, cycle, todayQuestion, today);
         dailyQuestionCandidateRepository.save(DailyQuestionCandidate.create(todayDailyQuestion, repeatedQuestion, 2));
         dailyQuestionCandidateRepository.save(DailyQuestionCandidate.create(todayDailyQuestion, freshCandidateQuestion, 3));
+        dailyQuestionCandidateRepository.save(DailyQuestionCandidate.create(todayDailyQuestion, futureAssignedQuestion, 4));
     }
 
     private String body(Long questionId) throws Exception {
@@ -100,6 +109,19 @@ class CheckCandidateCycleIntegrateTest extends IntegrateTest {
                     .andExpect(jsonPath("$.alreadyAssignedInCycle").value(false))
                     .andExpect(jsonPath("$.previouslyAssignedDates").isArray())
                     .andExpect(jsonPath("$.previouslyAssignedDates.length()").value(0));
+        }
+
+        @Test
+        @DisplayName("같은 사이클 내 미래 날짜에 이미 배정된 후보면 alreadyAssignedInCycle=true와 해당 날짜를 반환")
+        void check_candidate_returns_true_when_assigned_on_future_date_in_cycle() throws Exception {
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/candidates/cycle-check", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body(futureAssignedQuestion.getId())))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.alreadyAssignedInCycle").value(true))
+                    .andExpect(jsonPath("$.previouslyAssignedDates.length()").value(1))
+                    .andExpect(jsonPath("$.previouslyAssignedDates[0]").value(tomorrow.toString()));
         }
 
         @Test
