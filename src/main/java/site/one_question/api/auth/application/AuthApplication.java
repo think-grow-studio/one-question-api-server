@@ -35,6 +35,8 @@ import site.one_question.api.question.domain.QuestionLikeService;
 import site.one_question.api.question.domain.DailyQuestionAnswerService;
 import site.one_question.api.question.domain.DailyQuestionCandidateRepository;
 import site.one_question.api.question.domain.DailyQuestionService;
+import site.one_question.api.notification.domain.FcmTokenService;
+import site.one_question.api.notification.domain.QuestionReminderSettingService;
 import site.one_question.api.question.domain.QuestionCycleService;
 
 @Service
@@ -55,6 +57,8 @@ public class AuthApplication {
     private final AnswerPostLikeService answerPostLikeService;
     private final QuestionLikeService questionLikeService;
     private final AnswerPostService answerPostService;
+    private final QuestionReminderSettingService questionReminderSettingService;
+    private final FcmTokenService fcmTokenService;
 
     public AuthResponse googleAuth(GoogleAuthRequest request, String locale, String timezone) {
         GoogleIdToken.Payload payload = googleTokenVerifier.verify(request.idToken());
@@ -201,6 +205,8 @@ public class AuthApplication {
 
     public void withdraw(Long memberId) {
         refreshTokenService.deleteByMemberId(memberId);
+        fcmTokenService.deleteByMemberId(memberId);
+        questionReminderSettingService.deleteByMemberId(memberId);
         answerPostLikeService.deleteByMemberId(memberId);
         questionLikeService.deleteByMemberId(memberId);
         answerPostService.deleteByMemberId(memberId);
