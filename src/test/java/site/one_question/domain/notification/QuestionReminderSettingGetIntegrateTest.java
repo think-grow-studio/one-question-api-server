@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import site.one_question.api.member.domain.Member;
-import site.one_question.api.notification.presentation.request.setQuestionReminderSettingRequest;
+import site.one_question.api.notification.presentation.request.SetQuestionReminderSettingRequest;
 import site.one_question.test_config.IntegrateTest;
 
 @DisplayName("알림 설정 조회 API 통합 테스트")
@@ -29,7 +29,7 @@ class QuestionReminderSettingGetIntegrateTest extends IntegrateTest {
     @Test
     @DisplayName("알림 설정 조회 성공")
     void get_returns_existing_setting() throws Exception {
-        setQuestionReminderSettingRequest request = new setQuestionReminderSettingRequest(
+        SetQuestionReminderSettingRequest request = new SetQuestionReminderSettingRequest(
                 "09:00", "Asia/Seoul", true
         );
         mockMvc.perform(put(NOTIFICATION_SETTING_API)

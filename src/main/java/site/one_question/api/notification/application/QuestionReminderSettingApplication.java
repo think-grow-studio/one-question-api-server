@@ -7,7 +7,7 @@ import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberService;
 import site.one_question.api.notification.domain.QuestionReminderSetting;
 import site.one_question.api.notification.domain.QuestionReminderSettingService;
-import site.one_question.api.notification.presentation.request.setQuestionReminderSettingRequest;
+import site.one_question.api.notification.presentation.request.SetQuestionReminderSettingRequest;
 import site.one_question.api.notification.presentation.response.SetQuestionReminderSettingResponse;
 
 @Service
@@ -18,7 +18,7 @@ public class QuestionReminderSettingApplication {
     private final MemberService memberService;
     private final QuestionReminderSettingService questionReminderSettingService;
 
-    public SetQuestionReminderSettingResponse set(Long memberId, setQuestionReminderSettingRequest request) {
+    public SetQuestionReminderSettingResponse set(Long memberId, SetQuestionReminderSettingRequest request) {
         Member member = memberService.findById(memberId);
         QuestionReminderSetting setting = questionReminderSettingService.upsert(
                 member,

@@ -16,7 +16,7 @@ import site.one_question.api.notification.application.FcmTokenApplication;
 import site.one_question.api.notification.application.QuestionReminderSettingApplication;
 import site.one_question.api.notification.presentation.request.DeleteFcmTokenRequest;
 import site.one_question.api.notification.presentation.request.RegisterFcmTokenRequest;
-import site.one_question.api.notification.presentation.request.setQuestionReminderSettingRequest;
+import site.one_question.api.notification.presentation.request.SetQuestionReminderSettingRequest;
 import site.one_question.api.notification.presentation.response.SetQuestionReminderSettingResponse;
 
 @Slf4j
@@ -56,7 +56,7 @@ public class NotificationController implements NotificationApi {
     @PutMapping("/settings")
     public ResponseEntity<SetQuestionReminderSettingResponse> upsertSetting(
             @PrincipalId Long memberId,
-            @Valid @RequestBody setQuestionReminderSettingRequest request
+            @Valid @RequestBody SetQuestionReminderSettingRequest request
     ) {
         log.info("[API] 알림 설정 저장 요청 시작 - alarmTime: {}", request.alarmTime());
         SetQuestionReminderSettingResponse response = questionReminderSettingApplication.set(memberId, request);

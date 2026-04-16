@@ -13,7 +13,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import site.one_question.api.member.domain.Member;
-import site.one_question.api.notification.presentation.request.setQuestionReminderSettingRequest;
+import site.one_question.api.notification.presentation.request.SetQuestionReminderSettingRequest;
 import site.one_question.test_config.IntegrateTest;
 
 @DisplayName("알림 설정 저장 API 통합 테스트")
@@ -31,7 +31,7 @@ class QuestionReminderSettingUpsertIntegrateTest extends IntegrateTest {
     @Test
     @DisplayName("알림 설정 최초 저장 성공")
     void upsert_creates_new_setting() throws Exception {
-        setQuestionReminderSettingRequest request = new setQuestionReminderSettingRequest(
+        SetQuestionReminderSettingRequest request = new SetQuestionReminderSettingRequest(
                 "08:00", "Asia/Seoul", true
         );
 
@@ -58,7 +58,7 @@ class QuestionReminderSettingUpsertIntegrateTest extends IntegrateTest {
     void upsert_updates_existing_setting() throws Exception {
         put_setting("08:00", "Asia/Seoul", true);
 
-        setQuestionReminderSettingRequest second = new setQuestionReminderSettingRequest(
+        SetQuestionReminderSettingRequest second = new SetQuestionReminderSettingRequest(
                 "21:30", "America/New_York", false
         );
         mockMvc.perform(put(NOTIFICATION_SETTING_API)
@@ -84,7 +84,7 @@ class QuestionReminderSettingUpsertIntegrateTest extends IntegrateTest {
     @Test
     @DisplayName("enabled=false로 신규 생성 시 DB에 비활성 상태로 저장된다")
     void upsert_creates_disabled_setting() throws Exception {
-        setQuestionReminderSettingRequest request = new setQuestionReminderSettingRequest(
+        SetQuestionReminderSettingRequest request = new SetQuestionReminderSettingRequest(
                 "08:00", "Asia/Seoul", false
         );
 
@@ -119,7 +119,7 @@ class QuestionReminderSettingUpsertIntegrateTest extends IntegrateTest {
     @ValueSource(strings = {"00:00", "23:59"})
     @DisplayName("경계값 alarmTime(00:00, 23:59)은 정상 저장된다")
     void upsert_accepts_boundary_alarm_times(String alarmTime) throws Exception {
-        setQuestionReminderSettingRequest request = new setQuestionReminderSettingRequest(
+        SetQuestionReminderSettingRequest request = new SetQuestionReminderSettingRequest(
                 alarmTime, "Asia/Seoul", true
         );
 
@@ -134,7 +134,7 @@ class QuestionReminderSettingUpsertIntegrateTest extends IntegrateTest {
     @Test
     @DisplayName("잘못된 alarmTime 형식으로 저장 시 400 반환")
     void upsert_returns_400_for_invalid_alarm_time() throws Exception {
-        setQuestionReminderSettingRequest request = new setQuestionReminderSettingRequest(
+        SetQuestionReminderSettingRequest request = new SetQuestionReminderSettingRequest(
                 "25:00", "Asia/Seoul", true
         );
 
@@ -149,7 +149,7 @@ class QuestionReminderSettingUpsertIntegrateTest extends IntegrateTest {
     @ValueSource(strings = {"08:60", "8:00", "25:00", "invalid", ""})
     @DisplayName("잘못된 alarmTime 포맷들은 모두 400을 반환한다")
     void upsert_returns_400_for_various_invalid_alarm_time_formats(String invalidAlarmTime) throws Exception {
-        setQuestionReminderSettingRequest request = new setQuestionReminderSettingRequest(
+        SetQuestionReminderSettingRequest request = new SetQuestionReminderSettingRequest(
                 invalidAlarmTime, "Asia/Seoul", true
         );
 
@@ -163,7 +163,7 @@ class QuestionReminderSettingUpsertIntegrateTest extends IntegrateTest {
     @Test
     @DisplayName("빈 timezone 으로 저장 시 400 반환")
     void upsert_returns_400_for_blank_timezone() throws Exception {
-        setQuestionReminderSettingRequest request = new setQuestionReminderSettingRequest(
+        SetQuestionReminderSettingRequest request = new SetQuestionReminderSettingRequest(
                 "08:00", "", true
         );
 
@@ -177,7 +177,7 @@ class QuestionReminderSettingUpsertIntegrateTest extends IntegrateTest {
     @Test
     @DisplayName("인증 없이 알림 설정 저장 시 401 반환")
     void upsert_returns_401_without_auth() throws Exception {
-        setQuestionReminderSettingRequest request = new setQuestionReminderSettingRequest(
+        SetQuestionReminderSettingRequest request = new SetQuestionReminderSettingRequest(
                 "08:00", "Asia/Seoul", true
         );
 
@@ -190,7 +190,7 @@ class QuestionReminderSettingUpsertIntegrateTest extends IntegrateTest {
     // ========== 헬퍼 ==========
 
     private void put_setting(String alarmTime, String timezone, boolean enabled) throws Exception {
-        setQuestionReminderSettingRequest request = new setQuestionReminderSettingRequest(
+        SetQuestionReminderSettingRequest request = new SetQuestionReminderSettingRequest(
                 alarmTime, timezone, enabled
         );
         mockMvc.perform(put(NOTIFICATION_SETTING_API)
