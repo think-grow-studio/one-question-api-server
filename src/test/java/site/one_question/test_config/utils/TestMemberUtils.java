@@ -16,12 +16,16 @@ public class TestMemberUtils {
     private static int uniqueId = 0;
 
     public Member createSave() {
+        return createSave_With_Locale("ko-KR");
+    }
+
+    public Member createSave_With_Locale(String locale) {
         Member member = Member.create(
                 "test" + uniqueId + "@test.com",
                 "테스트유저" + uniqueId,
                 AuthSocialProvider.GOOGLE,
                 "provider-id-" + uniqueId++,
-                "ko-KR",
+                locale,
                 LocalDate.now(ZoneId.of("Asia/Seoul"))
         );
         return memberRepository.save(member);
