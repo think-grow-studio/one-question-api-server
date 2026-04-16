@@ -49,7 +49,7 @@ class AuthSignupIntegrateTest extends IntegrateTest {
         // when & then
         mockMvc.perform(post(AUTH_GOOGLE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header(ACCEPT_LANGUAGE, "ko-KR")
+                        .header(ACCEPT_LANGUAGE, "ko-KR,ko;q=0.9,en-US;q=0.8")
                         .header(HttpHeaderConstant.TIMEZONE, "Asia/Seoul")
                         .content(requestBody))
                 .andExpect(status().isOk())
@@ -64,6 +64,7 @@ class AuthSignupIntegrateTest extends IntegrateTest {
         Member member = members.get(0);
         assertThat(member.getEmail()).isEqualTo("newuser@gmail.com");
         assertThat(member.getFullName()).isEqualTo("테스트유저");
+        assertThat(member.getLocale()).isEqualTo("ko-KR");
         assertThat(member.getPublicId()).startsWith("mem_");
 
         String uuidPart = member.getPublicId().substring(4);
@@ -89,6 +90,32 @@ class AuthSignupIntegrateTest extends IntegrateTest {
     }
 
     @Test
+    @DisplayName("Accept-Language 헤더의 full locale은 정규화된 단일 locale로 저장된다")
+    void google_signup_normalizes_locale_to_fullLocale() throws Exception {
+        GoogleIdToken.Payload payload = new GoogleIdToken.Payload();
+        payload.setSubject("google-provider-id-en");
+        payload.setEmail("english@gmail.com");
+        payload.set("name", "English User");
+
+        given(googleTokenVerifier.verify(anyString())).willReturn(payload);
+
+        String requestBody = objectMapper.writeValueAsString(
+                new TestGoogleAuthRequest("fake-id-token", "english@gmail.com", "English User")
+        );
+
+        mockMvc.perform(post(AUTH_GOOGLE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(ACCEPT_LANGUAGE, "en-GB,en;q=0.9,ko;q=0.8")
+                        .header(HttpHeaderConstant.TIMEZONE, "Asia/Seoul")
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isNewMember").value(true));
+
+        Member member = memberRepository.findAll().get(0);
+        assertThat(member.getLocale()).isEqualTo("en-GB");
+    }
+
+    @Test
     @DisplayName("기존 회원이 다시 로그인하면 isNewMember가 false이고 publicId가 유지된다")
     void google_login_existing_member_keeps_publicId() throws Exception {
         // given - 기존 회원 생성
@@ -108,7 +135,7 @@ class AuthSignupIntegrateTest extends IntegrateTest {
         // when & then
         mockMvc.perform(post(AUTH_GOOGLE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header(ACCEPT_LANGUAGE, "ko-KR")
+                        .header(ACCEPT_LANGUAGE, "ko-KR,ko;q=0.9,en-US;q=0.8")
                         .header(HttpHeaderConstant.TIMEZONE, "Asia/Seoul")
                         .content(requestBody))
                 .andExpect(status().isOk())
