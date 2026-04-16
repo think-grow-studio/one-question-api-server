@@ -38,6 +38,7 @@ import site.one_question.api.question.domain.DailyQuestionService;
 import site.one_question.api.notification.domain.FcmTokenService;
 import site.one_question.api.notification.domain.QuestionReminderSettingService;
 import site.one_question.api.question.domain.QuestionCycleService;
+import site.one_question.global.i18n.LocaleNormalizer;
 
 @Service
 @Transactional
@@ -59,6 +60,7 @@ public class AuthApplication {
     private final AnswerPostService answerPostService;
     private final QuestionReminderSettingService questionReminderSettingService;
     private final FcmTokenService fcmTokenService;
+    private final LocaleNormalizer localeNormalizer;
 
     public AuthResponse googleAuth(GoogleAuthRequest request, String locale, String timezone) {
         GoogleIdToken.Payload payload = googleTokenVerifier.verify(request.idToken());
@@ -105,6 +107,7 @@ public class AuthApplication {
     ) {
         Optional<Member> existingMember = memberService.findByProviderAndProviderId(provider, providerId);
         boolean isNewMember = existingMember.isEmpty();
+        String normalizedLocale = localeNormalizer.normalize(locale);
 
         Member member = existingMember.orElseGet(() -> {
             Member newMember = memberService.createMember(
@@ -112,7 +115,7 @@ public class AuthApplication {
                     name != null ? name : "Member",
                     provider,
                     providerId,
-                    locale,
+                    normalizedLocale,
                     localDate
             );
             questionCycleService.createFirstCycle(newMember, timezone);
