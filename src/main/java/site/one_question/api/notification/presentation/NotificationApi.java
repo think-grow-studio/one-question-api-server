@@ -11,15 +11,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import site.one_question.api.notification.presentation.request.DeleteFcmTokenRequest;
 import site.one_question.api.notification.presentation.request.RegisterFcmTokenRequest;
-import site.one_question.api.notification.presentation.request.UpsertQuestionReminderSettingRequest;
-import site.one_question.api.notification.presentation.response.QuestionReminderSettingResponse;
+import site.one_question.api.notification.presentation.request.SetQuestionReminderSettingRequest;
+import site.one_question.api.notification.presentation.response.SetQuestionReminderSettingResponse;
 
 @Tag(name = "Notification", description = "알림 관련 API")
 public interface NotificationApi {
 
     @Operation(
             summary = "FCM 토큰 등록",
-            description = "디바이스의 FCM 토큰을 등록합니다. 이미 등록된 토큰이면 무시됩니다."
+            description = "디바이스의 FCM 토큰을 등록합니다. 이미 등록된 토큰이 있으면 새 토큰으로 교체됩니다. (Upsert)"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "등록 성공"),
@@ -124,21 +124,6 @@ public interface NotificationApi {
                             }
                     )
             ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "FCM 토큰 없음",
-                    content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    value = """
-                                            {
-                                                "code": "NOTIFICATION-002",
-                                                "message": "FCM 토큰을 찾을 수 없습니다."
-                                            }
-                                            """
-                            )
-                    )
-            )
     })
     ResponseEntity<Void> deleteFcmToken(
             Long memberId,
@@ -167,7 +152,7 @@ public interface NotificationApi {
                     description = "저장 성공",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = QuestionReminderSettingResponse.class)
+                            schema = @Schema(implementation = SetQuestionReminderSettingResponse.class)
                     )
             ),
             @ApiResponse(
@@ -223,16 +208,16 @@ public interface NotificationApi {
                     )
             )
     })
-    ResponseEntity<QuestionReminderSettingResponse> upsertSetting(
+    ResponseEntity<SetQuestionReminderSettingResponse> upsertSetting(
             Long memberId,
             @RequestBody(
                     description = "알림 설정 요청",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = UpsertQuestionReminderSettingRequest.class)
+                            schema = @Schema(implementation = SetQuestionReminderSettingRequest.class)
                     )
             )
-            UpsertQuestionReminderSettingRequest request
+            SetQuestionReminderSettingRequest request
     );
 
     @Operation(
@@ -245,7 +230,7 @@ public interface NotificationApi {
                     description = "조회 성공",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = QuestionReminderSettingResponse.class)
+                            schema = @Schema(implementation = SetQuestionReminderSettingResponse.class)
                     )
             ),
             @ApiResponse(
@@ -300,5 +285,5 @@ public interface NotificationApi {
                     )
             )
     })
-    ResponseEntity<QuestionReminderSettingResponse> getSetting(Long memberId);
+    ResponseEntity<SetQuestionReminderSettingResponse> getSetting(Long memberId);
 }
