@@ -8,7 +8,7 @@ import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberService;
 import site.one_question.api.member.presentation.response.GetMemberResponse;
 import site.one_question.api.notification.domain.QuestionReminderSettingService;
-import site.one_question.api.notification.presentation.response.QuestionReminderSettingResponse;
+import site.one_question.api.notification.presentation.response.SetQuestionReminderSettingResponse;
 import site.one_question.api.question.domain.QuestionCycleService;
 
 @Service
@@ -24,9 +24,9 @@ public class MemberApplication {
     public GetMemberResponse getMe(Long memberId) {
         Member member = memberService.findById(memberId);
         LocalDate firstCycleStartDate = questionCycleService.getFirstCycle(memberId).getStartDate();
-        QuestionReminderSettingResponse notificationSetting = questionReminderSettingService
+        SetQuestionReminderSettingResponse notificationSetting = questionReminderSettingService
                 .findByMember(member)
-                .map(QuestionReminderSettingResponse::from)
+                .map(SetQuestionReminderSettingResponse::from)
                 .orElse(null);
         return GetMemberResponse.from(member, firstCycleStartDate, notificationSetting);
     }

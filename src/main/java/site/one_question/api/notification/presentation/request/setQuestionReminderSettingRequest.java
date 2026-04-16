@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
 @Schema(description = "알림 설정 요청")
-public record UpsertQuestionReminderSettingRequest(
+public record setQuestionReminderSettingRequest(
         @Schema(description = "알람 시간 (HH:mm)", example = "08:00")
         @NotBlank
         @Pattern(regexp = "^([01]\\d|2[0-3]):[0-5]\\d$", message = "알람 시간은 HH:mm 형식이어야 합니다.")

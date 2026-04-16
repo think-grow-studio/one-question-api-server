@@ -16,8 +16,8 @@ import site.one_question.api.notification.application.FcmTokenApplication;
 import site.one_question.api.notification.application.QuestionReminderSettingApplication;
 import site.one_question.api.notification.presentation.request.DeleteFcmTokenRequest;
 import site.one_question.api.notification.presentation.request.RegisterFcmTokenRequest;
-import site.one_question.api.notification.presentation.request.UpsertQuestionReminderSettingRequest;
-import site.one_question.api.notification.presentation.response.QuestionReminderSettingResponse;
+import site.one_question.api.notification.presentation.request.setQuestionReminderSettingRequest;
+import site.one_question.api.notification.presentation.response.SetQuestionReminderSettingResponse;
 
 @Slf4j
 @RestController
@@ -54,23 +54,23 @@ public class NotificationController implements NotificationApi {
 
     @Override
     @PutMapping("/settings")
-    public ResponseEntity<QuestionReminderSettingResponse> upsertSetting(
+    public ResponseEntity<SetQuestionReminderSettingResponse> upsertSetting(
             @PrincipalId Long memberId,
-            @Valid @RequestBody UpsertQuestionReminderSettingRequest request
+            @Valid @RequestBody setQuestionReminderSettingRequest request
     ) {
         log.info("[API] 알림 설정 저장 요청 시작 - alarmTime: {}", request.alarmTime());
-        QuestionReminderSettingResponse response = questionReminderSettingApplication.upsert(memberId, request);
+        SetQuestionReminderSettingResponse response = questionReminderSettingApplication.set(memberId, request);
         log.info("[API] 알림 설정 저장 요청 종료");
         return ResponseEntity.ok(response);
     }
 
     @Override
     @GetMapping("/settings")
-    public ResponseEntity<QuestionReminderSettingResponse> getSetting(
+    public ResponseEntity<SetQuestionReminderSettingResponse> getSetting(
             @PrincipalId Long memberId
     ) {
         log.info("[API] 알림 설정 조회 요청 시작");
-        QuestionReminderSettingResponse response = questionReminderSettingApplication.get(memberId);
+        SetQuestionReminderSettingResponse response = questionReminderSettingApplication.get(memberId);
         log.info("[API] 알림 설정 조회 요청 종료");
         return ResponseEntity.ok(response);
     }

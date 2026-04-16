@@ -7,8 +7,8 @@ import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberService;
 import site.one_question.api.notification.domain.QuestionReminderSetting;
 import site.one_question.api.notification.domain.QuestionReminderSettingService;
-import site.one_question.api.notification.presentation.request.UpsertQuestionReminderSettingRequest;
-import site.one_question.api.notification.presentation.response.QuestionReminderSettingResponse;
+import site.one_question.api.notification.presentation.request.setQuestionReminderSettingRequest;
+import site.one_question.api.notification.presentation.response.SetQuestionReminderSettingResponse;
 
 @Service
 @Transactional
@@ -18,7 +18,7 @@ public class QuestionReminderSettingApplication {
     private final MemberService memberService;
     private final QuestionReminderSettingService questionReminderSettingService;
 
-    public QuestionReminderSettingResponse upsert(Long memberId, UpsertQuestionReminderSettingRequest request) {
+    public SetQuestionReminderSettingResponse set(Long memberId, setQuestionReminderSettingRequest request) {
         Member member = memberService.findById(memberId);
         QuestionReminderSetting setting = questionReminderSettingService.upsert(
                 member,
@@ -26,12 +26,12 @@ public class QuestionReminderSettingApplication {
                 request.timezone(),
                 request.enabled()
         );
-        return QuestionReminderSettingResponse.from(setting);
+        return SetQuestionReminderSettingResponse.from(setting);
     }
 
     @Transactional(readOnly = true)
-    public QuestionReminderSettingResponse get(Long memberId) {
+    public SetQuestionReminderSettingResponse get(Long memberId) {
         Member member = memberService.findById(memberId);
-        return QuestionReminderSettingResponse.from(questionReminderSettingService.findByMemberOrThrow(member));
+        return SetQuestionReminderSettingResponse.from(questionReminderSettingService.findByMemberOrThrow(member));
     }
 }

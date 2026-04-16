@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
 import site.one_question.api.member.domain.Member;
-import site.one_question.api.notification.presentation.response.QuestionReminderSettingResponse;
+import site.one_question.api.notification.presentation.response.SetQuestionReminderSettingResponse;
 
 @Schema(description = "회원 정보 조회 응답")
 public record GetMemberResponse(
@@ -39,9 +39,9 @@ public record GetMemberResponse(
         LocalDate cycleStartDate,
 
         @Schema(description = "알림 설정 (미설정 시 null)", nullable = true)
-        QuestionReminderSettingResponse notificationSetting
+        SetQuestionReminderSettingResponse notificationSetting
 ) {
-    public static GetMemberResponse from(Member member, LocalDate firstCycleStartDate, QuestionReminderSettingResponse notificationSetting) {
+    public static GetMemberResponse from(Member member, LocalDate firstCycleStartDate, SetQuestionReminderSettingResponse notificationSetting) {
         return new GetMemberResponse(
                 member.getId(),
                 member.getPublicId(),
