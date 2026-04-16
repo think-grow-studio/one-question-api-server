@@ -18,6 +18,8 @@ import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.GoogleTokenVerifier;
 import site.one_question.api.answerpost.domain.AnswerPostLikeRepository;
 import site.one_question.api.answerpost.domain.AnswerPostRepository;
+import site.one_question.api.notification.domain.FcmTokenRepository;
+import site.one_question.api.notification.domain.QuestionReminderSettingRepository;
 import site.one_question.api.question.domain.QuestionLikeRepository;
 import site.one_question.api.auth.domain.RefreshTokenRepository;
 import site.one_question.api.member.domain.MemberRepository;
@@ -32,7 +34,9 @@ import site.one_question.test_config.utils.TestQuestionLikeUtils;
 import site.one_question.test_config.utils.TestAuthUtils;
 import site.one_question.test_config.utils.TestDailyQuestionAnswerUtils;
 import site.one_question.test_config.utils.TestDailyQuestionUtils;
+import site.one_question.test_config.utils.TestFcmTokenUtils;
 import site.one_question.test_config.utils.TestMemberUtils;
+import site.one_question.test_config.utils.TestQuestionReminderSettingUtils;
 import site.one_question.test_config.utils.TestQuestionCycleUtils;
 import site.one_question.test_config.utils.TestQuestionUtils;
 import site.one_question.test_config.utils.TestRefreshTokenUtils;
@@ -81,6 +85,12 @@ public abstract class IntegrateTest {
     @Autowired
     protected QuestionLikeRepository questionLikeRepository;
 
+    @Autowired
+    protected QuestionReminderSettingRepository questionReminderSettingRepository;
+
+    @Autowired
+    protected FcmTokenRepository fcmTokenRepository;
+
     // Test Utils
     @Autowired
     protected TestMemberUtils testMemberUtils;
@@ -112,6 +122,12 @@ public abstract class IntegrateTest {
     @Autowired
     protected TestQuestionLikeUtils testQuestionLikeUtils;
 
+    @Autowired
+    protected TestFcmTokenUtils testFcmTokenUtils;
+
+    @Autowired
+    protected TestQuestionReminderSettingUtils testQuestionReminderSettingUtils;
+
     // 트랜잭션 관리
     @PersistenceContext
     protected EntityManager entityManager;
@@ -135,6 +151,9 @@ public abstract class IntegrateTest {
     protected static final String MEMBERS_API = API_V1 + "/members";
     protected static final String QUESTIONS_API = API_V1 + "/questions";
     protected static final String ANSWER_POSTS_API = API_V1 + "/answer-posts";
+    protected static final String NOTIFICATION_API = API_V1 + "/members/me/notifications";
+    protected static final String FCM_TOKEN_API = NOTIFICATION_API + "/fcm-token";
+    protected static final String NOTIFICATION_SETTING_API = NOTIFICATION_API + "/settings";
 
     @BeforeEach
     void resetMocks() {
