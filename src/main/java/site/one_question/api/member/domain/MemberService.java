@@ -40,8 +40,10 @@ public class MemberService {
 
   public Member updateMember(Long memberId, String fullName, String locale) {
     Member member = findById(memberId);
-    String normalizedLocale = localeNormalizer.normalize(locale);
-    member.updateProfile(fullName, normalizedLocale);
+    if(locale != null) {
+      locale = localeNormalizer.normalize(locale);
+    }
+    member.updateProfile(fullName, locale);
     return member;
   }
 
