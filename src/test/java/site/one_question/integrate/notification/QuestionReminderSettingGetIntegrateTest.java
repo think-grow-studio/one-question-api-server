@@ -42,6 +42,7 @@ class QuestionReminderSettingGetIntegrateTest extends IntegrateTest {
                         .header(HttpHeaders.AUTHORIZATION, token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.alarmTime").value("09:00"))
+                .andExpect(jsonPath("$.timezone").value("Asia/Seoul"))
                 .andExpect(jsonPath("$.enabled").value(true));
     }
 

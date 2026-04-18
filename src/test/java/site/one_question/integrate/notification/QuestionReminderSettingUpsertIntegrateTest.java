@@ -41,6 +41,7 @@ class QuestionReminderSettingUpsertIntegrateTest extends IntegrateTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.alarmTime").value("08:00"))
+                .andExpect(jsonPath("$.timezone").value("Asia/Seoul"))
                 .andExpect(jsonPath("$.enabled").value(true));
 
         assertThat(questionReminderSettingRepository.findByMember(member))
@@ -67,6 +68,7 @@ class QuestionReminderSettingUpsertIntegrateTest extends IntegrateTest {
                         .content(objectMapper.writeValueAsString(second)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.alarmTime").value("21:30"))
+                .andExpect(jsonPath("$.timezone").value("America/New_York"))
                 .andExpect(jsonPath("$.enabled").value(false));
 
         assertThat(questionReminderSettingRepository.findAll())
