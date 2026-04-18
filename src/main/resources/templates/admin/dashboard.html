@@ -279,7 +279,7 @@
                         <td th:text="${row.fullName()}"></td>
                         <td th:text="${row.joinedDate()}" class="col-hide-mobile"></td>
                         <td style="font-weight:600;" th:text="${row.answerCount()}"></td>
-                        <td th:text="${row.lastAnsweredAt()}" class="col-hide-mobile"></td>
+                        <td th:text="${#temporals.format(row.lastAnsweredAt(), 'yyyy-MM-dd HH:mm')}" class="col-hide-mobile"></td>
                     </tr>
                 </tbody>
             </table>
@@ -304,7 +304,7 @@
                     <td th:text="${row.fullName()}"></td>
                     <td class="col-hide-mobile"><span class="truncate" th:text="${row.questionContent()}"></span></td>
                     <td><span class="truncate" style="max-width:400px;" th:text="${row.answerContent()}"></span></td>
-                    <td th:text="${row.answeredAt()}" class="col-hide-mobile"></td>
+                    <td th:text="${#temporals.format(row.answeredAt(), 'yyyy-MM-dd HH:mm')}" class="col-hide-mobile"></td>
                 </tr>
             </tbody>
         </table>
