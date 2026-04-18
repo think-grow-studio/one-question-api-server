@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import site.one_question.api.question.domain.DailyQuestionAnswer;
 import site.one_question.web.admin.repository.AdminDailyQuestionAnswerRepository;
 import site.one_question.web.admin.repository.AdminMemberRepository;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -54,21 +56,38 @@ public class AdminDashboardService {
 
     public DashboardData getDashboardData() {
         LocalDate today = LocalDate.now(KST);
-        List<DailyQuestionAnswer> allAnswers = dqaRepository.findAllWithMember();
-        List<WauMemberRow> wauMembers = buildWauMembers(today, allAnswers);
-        List<DailyAnswerCountRow> dailyTrend = buildDailyTrend(today, allAnswers);
-        long maxDailyCount = dailyTrend.stream()
-                .mapToLong(DailyAnswerCountRow::count)
-                .max()
-                .orElse(1L);
 
-        return new DashboardData(
-                buildStats(today, allAnswers, wauMembers.size()),
-                dailyTrend,
-                maxDailyCount,
-                buildLeaderboard(allAnswers),
-                buildRecentAnswers(),
-                wauMembers);
+        log.info("[Dashboard] findAllWithMember 시작");
+        List<DailyQuestionAnswer> allAnswers = dqaRepository.findAllWithMember();
+        log.info("[Dashboard] findAllWithMember 완료 rows={}", allAnswers.size());
+
+        log.info("[Dashboard] buildWauMembers 시작");
+        List<WauMemberRow> wauMembers = buildWauMembers(today, allAnswers);
+        log.info("[Dashboard] buildWauMembers 완료 wau={}", wauMembers.size());
+
+        log.info("[Dashboard] buildDailyTrend 시작");
+        List<DailyAnswerCountRow> dailyTrend = buildDailyTrend(today, allAnswers);
+        long maxDailyCount = dailyTrend.stream().mapToLong(DailyAnswerCountRow::count).max().orElse(1L);
+        log.info("[Dashboard] buildDailyTrend 완료");
+
+        log.info("[Dashboard] buildLeaderboard 시작");
+        List<MemberAnswerCountRow> leaderboard = buildLeaderboard(allAnswers);
+        log.info("[Dashboard] buildLeaderboard 완료 members={}", leaderboard.size());
+
+        log.info("[Dashboard] findRecentAnswers 시작");
+        List<RecentAnswerRow> recentAnswers = buildRecentAnswers();
+        log.info("[Dashboard] findRecentAnswers 완료 rows={}", recentAnswers.size());
+
+        log.info("[Dashboard] buildStats 시작");
+        DashboardStats stats = buildStats(today, allAnswers, wauMembers.size());
+        log.info("[Dashboard] buildStats 완료");
+
+        log.info("[Dashboard] 완료 | totalMembers={}, totalAnswers={}, todayAnswers={} (existing={}, new={}), wau={}",
+                stats.totalMembers(), stats.totalAnswers(),
+                stats.todayAnswers(), stats.todayExistingAnswers(), stats.todayNewAnswers(),
+                stats.wauCount());
+
+        return new DashboardData(stats, dailyTrend, maxDailyCount, leaderboard, recentAnswers, wauMembers);
     }
 
     private DashboardStats buildStats(LocalDate today, List<DailyQuestionAnswer> allAnswers, int wauCount) {
