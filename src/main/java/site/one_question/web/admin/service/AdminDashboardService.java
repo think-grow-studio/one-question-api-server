@@ -52,7 +52,7 @@ public class AdminDashboardService {
     public DashboardData getDashboardData() {
         LocalDate today = LocalDate.now(KST);
         List<DailyQuestionAnswer> allAnswers = dqaRepository.findAllWithMember();
-        List<WauMemberRow> wauMembers = buildWauMembers(today);
+        List<WauMemberRow> wauMembers = buildWauMembers(today, allAnswers);
         List<DailyAnswerCountRow> dailyTrend = buildDailyTrend(today);
         long maxDailyCount = dailyTrend.stream()
                 .mapToLong(DailyAnswerCountRow::count)
@@ -125,10 +125,11 @@ public class AdminDashboardService {
                 .toList();
     }
 
-    private List<WauMemberRow> buildWauMembers(LocalDate today) {
+    private List<WauMemberRow> buildWauMembers(LocalDate today, List<DailyQuestionAnswer> allAnswers) {
         Instant from = today.minusDays(7).atStartOfDay(KST).toInstant();
         Instant to = today.atStartOfDay(KST).toInstant();
-        return dqaRepository.findAnswersInDateRange(from, to).stream()
+        return allAnswers.stream()
+                .filter(dqa -> !dqa.getAnsweredAt().isBefore(from) && dqa.getAnsweredAt().isBefore(to))
                 .collect(Collectors.groupingBy(dqa -> dqa.getMember().getId()))
                 .entrySet().stream()
                 .filter(e -> e.getValue().size() >= 3)
