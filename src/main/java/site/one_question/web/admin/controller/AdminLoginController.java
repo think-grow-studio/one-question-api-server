@@ -55,12 +55,12 @@ public class AdminLoginController {
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        return "redirect:/admin/answer-posts";
+        return "redirect:/admin/dashboard";
     }
 
     @GetMapping
     public String index() {
-        return "redirect:/admin/answer-posts";
+        return "redirect:/admin/dashboard";
     }
 
     @PostMapping("/logout")
