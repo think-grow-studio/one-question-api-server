@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대시보드 - One Question Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .header {
+            background: #fff;
+            padding: 16px 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left { display: flex; align-items: center; gap: 24px; }
+        .header h1 { font-size: 20px; color: #333; }
+        .nav { display: flex; gap: 4px; }
+        .nav a {
+            padding: 6px 14px; border-radius: 6px; font-size: 14px;
+            text-decoration: none; color: #555; transition: background-color 0.15s;
+        }
+        .nav a:hover { background-color: #f0f4ff; color: #4A90D9; }
+        .nav a.active { background-color: #EBF4FF; color: #4A90D9; font-weight: 600; }
+        .btn-logout {
+            padding: 8px 16px; background-color: #e0e0e0; color: #555; border: none;
+            border-radius: 6px; font-size: 14px; cursor: pointer; transition: background-color 0.2s;
+        }
+        .btn-logout:hover { background-color: #d0d0d0; }
+        .content { max-width: 1400px; margin: 32px auto; padding: 0 24px; }
+        .page-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+
+        /* Stats Cards */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card {
+            background: #fff; border-radius: 10px; padding: 20px 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .stat-label { font-size: 13px; color: #888; margin-bottom: 8px; }
+        .stat-value { font-size: 32px; font-weight: 700; color: #333; line-height: 1; }
+        .stat-sub { font-size: 12px; color: #aaa; margin-top: 6px; }
+
+        /* Two-column row */
+        .two-col { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 24px; }
+
+        /* Cards */
+        .card {
+            background: #fff; border-radius: 10px; padding: 20px 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 24px;
+        }
+        .card:last-child { margin-bottom: 0; }
+        .card-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 16px; }
+
+        /* Tables */
+        .data-table {
+            width: 100%; border-collapse: collapse;
+        }
+        .data-table th {
+            background-color: #f8f9fa; padding: 10px 14px; text-align: left;
+            font-size: 12px; color: #666; font-weight: 600;
+            border-bottom: 1px solid #e9ecef; white-space: nowrap;
+        }
+        .data-table td {
+            padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover { background-color: #f8f9ff; }
+
+        /* Bar chart cell */
+        .bar-cell { display: flex; align-items: center; gap: 8px; }
+        .bar-track { flex: 1; height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+        .bar-fill { height: 100%; background: #4A90D9; border-radius: 4px; }
+
+        /* Rank badges */
+        .rank { display: inline-flex; align-items: center; justify-content: center;
+                width: 24px; height: 24px; border-radius: 50%;
+                font-size: 12px; font-weight: 700; }
+        .rank-1 { background: #FFD700; color: #333; }
+        .rank-2 { background: #C0C0C0; color: #333; }
+        .rank-3 { background: #CD7F32; color: #fff; }
+        .rank-n { background: #f0f0f0; color: #888; }
+
+        /* Truncated text */
+        .truncate { display: inline-block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+
+        .empty-state {
+            padding: 32px; text-align: center; color: #aaa; font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="header-left">
+        <h1>One Question Admin</h1>
+        <nav class="nav">
+            <a href="/admin/dashboard" class="active">대시보드</a>
+            <a href="/admin/answer-posts">AI 답변 피드</a>
+        </nav>
+    </div>
+    <form method="post" action="/admin/logout">
+        <button type="submit" class="btn-logout">로그아웃</button>
+    </form>
+</div>
+
+<div class="content">
+    <h2 class="page-title">대시보드</h2>
+
+    <!-- Stats Cards -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-label">전체 회원</div>
+            <div class="stat-value" th:text="${stats.totalMembers()}">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">전체 답변</div>
+            <div class="stat-value" th:text="${stats.totalAnswers()}">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">오늘 답변</div>
+            <div class="stat-value" th:text="${stats.todayAnswers()}">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">WAU (주간 활성)</div>
+            <div class="stat-value" th:text="${stats.wauCount()}">0</div>
+            <div class="stat-sub">최근 7일, 3회 이상</div>
+        </div>
+    </div>
+
+    <!-- Daily Trend + WAU Members -->
+    <div class="two-col">
+        <div class="card" style="margin-bottom:0;">
+            <div class="card-title">일자별 답변 추이 (최근 30일)</div>
+            <div th:if="${#lists.isEmpty(dailyTrend)}" class="empty-state">데이터가 없습니다.</div>
+            <table th:if="${!#lists.isEmpty(dailyTrend)}" class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:120px;">날짜</th>
+                        <th style="width:60px;">답변수</th>
+                        <th>비율</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="row : ${dailyTrend}">
+                        <td th:text="${row.date()}"></td>
+                        <td th:text="${row.count()}"></td>
+                        <td>
+                            <div class="bar-cell">
+                                <div class="bar-track">
+                                    <div class="bar-fill"
+                                         th:style="'width:' + ${maxDailyCount > 0 ? (row.count() * 100 / maxDailyCount) : 0} + '%'"></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card" style="margin-bottom:0;">
+            <div class="card-title">WAU 멤버 <span style="font-size:13px;font-weight:400;color:#888;">(최근 7일, 3회↑)</span></div>
+            <div th:if="${#lists.isEmpty(wauMembers)}" class="empty-state">해당 멤버 없음</div>
+            <table th:if="${!#lists.isEmpty(wauMembers)}" class="data-table">
+                <thead>
+                    <tr>
+                        <th>이름</th>
+                        <th style="width:80px;text-align:right;">7일 답변수</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="row : ${wauMembers}">
+                        <td th:text="${row.fullName()}"></td>
+                        <td style="text-align:right;font-weight:600;color:#4A90D9;" th:text="${row.answerCount()}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="card">
+        <div class="card-title">회원별 답변 수</div>
+        <div th:if="${#lists.isEmpty(leaderboard)}" class="empty-state">데이터가 없습니다.</div>
+        <table th:if="${!#lists.isEmpty(leaderboard)}" class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:60px;">순위</th>
+                    <th>이름</th>
+                    <th style="width:110px;">가입일</th>
+                    <th style="width:90px;">총 답변수</th>
+                    <th style="width:160px;">마지막 답변</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="row, stat : ${leaderboard}">
+                    <td>
+                        <span th:if="${stat.index == 0}" class="rank rank-1">1</span>
+                        <span th:if="${stat.index == 1}" class="rank rank-2">2</span>
+                        <span th:if="${stat.index == 2}" class="rank rank-3">3</span>
+                        <span th:if="${stat.index >= 3}" class="rank rank-n" th:text="${stat.index + 1}"></span>
+                    </td>
+                    <td th:text="${row.fullName()}"></td>
+                    <td th:text="${row.joinedDate()}"></td>
+                    <td style="font-weight:600;" th:text="${row.answerCount()}"></td>
+                    <td th:text="${row.lastAnsweredAt()}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Recent Answers -->
+    <div class="card">
+        <div class="card-title">최근 100 답변</div>
+        <div th:if="${#lists.isEmpty(recentAnswers)}" class="empty-state">데이터가 없습니다.</div>
+        <table th:if="${!#lists.isEmpty(recentAnswers)}" class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:90px;">이름</th>
+                    <th style="width:220px;">질문</th>
+                    <th>답변</th>
+                    <th style="width:150px;">답변 시각</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="row : ${recentAnswers}">
+                    <td th:text="${row.fullName()}"></td>
+                    <td><span class="truncate" th:text="${row.questionContent()}"></span></td>
+                    <td><span class="truncate" style="max-width:400px;" th:text="${row.answerContent()}"></span></td>
+                    <td th:text="${row.answeredAt()}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
