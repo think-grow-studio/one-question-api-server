@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import site.one_question.test_config.IntegrateTestConfig;
+import site.one_question.integrate.test_config.IntegrateTestConfig;
 
 @SpringBootTest
 @ActiveProfiles("test")
