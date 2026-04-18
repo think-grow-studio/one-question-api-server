@@ -26,7 +26,18 @@ public interface NotificationApi {
             @ApiResponse(
                     responseCode = "400",
                     description = "잘못된 요청",
-                    content = @Content(mediaType = "application/json")
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "토큰 누락",
+                                    value = """
+                                            {
+                                                "code": "GLOBAL-001",
+                                                "message": "tokenValue: 공백일 수 없습니다"
+                                            }
+                                            """
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "401",
@@ -86,7 +97,18 @@ public interface NotificationApi {
             @ApiResponse(
                     responseCode = "400",
                     description = "잘못된 요청",
-                    content = @Content(mediaType = "application/json")
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "토큰 누락",
+                                    value = """
+                                            {
+                                                "code": "GLOBAL-001",
+                                                "message": "tokenValue: 공백일 수 없습니다"
+                                            }
+                                            """
+                            )
+                    )
             ),
             @ApiResponse(
                     responseCode = "401",
@@ -164,7 +186,7 @@ public interface NotificationApi {
                                     name = "alarmTime 형식 오류",
                                     value = """
                                             {
-                                                "code": "COMMON-001",
+                                                "code": "GLOBAL-001",
                                                 "message": "알람 시간은 HH:mm 형식이어야 합니다."
                                             }
                                             """
@@ -275,6 +297,7 @@ public interface NotificationApi {
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
+                                    name = "알림 설정 없음",
                                     value = """
                                             {
                                                 "code": "NOTIFICATION-001",
