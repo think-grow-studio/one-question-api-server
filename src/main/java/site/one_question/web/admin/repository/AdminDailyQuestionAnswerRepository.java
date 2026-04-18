@@ -1,11 +1,9 @@
 package site.one_question.web.admin.repository;
 
-import java.time.Instant;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import site.one_question.api.question.domain.DailyQuestionAnswer;
 
 public interface AdminDailyQuestionAnswerRepository extends JpaRepository<DailyQuestionAnswer, Long> {
@@ -26,12 +24,5 @@ public interface AdminDailyQuestionAnswerRepository extends JpaRepository<DailyQ
             WHERE m.id != 1
             """)
     List<DailyQuestionAnswer> findAllWithMember();
-
-    @Query("""
-            SELECT dqa.answeredAt FROM DailyQuestionAnswer dqa
-            WHERE dqa.member.id != 1
-              AND dqa.answeredAt >= :from
-            """)
-    List<Instant> findAnsweredAtsFrom(@Param("from") Instant from);
 
 }

@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,7 +28,9 @@ public class AdminDashboardService {
     private final AdminDailyQuestionAnswerRepository dqaRepository;
     private final AdminMemberRepository memberRepository;
 
-    public record DashboardStats(long totalMembers, long totalAnswers, long todayAnswers, int wauCount) {}
+    public record DashboardStats(long totalMembers, long totalAnswers,
+                                  long todayAnswers, long todayExistingAnswers, long todayNewAnswers,
+                                  int wauCount) {}
 
     public record RecentAnswerRow(Long memberId, String fullName, LocalDate joinedDate,
                                   int changeCount, String questionContent,
@@ -36,7 +39,7 @@ public class AdminDashboardService {
     public record MemberAnswerCountRow(Long memberId, String fullName, LocalDate joinedDate,
                                        long answerCount, LocalDateTime lastAnsweredAt) {}
 
-    public record DailyAnswerCountRow(LocalDate date, long count) {}
+    public record DailyAnswerCountRow(LocalDate date, long count, long existingCount, long newCount) {}
 
     public record WauMemberRow(Long memberId, String fullName, long answerCount) {}
 
@@ -53,7 +56,7 @@ public class AdminDashboardService {
         LocalDate today = LocalDate.now(KST);
         List<DailyQuestionAnswer> allAnswers = dqaRepository.findAllWithMember();
         List<WauMemberRow> wauMembers = buildWauMembers(today, allAnswers);
-        List<DailyAnswerCountRow> dailyTrend = buildDailyTrend(today);
+        List<DailyAnswerCountRow> dailyTrend = buildDailyTrend(today, allAnswers);
         long maxDailyCount = dailyTrend.stream()
                 .mapToLong(DailyAnswerCountRow::count)
                 .max()
@@ -71,21 +74,34 @@ public class AdminDashboardService {
     private DashboardStats buildStats(LocalDate today, List<DailyQuestionAnswer> allAnswers, int wauCount) {
         long totalMembers = memberRepository.countExcludingAdmin();
         long totalAnswers = allAnswers.size();
-        long todayAnswers = allAnswers.stream()
+        List<DailyQuestionAnswer> todayList = allAnswers.stream()
                 .filter(dqa -> dqa.getAnsweredAt().atZone(KST).toLocalDate().equals(today))
+                .toList();
+        long todayAnswers = todayList.size();
+        long todayNew = todayList.stream()
+                .filter(dqa -> dqa.getMember().getJoinedDate().equals(today))
                 .count();
-        return new DashboardStats(totalMembers, totalAnswers, todayAnswers, wauCount);
+        long todayExisting = todayAnswers - todayNew;
+        return new DashboardStats(totalMembers, totalAnswers, todayAnswers, todayExisting, todayNew, wauCount);
     }
 
-    private List<DailyAnswerCountRow> buildDailyTrend(LocalDate today) {
+    private List<DailyAnswerCountRow> buildDailyTrend(LocalDate today, List<DailyQuestionAnswer> allAnswers) {
         LocalDate thirtyDaysAgo = today.minusDays(29);
         Instant from = thirtyDaysAgo.atStartOfDay(KST).toInstant();
-        Map<LocalDate, Long> dailyMap = dqaRepository.findAnsweredAtsFrom(from).stream()
-                .collect(Collectors.groupingBy(
-                        inst -> inst.atZone(KST).toLocalDate(),
-                        Collectors.counting()));
+        Map<LocalDate, long[]> dailyMap = new HashMap<>();
+        allAnswers.stream()
+                .filter(dqa -> !dqa.getAnsweredAt().isBefore(from))
+                .forEach(dqa -> {
+                    LocalDate answerDate = dqa.getAnsweredAt().atZone(KST).toLocalDate();
+                    boolean isNew = dqa.getMember().getJoinedDate().equals(answerDate);
+                    long[] c = dailyMap.computeIfAbsent(answerDate, d -> new long[2]);
+                    if (isNew) c[1]++; else c[0]++;
+                });
         return thirtyDaysAgo.datesUntil(today.plusDays(1))
-                .map(d -> new DailyAnswerCountRow(d, dailyMap.getOrDefault(d, 0L)))
+                .map(d -> {
+                    long[] c = dailyMap.getOrDefault(d, new long[2]);
+                    return new DailyAnswerCountRow(d, c[0] + c[1], c[0], c[1]);
+                })
                 .sorted(Comparator.comparing(DailyAnswerCountRow::date).reversed())
                 .toList();
     }
@@ -113,7 +129,7 @@ public class AdminDashboardService {
     }
 
     private List<RecentAnswerRow> buildRecentAnswers() {
-        return dqaRepository.findRecentAnswers(Pageable.ofSize(100)).stream()
+        return dqaRepository.findRecentAnswers(Pageable.ofSize(50)).stream()
                 .map(dqa -> new RecentAnswerRow(
                         dqa.getMember().getId(),
                         dqa.getMember().getFullName(),
