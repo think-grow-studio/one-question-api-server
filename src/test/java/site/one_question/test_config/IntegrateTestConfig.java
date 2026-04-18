@@ -4,6 +4,8 @@ import org.mockito.Mockito;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.messaging.FirebaseMessaging;
 import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.GoogleTokenVerifier;
@@ -27,5 +29,17 @@ public class IntegrateTestConfig {
     @Primary
     public FirebaseTokenVerifier mockFirebaseTokenVerifier() {
         return Mockito.mock(FirebaseTokenVerifier.class);
+    }
+
+    @Bean
+    @Primary
+    public FirebaseMessaging mockFirebaseMessaging() {
+        return Mockito.mock(FirebaseMessaging.class);
+    }
+
+    @Bean
+    @Primary
+    public FirebaseAuth mockFirebaseAuth() {
+        return Mockito.mock(FirebaseAuth.class);
     }
 }
