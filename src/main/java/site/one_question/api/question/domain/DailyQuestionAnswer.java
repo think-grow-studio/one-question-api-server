@@ -21,7 +21,7 @@ public class DailyQuestionAnswer extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "daily_question_id", nullable = false)
     private DailyQuestion dailyQuestionId;
 
