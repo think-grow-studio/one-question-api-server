@@ -1,4 +1,4 @@
-package site.one_question.global.fcm.exception;
+package site.one_question.api.notification.domain.exception;
 
 public class FcmTokenExpiredException extends RuntimeException {
 

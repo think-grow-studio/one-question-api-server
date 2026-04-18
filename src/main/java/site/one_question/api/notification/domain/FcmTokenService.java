@@ -1,5 +1,9 @@
 package site.one_question.api.notification.domain;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -8,6 +12,8 @@ import site.one_question.api.member.domain.Member;
 @Component
 @RequiredArgsConstructor
 public class FcmTokenService {
+
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     private final FcmTokenRepository repository;
 
@@ -23,6 +29,11 @@ public class FcmTokenService {
 
     public Optional<FcmToken> findToken(Member member) {
         return repository.findByMember(member);
+    }
+
+    public List<FcmToken> findTokensForNotification(Instant instant, String timezone) {
+        String alarmTime = instant.atZone(ZoneId.of(timezone)).toLocalTime().format(TIME_FORMATTER);
+        return repository.findTokensForNotification(alarmTime, timezone);
     }
 
     public void deleteByMemberId(Long memberId) {
