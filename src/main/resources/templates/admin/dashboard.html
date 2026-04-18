@@ -124,7 +124,9 @@
             .stat-value { font-size: 26px; }
             .header h1 { font-size: 16px; }
             .col-hide-mobile { display: none; }
-            .truncate { max-width: 140px; }
+            .truncate { max-width: 100px; }
+            .data-table th, .data-table td { padding: 8px 6px; font-size: 12px; }
+            .scroll-container { overflow-x: auto; }
         }
         @media (max-width: 480px) {
             .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -199,8 +201,8 @@
                     <thead>
                         <tr>
                             <th style="width:110px;">날짜</th>
-                            <th style="width:50px;text-align:right;" class="col-hide-mobile">기존</th>
-                            <th style="width:50px;text-align:right;" class="col-hide-mobile">신규</th>
+                            <th style="width:50px;text-align:right;">기존</th>
+                            <th style="width:50px;text-align:right;">신규</th>
                             <th style="width:50px;text-align:right;">합계</th>
                             <th>비율</th>
                         </tr>
@@ -208,8 +210,8 @@
                     <tbody>
                         <tr th:each="row : ${dailyTrend}">
                             <td th:text="${row.date()}"></td>
-                            <td style="text-align:right;color:#4A90D9;font-weight:600;" th:text="${row.existingCount()}" class="col-hide-mobile"></td>
-                            <td style="text-align:right;color:#52C41A;font-weight:600;" th:text="${row.newCount()}" class="col-hide-mobile"></td>
+                            <td style="text-align:right;color:#4A90D9;font-weight:600;" th:text="${row.existingCount()}"></td>
+                            <td style="text-align:right;color:#52C41A;font-weight:600;" th:text="${row.newCount()}"></td>
                             <td style="text-align:right;font-weight:600;" th:text="${row.count()}"></td>
                             <td>
                                 <div class="bar-cell">
@@ -294,7 +296,7 @@
             <thead>
                 <tr>
                     <th style="width:90px;">이름</th>
-                    <th style="width:180px;" class="col-hide-mobile">질문</th>
+                    <th style="width:180px;">질문</th>
                     <th>답변</th>
                     <th style="width:150px;" class="col-hide-mobile">답변 시각</th>
                 </tr>
@@ -302,7 +304,7 @@
             <tbody>
                 <tr th:each="row : ${recentAnswers}">
                     <td th:text="${row.fullName()}"></td>
-                    <td class="col-hide-mobile"><span class="truncate" th:text="${row.questionContent()}"></span></td>
+                    <td><span class="truncate" th:text="${row.questionContent()}"></span></td>
                     <td><span class="truncate" style="max-width:400px;" th:text="${row.answerContent()}"></span></td>
                     <td th:text="${#temporals.format(row.answeredAt(), 'yyyy-MM-dd HH:mm')}" class="col-hide-mobile"></td>
                 </tr>
