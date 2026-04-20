@@ -28,11 +28,13 @@ public class NotificationGateway {
         try {
             firebaseMessaging.send(message);
         } catch (FirebaseMessagingException e) {
-            if (e.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED) {
+            MessagingErrorCode code = e.getMessagingErrorCode();
+            if (code == MessagingErrorCode.UNREGISTERED
+                    || code == MessagingErrorCode.SENDER_ID_MISMATCH) {
                 throw new FcmTokenExpiredException(fcmToken);
             }
-            log.error("FCM 전송 실패: memberId={}, errorCode={}",
-                    memberId, e.getMessagingErrorCode(), e);
+            log.error("FCM 전송 실패: memberId={}, errorCode={}, msg={}",
+                    memberId, code, e.getMessage(), e);
         }
     }
 }

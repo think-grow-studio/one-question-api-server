@@ -34,6 +34,11 @@ public class NotificationScheduler {
     @Scheduled(cron = "0 * * * * *")
     @SchedulerLock(name = "sendAlarmNotifications", lockAtLeastFor = "PT55S", lockAtMostFor = "PT55S")
     public void sendAlarmNotifications() {
+        long startMs = System.currentTimeMillis();
+        int success = 0;
+        int failure = 0;
+        int expiredCleaned = 0;
+
         List<String> timezones = questionReminderSettingService.findDistinctActiveTimezones();
         if (timezones.isEmpty()) {
             return;
@@ -58,16 +63,21 @@ public class NotificationScheduler {
                             locale
                     );
                     notificationGateway.sendNotification(fcmToken.getMember().getId(), fcmToken.getToken(), title, body);
-                    log.debug("FCM 알림 전송 완료: memberId={}", fcmToken.getMember().getId());
+                    success++;
                 } catch (FcmTokenExpiredException e) {
                     transactionTemplate.executeWithoutResult(status ->
                             fcmTokenService.delete(fcmToken.getMember(), fcmToken.getToken()));
+                    expiredCleaned++;
                     log.warn("FCM 토큰 만료, 삭제 처리: memberId={}", fcmToken.getMember().getId());
                 } catch (Exception e) {
+                    failure++;
                     log.error("FCM 알림 전송 실패: memberId={}", fcmToken.getMember().getId(), e);
                 }
             }
         }
+
+        log.info("FCM 스케줄러 완료: success={}, failure={}, expiredCleaned={}, elapsedMs={}",
+                success, failure, expiredCleaned, System.currentTimeMillis() - startMs);
     }
 
     private Locale getMemberLocale(String localeValue) {
