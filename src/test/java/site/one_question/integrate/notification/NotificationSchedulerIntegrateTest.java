@@ -78,6 +78,21 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
     }
 
     @Test
+    @DisplayName("다른 프로젝트의 FCM 토큰(SENDER_ID_MISMATCH)도 DB에서 삭제한다")
+    void sendAlarmNotifications_deletesToken_whenSenderIdMismatch() throws Exception {
+        testFcmTokenUtils.createSave(member, "mismatched-token");
+        testQuestionReminderSettingUtils.createSave(member, currentAlarmTime, TIMEZONE);
+
+        FirebaseMessagingException ex = mock(FirebaseMessagingException.class);
+        when(ex.getMessagingErrorCode()).thenReturn(MessagingErrorCode.SENDER_ID_MISMATCH);
+        when(firebaseMessaging.send(any(Message.class))).thenThrow(ex);
+
+        notificationScheduler.sendAlarmNotifications();
+
+        assertThat(fcmTokenRepository.findByMember(member)).isEmpty();
+    }
+
+    @Test
     @DisplayName("서로 다른 타임존 멤버에게 각자의 현지 시각에 맞게 알림을 전송한다")
     void sendAlarmNotifications_sendsNotification_respectingEachMembersTimezone() throws Exception {
         String seoulTime = LocalTime.now(ZoneId.of("Asia/Seoul")).format(TIME_FORMATTER);
