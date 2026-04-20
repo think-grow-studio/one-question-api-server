@@ -47,6 +47,11 @@ dependencies {
 	// Firebase Admin SDK
 	implementation 'com.google.firebase:firebase-admin:9.4.3'
 
+	// ShedLock - 분산 스케줄러 중복 실행 방지
+	implementation 'net.javacrumbs.shedlock:shedlock-spring:7.7.0'
+	implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:7.7.0'
+	testImplementation 'net.javacrumbs.shedlock:shedlock-provider-inmemory:7.7.0'
+
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'com.oracle.database.jdbc:ojdbc11:23.3.0.23.09'
