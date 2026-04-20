@@ -29,6 +29,6 @@ public class BaseEntity {
   private Instant updatedAt;
 
   @LastModifiedBy
-  @Column(name = "updated_By")
+  @Column(name = "updated_by")
   private Long updatedBy;
 }
