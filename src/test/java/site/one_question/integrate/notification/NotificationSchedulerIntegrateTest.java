@@ -15,6 +15,10 @@ import com.google.firebase.messaging.MessagingErrorCode;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -182,6 +186,22 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
 
         verify(firebaseMessaging, times(2)).send(any(Message.class));
         assertThat(fcmTokenRepository.findAll()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("멀티 서버 환경에서 스케줄러가 동시에 실행되어도 FCM 알림은 한 번만 전송한다")
+    void sendAlarmNotifications_sendsOnce_whenCalledConcurrently() throws Exception {
+        testFcmTokenUtils.createSave(member, "test-token");
+        testQuestionReminderSettingUtils.createSave(member, currentAlarmTime, TIMEZONE);
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<?> f1 = executor.submit(() -> notificationScheduler.sendAlarmNotifications());
+        Future<?> f2 = executor.submit(() -> notificationScheduler.sendAlarmNotifications());
+        f1.get(10, TimeUnit.SECONDS);
+        f2.get(10, TimeUnit.SECONDS);
+        executor.shutdown();
+
+        verify(firebaseMessaging, times(1)).send(any(Message.class));
     }
 
     @Test

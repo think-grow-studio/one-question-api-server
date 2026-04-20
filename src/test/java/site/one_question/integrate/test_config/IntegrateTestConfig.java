@@ -42,4 +42,9 @@ public class IntegrateTestConfig {
     public FirebaseAuth mockFirebaseAuth() {
         return Mockito.mock(FirebaseAuth.class);
     }
+
+    @Bean
+    public ResettableInMemoryLockProvider resettableInMemoryLockProvider() {
+        return new ResettableInMemoryLockProvider();
+    }
 }

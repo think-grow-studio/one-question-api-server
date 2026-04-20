@@ -135,6 +135,9 @@ public abstract class IntegrateTest {
     @Autowired
     protected TransactionTemplate transactionTemplate;
 
+    @Autowired
+    private ResettableInMemoryLockProvider resettableInMemoryLockProvider;
+
     // Mock Verifiers
     @Autowired
     protected GoogleTokenVerifier googleTokenVerifier;
@@ -158,6 +161,11 @@ public abstract class IntegrateTest {
     @BeforeEach
     void resetMocks() {
         Mockito.reset(googleTokenVerifier, appleTokenVerifier, firebaseTokenVerifier);
+    }
+
+    @BeforeEach
+    void resetLockProvider() {
+        resettableInMemoryLockProvider.reset();
     }
 
     @AfterEach
