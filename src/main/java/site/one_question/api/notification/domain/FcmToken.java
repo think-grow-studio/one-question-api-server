@@ -21,6 +21,8 @@ import site.one_question.global.common.domain.BaseEntity;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+// TODO: 현재는 (member_id, token) 복합 유니크만 보장한다.
+// 회원당 FCM 토큰 1개 정책을 확정하면 member_id 단독 유니크로 마이그레이션 필요.
 @Table(
         name = "fcm_token",
         uniqueConstraints = @UniqueConstraint(
@@ -43,5 +45,9 @@ public class FcmToken extends BaseEntity {
 
     public static FcmToken create(Member member, String token) {
         return new FcmToken(null, member, token);
+    }
+
+    public void updateToken(String token) {
+        this.token = token;
     }
 }

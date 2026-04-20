@@ -18,8 +18,11 @@ public class FcmTokenService {
     private final FcmTokenRepository repository;
 
     public void register(Member member, String token) {
-        repository.deleteByMember(member);
-        repository.save(FcmToken.create(member, token));
+        repository.findByMember(member)
+                .ifPresentOrElse(
+                        fcmToken -> fcmToken.updateToken(token),
+                        () -> repository.save(FcmToken.create(member, token))
+                );
     }
 
     public void delete(Member member, String token) {
