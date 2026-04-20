@@ -202,6 +202,7 @@ public class AuthApplication {
 
     public void logout(Long memberId) {
         refreshTokenService.deleteByMemberId(memberId);
+        fcmTokenService.deleteByMemberId(memberId);
     }
 
     public void withdraw(Long memberId) {
