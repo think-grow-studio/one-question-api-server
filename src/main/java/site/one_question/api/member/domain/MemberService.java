@@ -5,11 +5,13 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import site.one_question.api.member.domain.exception.MemberNotFoundException;
+import site.one_question.global.i18n.LocaleNormalizer;
 
 @Component
 @RequiredArgsConstructor
 public class MemberService {
   private final MemberRepository memberRepository;
+  private final LocaleNormalizer localeNormalizer;
 
   public Member findById(Long memberId) {
     return memberRepository.findById(memberId)
@@ -32,12 +34,15 @@ public class MemberService {
           String locale,
           LocalDate localDate
   ) {
-    Member member = Member.create(email, fullName, provider, providerId, locale, localDate);
+    Member member = Member.create(email, fullName, provider, providerId, localeNormalizer.normalize(locale), localDate);
     return memberRepository.save(member);
   }
 
   public Member updateMember(Long memberId, String fullName, String locale) {
     Member member = findById(memberId);
+    if(locale != null) {
+      locale = localeNormalizer.normalize(locale);
+    }
     member.updateProfile(fullName, locale);
     return member;
   }

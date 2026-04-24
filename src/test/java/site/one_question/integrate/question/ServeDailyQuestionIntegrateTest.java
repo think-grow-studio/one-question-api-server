@@ -1,0 +1,504 @@
+package site.one_question.integrate.question;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Comparator;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import java.util.Map;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import site.one_question.global.common.HttpHeaderConstant;
+import site.one_question.api.member.domain.Member;
+import site.one_question.api.question.domain.DailyQuestion;
+import site.one_question.api.question.domain.Question;
+import site.one_question.api.question.domain.QuestionCycle;
+import site.one_question.api.question.domain.exception.QuestionExceptionSpec;
+import site.one_question.api.question.presentation.request.CreateAnswerRequest;
+import site.one_question.integrate.test_config.IntegrateTest;
+
+@DisplayName("오늘의 질문 조회 통합 테스트")
+class ServeDailyQuestionIntegrateTest extends IntegrateTest {
+
+    private static final String TIMEZONE = "Asia/Seoul";
+
+    private Member member;
+    private String token;
+
+    @BeforeEach
+    void setup() {
+        member = testMemberUtils.createSave();
+        token = testAuthUtils.createBearerToken(member);
+
+        // 테스트용 질문 10개 생성 (DailyQuestion 생성 시 질문 풀에서 선택하기 위함)
+        for (int i = 0; i < 10; i++) {
+            testQuestionUtils.createSave();
+        }
+    }
+
+    @Test
+    @DisplayName("오늘의 질문 제공 시 200 OK 응답 및 질문 정보 반환")
+    void serve_daily_question_with_valid_request_then_return_200_ok() throws Exception {
+        // given
+        LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+        // when & then
+        mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                        .header(HttpHeaders.AUTHORIZATION, token)
+                        .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dailyQuestionId").exists())
+                .andExpect(jsonPath("$.content").exists())
+                .andExpect(jsonPath("$.questionCycle").value(1))
+                .andExpect(jsonPath("$.changeCount").value(0))
+                .andExpect(jsonPath("$.candidates").isArray())
+                .andExpect(jsonPath("$.candidates.length()").value(1))
+                .andExpect(jsonPath("$.candidates[0].receivedOrder").value(1))
+                .andExpect(jsonPath("$.candidates[0].selected").value(true));
+
+        // DB 검증 - DailyQuestion 생성 확인
+        assertThat(dailyQuestionRepository.findAll())
+                .as("DailyQuestion이 1개 생성되어야 함")
+                .hasSize(1);
+
+        DailyQuestion savedDailyQuestion = dailyQuestionRepository.findAll().get(0);
+        assertThat(savedDailyQuestion.getMember().getId())
+                .as("저장된 DailyQuestion의 회원 ID가 요청한 회원 ID와 일치해야 함 (기대 ID: %d)", member.getId())
+                .isEqualTo(member.getId());
+        assertThat(savedDailyQuestion.getQuestionDate())
+                .as("저장된 DailyQuestion의 날짜가 요청한 날짜와 일치해야 함 (기대 날짜: %s)", today)
+                .isEqualTo(today);
+
+        // QuestionCycle 생성 확인
+        assertThat(questionCycleRepository.findAll())
+                .as("QuestionCycle이 1개 생성되어야 함")
+                .hasSize(1);
+    }
+
+    @Nested
+    @DisplayName("멱등성 테스트")
+    class IdempotencyTest {
+
+        @Test
+        @DisplayName("동일 날짜 2번 요청 시 같은 DailyQuestion 반환")
+        void serve_same_date_twice_returns_same_daily_question() throws Exception {
+            // given
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            // when - 첫 번째 요청
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            List<DailyQuestion> afterFirstRequest = dailyQuestionRepository.findAll();
+            assertThat(afterFirstRequest)
+                    .as("첫 번째 요청 후 DailyQuestion이 1개 생성되어야 함")
+                    .hasSize(1);
+            Long firstDailyQuestionId = afterFirstRequest.get(0).getId();
+
+            // when - 두 번째 요청 (동일 날짜)
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.dailyQuestionId").value(firstDailyQuestionId));
+
+            // then - DailyQuestion이 1개만 존재 (중복 생성 없음)
+            assertThat(dailyQuestionRepository.findAll())
+                    .as("두 번째 요청 후에도 DailyQuestion이 1개만 존재해야 함 (중복 생성 없음)")
+                    .hasSize(1);
+            assertThat(questionCycleRepository.findAll())
+                    .as("두 번째 요청 후에도 QuestionCycle이 1개만 존재해야 함 (중복 생성 없음)")
+                    .hasSize(1);
+        }
+    }
+
+    @Nested
+    @DisplayName("갭 필링 테스트")
+    class GapFillingTest {
+
+        @Test
+        @DisplayName("2년 후 요청 시 중간 사이클들 자동 생성")
+        void request_after_2_years_creates_intermediate_cycles() throws Exception {
+            // given - 2년 전에 가입한 멤버 및 첫 번째 사이클 생성
+            LocalDate twoYearsAgo = LocalDate.now(ZoneId.of(TIMEZONE)).minusYears(2);
+            Member oldMember = testMemberUtils.createSave_With_JoinedDate(twoYearsAgo);
+            String oldMemberToken = testAuthUtils.createBearerToken(oldMember);
+
+            // 첫 번째 사이클 생성 (2년 전 시작)
+            testQuestionCycleUtils.createSave_With_StartDate(oldMember, twoYearsAgo, TIMEZONE, 1);
+
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            // when - 오늘 날짜로 질문 요청
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, oldMemberToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.questionCycle").value(3)); // 3번째 사이클
+
+            // then - 사이클이 순차적으로 생성됨
+            List<QuestionCycle> cycles = questionCycleRepository.findAll();
+            assertThat(cycles)
+                    .as("2년 후 요청 시 총 3개의 사이클이 생성되어야 함")
+                    .hasSize(3);
+
+            // cycleNumber 순서 검증
+            List<QuestionCycle> sortedCycles = cycles.stream()
+                    .sorted(Comparator.comparing(QuestionCycle::getCycleNumber))
+                    .toList();
+
+            assertThat(sortedCycles.get(0).getCycleNumber())
+                    .as("첫 번째 사이클 번호가 1이어야 함")
+                    .isEqualTo(1);
+            assertThat(sortedCycles.get(1).getCycleNumber())
+                    .as("두 번째 사이클 번호가 2여야 함")
+                    .isEqualTo(2);
+            assertThat(sortedCycles.get(2).getCycleNumber())
+                    .as("세 번째 사이클 번호가 3이어야 함")
+                    .isEqualTo(3);
+
+            // 각 사이클의 시작/종료일 연속성 검증
+            for (int i = 1; i < sortedCycles.size(); i++) {
+                QuestionCycle prevCycle = sortedCycles.get(i - 1);
+                QuestionCycle currentCycle = sortedCycles.get(i);
+                assertThat(currentCycle.getStartDate())
+                        .as("사이클 %d의 시작일이 이전 사이클의 종료일 + 1일이어야 함", currentCycle.getCycleNumber())
+                        .isEqualTo(prevCycle.getEndDate().plusDays(1));
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("사이클 경계 테스트")
+    class CycleBoundaryTest {
+
+        @Test
+        @DisplayName("사이클 마지막 날 요청 시 해당 사이클 반환")
+        void request_on_cycle_end_date_returns_current_cycle() throws Exception {
+            // given - 1년 전에 가입해서 오늘이 사이클 마지막 날이 되도록 설정
+            LocalDate cycleStartDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusYears(1).plusDays(1);
+            LocalDate cycleEndDate = cycleStartDate.plusYears(1).minusDays(1); // = 오늘
+
+            Member memberWithCycle = testMemberUtils.createSave_With_JoinedDate(cycleStartDate);
+            String memberToken = testAuthUtils.createBearerToken(memberWithCycle);
+
+            QuestionCycle cycle = testQuestionCycleUtils.createSave_With_StartDate(
+                    memberWithCycle, cycleStartDate, TIMEZONE, 1);
+
+            // when - 사이클 종료일에 요청
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", cycleEndDate)
+                            .header(HttpHeaders.AUTHORIZATION, memberToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.questionCycle").value(1)); // 첫 번째 사이클
+
+            // then - 새 사이클이 생성되지 않음
+            assertThat(questionCycleRepository.findAll())
+                    .as("사이클 종료일에 요청 시 새 사이클이 생성되지 않아야 함 (1개 유지)")
+                    .hasSize(1);
+            assertThat(questionCycleRepository.findAll().get(0).getId())
+                    .as("기존 사이클 ID가 유지되어야 함 (기대 ID: %d)", cycle.getId())
+                    .isEqualTo(cycle.getId());
+        }
+
+        @Test
+        @DisplayName("사이클 종료일 다음 날 요청 시 새 사이클 생성")
+        void request_day_after_cycle_end_creates_new_cycle() throws Exception {
+            // given - 사이클 종료일이 어제가 되도록 설정
+            LocalDate cycleStartDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusYears(1);
+            LocalDate cycleEndDate = cycleStartDate.plusYears(1).minusDays(1); // = 어제
+            LocalDate dayAfterCycleEnd = cycleEndDate.plusDays(1); // = 오늘
+
+            Member memberWithCycle = testMemberUtils.createSave_With_JoinedDate(cycleStartDate);
+            String memberToken = testAuthUtils.createBearerToken(memberWithCycle);
+
+            testQuestionCycleUtils.createSave_With_StartDate(memberWithCycle, cycleStartDate, TIMEZONE, 1);
+
+            // when - 사이클 종료일 다음 날에 요청
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", dayAfterCycleEnd)
+                            .header(HttpHeaders.AUTHORIZATION, memberToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.questionCycle").value(2)); // 두 번째 사이클
+
+            // then - 새 사이클 생성 확인
+            List<QuestionCycle> cycles = questionCycleRepository.findAll();
+            assertThat(cycles)
+                    .as("사이클 종료일 다음 날 요청 시 새 사이클이 생성되어 총 2개가 되어야 함")
+                    .hasSize(2);
+
+            QuestionCycle newCycle = cycles.stream()
+                    .filter(c -> c.getCycleNumber() == 2)
+                    .findFirst()
+                    .orElseThrow();
+
+            assertThat(newCycle.getStartDate())
+                    .as("새 사이클의 시작일이 사이클 종료일 다음 날과 일치해야 함 (기대 날짜: %s)", dayAfterCycleEnd)
+                    .isEqualTo(dayAfterCycleEnd);
+        }
+    }
+
+    @Nested
+    @DisplayName("좋아요 여부 테스트")
+    class LikedTest {
+
+        @Test
+        @DisplayName("좋아요를 누르지 않은 질문 조회 시 liked=false 반환")
+        void serve_returns_liked_false_when_not_liked() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.liked").value(false));
+        }
+
+        @Test
+        @DisplayName("좋아요를 누른 질문 조회 시 liked=true 반환")
+        void serve_returns_liked_true_when_liked() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question question = testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave(member, cycle, question);
+            testQuestionLikeUtils.createSave(question, member);
+
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.liked").value(true));
+        }
+
+        @Test
+        @DisplayName("사이클이 넘어가도 이전 사이클에서 좋아요한 질문은 liked=true 반환")
+        void serve_returns_liked_true_for_same_question_across_cycles() throws Exception {
+            // given - 1년 전 사이클 1 시작, 오늘 사이클 2 시작
+            LocalDate cycleOneStartDate = LocalDate.now(ZoneId.of(TIMEZONE)).minusYears(1);
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            Member cycleMember = testMemberUtils.createSave_With_JoinedDate(cycleOneStartDate);
+            String cycleMemberToken = testAuthUtils.createBearerToken(cycleMember);
+
+            // 사이클 1: 1년 전 시작
+            QuestionCycle cycleOne = testQuestionCycleUtils.createSave_With_StartDate(cycleMember, cycleOneStartDate, TIMEZONE, 1);
+
+            // 질문 풀 생성 (serveDailyQuestion이 랜덤 선택하므로 충분한 수 필요)
+            Question sharedQuestion = testQuestionUtils.createSave();
+            for (int i = 0; i < 9; i++) {
+                testQuestionUtils.createSave();
+            }
+
+            // 사이클 2 생성 전에 좋아요 → 좋아요는 사이클과 무관
+            testQuestionLikeUtils.createSave(sharedQuestion, cycleMember);
+
+            // 사이클 2: 오늘 시작, 해당 질문을 오늘의 질문으로 직접 할당
+            QuestionCycle cycleTwo = testQuestionCycleUtils.createSave_With_StartDate(cycleMember, today, TIMEZONE, 2);
+            testDailyQuestionUtils.createSave(cycleMember, cycleTwo, sharedQuestion);
+
+            // when - 사이클 2에서 오늘의 질문 조회
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, cycleMemberToken)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.questionCycle").value(2))
+                    .andExpect(jsonPath("$.liked").value(true));
+        }
+    }
+
+    @Nested
+    @DisplayName("후보 상태 반영 테스트")
+    class CandidateStateTest {
+
+        @Test
+        @DisplayName("기존 DailyQuestion에 후보가 여러 개면 order 순으로 모두 반환")
+        void serve_existing_daily_question_returns_all_candidates_in_order() throws Exception {
+            // given - BeforeEach에서 10개 질문 이미 생성됨
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            // serve → 초기 질문 제공 (order=1, current)
+            String serveResult = mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            Long dailyQuestionId = objectMapper.readTree(serveResult).get("dailyQuestionId").asLong();
+            Long initialQuestionId = objectMapper.readTree(serveResult).get("questionId").asLong();
+
+            // reload → 새 질문 추가 (order=2, current 변경)
+            String reloadResult = mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            Long reloadedQuestionId = objectMapper.readTree(reloadResult).get("questionId").asLong();
+
+            // when - serve 재조회 (멱등: 같은 DailyQuestion 반환)
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.dailyQuestionId").value(dailyQuestionId))
+                    .andExpect(jsonPath("$.questionId").value(reloadedQuestionId))
+                    .andExpect(jsonPath("$.changeCount").value(1))
+                    .andExpect(jsonPath("$.candidates.length()").value(2))
+                    .andExpect(jsonPath("$.candidates[0].questionId").value(initialQuestionId))
+                    .andExpect(jsonPath("$.candidates[0].receivedOrder").value(1))
+                    .andExpect(jsonPath("$.candidates[0].selected").value(false))
+                    .andExpect(jsonPath("$.candidates[1].questionId").value(reloadedQuestionId))
+                    .andExpect(jsonPath("$.candidates[1].receivedOrder").value(2))
+                    .andExpect(jsonPath("$.candidates[1].selected").value(true));
+        }
+
+        @Test
+        @DisplayName("후보 재선택 상태면 현재 선택 질문 기준으로 응답 반환")
+        void serve_existing_daily_question_reflects_reselected_candidate() throws Exception {
+            // given - BeforeEach에서 10개 질문 이미 생성됨
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            // serve → 초기 질문 (order=1, current)
+            String serveResult = mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            Long dailyQuestionId = objectMapper.readTree(serveResult).get("dailyQuestionId").asLong();
+            Long initialQuestionId = objectMapper.readTree(serveResult).get("questionId").asLong();
+
+            // reload → 새 질문 (order=2), current 변경
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk());
+
+            // 초기 질문(order=1)으로 재선택
+            mockMvc.perform(patch(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(Map.of("questionId", initialQuestionId))))
+                    .andExpect(status().isOk());
+
+            // when - serve 재조회: 초기 질문이 current
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.dailyQuestionId").value(dailyQuestionId))
+                    .andExpect(jsonPath("$.questionId").value(initialQuestionId))
+                    .andExpect(jsonPath("$.changeCount").value(1))
+                    .andExpect(jsonPath("$.candidates.length()").value(2))
+                    .andExpect(jsonPath("$.candidates[0].questionId").value(initialQuestionId))
+                    .andExpect(jsonPath("$.candidates[0].selected").value(true))
+                    .andExpect(jsonPath("$.candidates[1].selected").value(false));
+        }
+    }
+
+    @Nested
+    @DisplayName("답변 완료 상태 테스트")
+    class AnsweredStateTest {
+
+        @Test
+        @DisplayName("답변 완료 후 조회 시 candidates는 빈 배열이고 liked는 현재 질문 기준으로 반환")
+        void serve_answered_daily_question_returns_empty_candidates_and_current_liked() throws Exception {
+            // given - BeforeEach에서 10개 질문 이미 생성됨
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            // serve → dailyQuestionId, questionId 캡처
+            String serveRes = mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            long dailyQuestionId = objectMapper.readTree(serveRes).get("dailyQuestionId").asLong();
+            long questionId = objectMapper.readTree(serveRes).get("questionId").asLong();
+
+            // 좋아요 토글 (liked=true)
+            mockMvc.perform(post(QUESTIONS_API + "/{questionId}/like", questionId)
+                            .header(HttpHeaders.AUTHORIZATION, token))
+                    .andExpect(status().isOk());
+
+            // 답변 작성 → candidates 삭제됨
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/answer", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(new CreateAnswerRequest("답변 완료", false))))
+                    .andExpect(status().isOk());
+
+            // when & then - 답변 완료 후 조회: candidates 비어있고 liked=true 유지
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.dailyQuestionId").value(dailyQuestionId))
+                    .andExpect(jsonPath("$.questionId").value(questionId))
+                    .andExpect(jsonPath("$.liked").value(true))
+                    .andExpect(jsonPath("$.candidates").isArray())
+                    .andExpect(jsonPath("$.candidates.length()").value(0));
+        }
+    }
+
+    @Nested
+    @DisplayName("예외 처리 테스트")
+    class ExceptionTest {
+
+        @Test
+        @DisplayName("미래 날짜 요청 시 400 Bad Request")
+        void request_future_date_throws_400_bad_request() throws Exception {
+            // given
+            LocalDate futureDate = LocalDate.now(ZoneId.of(TIMEZONE)).plusDays(1);
+
+            // when & then
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", futureDate)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.FUTURE_DATE_QUESTION.getCode()));
+
+            // DB 검증 - 아무것도 생성되지 않음
+            assertThat(dailyQuestionRepository.findAll())
+                    .as("미래 날짜 요청 시 DailyQuestion이 생성되지 않아야 함")
+                    .isEmpty();
+            assertThat(questionCycleRepository.findAll())
+                    .as("미래 날짜 요청 시 QuestionCycle이 생성되지 않아야 함")
+                    .isEmpty();
+        }
+
+        @Test
+        @DisplayName("가입일 이전 날짜 요청 시 400 Bad Request")
+        void request_before_signup_date_throws_400_bad_request() throws Exception {
+            // given - 오늘 가입한 멤버에 대해 첫 사이클 생성
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            testQuestionCycleUtils.createSave_With_StartDate(member, today, TIMEZONE, 1);
+
+            LocalDate beforeSignupDate = today.minusDays(1);
+
+            // when & then
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", beforeSignupDate)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.BEFORE_SIGNUP_DATE.getCode()));
+
+            // DB 검증 - 새 사이클이 생성되지 않음
+            assertThat(questionCycleRepository.findAll())
+                    .as("가입일 이전 날짜 요청 시 새 사이클이 생성되지 않아야 함 (1개 유지)")
+                    .hasSize(1);
+            assertThat(dailyQuestionRepository.findAll())
+                    .as("가입일 이전 날짜 요청 시 DailyQuestion이 생성되지 않아야 함")
+                    .isEmpty();
+        }
+    }
+}

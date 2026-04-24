@@ -14,6 +14,7 @@ public class MessageConfig {
             new ReloadableResourceBundleMessageSource();
         messageSource.setBasename("classpath:messages");
         messageSource.setDefaultEncoding("UTF-8");
+        messageSource.setFallbackToSystemLocale(false);
         messageSource.setCacheSeconds(60);
         return messageSource;
     }
