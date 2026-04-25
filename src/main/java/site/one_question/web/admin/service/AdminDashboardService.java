@@ -41,7 +41,7 @@ public class AdminDashboardService {
 
     public record DailyAnswerCountRow(LocalDate date, long count, long existingCount, long newCount) {}
 
-    public record WauMemberRow(Long memberId, String fullName, long answerCount) {}
+    public record WauMemberRow(Long memberId, String fullName, LocalDate joinedDate, long answerCount) {}
 
     public record DashboardData(
             DashboardStats stats,
@@ -127,7 +127,7 @@ public class AdminDashboardService {
 
     private List<WauMemberRow> buildWauMembers(Instant from, Instant to) {
         return dqaRepository.findWauData(from, to).stream()
-                .map(row -> new WauMemberRow(row.memberId(), row.fullName(), row.answerCount()))
+                .map(row -> new WauMemberRow(row.memberId(), row.fullName(), row.joinedDate(), row.answerCount()))
                 .toList();
     }
 }

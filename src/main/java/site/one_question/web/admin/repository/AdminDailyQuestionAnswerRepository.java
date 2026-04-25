@@ -58,10 +58,10 @@ public interface AdminDailyQuestionAnswerRepository extends JpaRepository<DailyQ
     List<LeaderboardRow> findLeaderboardData();
 
     @Query("""
-            SELECT new site.one_question.web.admin.dto.WauRow(m.id, m.fullName, COUNT(dqa))
+            SELECT new site.one_question.web.admin.dto.WauRow(m.id, m.fullName, m.joinedDate, COUNT(dqa))
             FROM DailyQuestionAnswer dqa JOIN dqa.member m
             WHERE m.id != 1 AND dqa.answeredAt >= :from AND dqa.answeredAt < :to
-            GROUP BY m.id, m.fullName
+            GROUP BY m.id, m.fullName, m.joinedDate
             HAVING COUNT(dqa) >= 3
             ORDER BY m.id
             """)

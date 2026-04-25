@@ -124,8 +124,8 @@
             .stat-value { font-size: 26px; }
             .header h1 { font-size: 16px; }
             .col-hide-mobile { display: none; }
-            .truncate { max-width: 100px; }
-            .data-table th, .data-table td { padding: 8px 6px; font-size: 12px; }
+            .truncate { max-width: 80px; }
+            .data-table th, .data-table td { padding: 8px 4px; font-size: 11px; }
             .scroll-container { overflow-x: auto; }
         }
         @media (max-width: 480px) {
@@ -241,12 +241,14 @@
                     <thead>
                         <tr>
                             <th>이름</th>
+                            <th style="width:100px;">가입일</th>
                             <th style="width:80px;text-align:right;">7일 답변수</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:each="row : ${wauMembers}">
                             <td th:text="${row.fullName()}"></td>
+                            <td th:text="${row.joinedDate()}"></td>
                             <td style="text-align:right;font-weight:600;color:#4A90D9;" th:text="${row.answerCount()}"></td>
                         </tr>
                     </tbody>
@@ -265,9 +267,9 @@
                     <tr>
                         <th style="width:60px;">순위</th>
                         <th>이름</th>
-                        <th style="width:110px;" class="col-hide-mobile">가입일</th>
+                        <th style="width:110px;">가입일</th>
                         <th style="width:90px;">총 답변수</th>
-                        <th style="width:160px;" class="col-hide-mobile">마지막 답변</th>
+                        <th style="width:160px;">마지막 답변</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -279,9 +281,9 @@
                             <span th:if="${stat.index >= 3}" class="rank rank-n" th:text="${stat.index + 1}"></span>
                         </td>
                         <td th:text="${row.fullName()}"></td>
-                        <td th:text="${row.joinedDate()}" class="col-hide-mobile"></td>
+                        <td th:text="${row.joinedDate()}"></td>
                         <td style="font-weight:600;" th:text="${row.answerCount()}"></td>
-                        <td th:text="${#temporals.format(row.lastAnsweredAt(), 'yyyy-MM-dd HH:mm')}" class="col-hide-mobile"></td>
+                        <td th:text="${#temporals.format(row.lastAnsweredAt(), 'yyyy-MM-dd HH:mm')}"></td>
                     </tr>
                 </tbody>
             </table>
@@ -296,6 +298,7 @@
             <thead>
                 <tr>
                     <th style="width:90px;">이름</th>
+                    <th style="width:100px;">가입일</th>
                     <th style="width:180px;">질문</th>
                     <th>답변</th>
                     <th style="width:150px;" class="col-hide-mobile">답변 시각</th>
@@ -304,6 +307,7 @@
             <tbody>
                 <tr th:each="row : ${recentAnswers}">
                     <td th:text="${row.fullName()}"></td>
+                    <td th:text="${row.joinedDate()}"></td>
                     <td><span class="truncate" th:text="${row.questionContent()}"></span></td>
                     <td><span class="truncate" style="max-width:400px;" th:text="${row.answerContent()}"></span></td>
                     <td th:text="${#temporals.format(row.answeredAt(), 'yyyy-MM-dd HH:mm')}" class="col-hide-mobile"></td>
