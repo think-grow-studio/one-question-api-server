@@ -88,6 +88,10 @@ jobs:
                 -e DISCORD_LOGGING_WEBHOOK_URL="${{ secrets.DISCORD_LOGGING_WEBHOOK_URL }}" \
                 -e ADMIN_EMAIL="${{ secrets.ADMIN_EMAIL }}" \
                 -e FIREBASE_SERVICE_ACCOUNT_JSON="${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" \
+                -e APPLE_CLIENT_ID="${{ secrets.APPLE_CLIENT_ID }}" \
+                -e APPLE_TEAM_ID="${{ secrets.APPLE_TEAM_ID }}" \
+                -e APPLE_KEY_ID="${{ secrets.APPLE_KEY_ID }}" \
+                -e APPLE_PRIVATE_KEY="${{ secrets.APPLE_PRIVATE_KEY }}" \
                 $IMAGE_URL
 
               echo "⏳ [DEV VM] Waiting for container to start..."

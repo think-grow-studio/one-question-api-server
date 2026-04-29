@@ -9,9 +9,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.one_question.api.auth.domain.RefreshTokenService;
 import site.one_question.api.auth.domain.exception.AccountAlreadyLinkedException;
+import site.one_question.api.auth.domain.exception.AppleAccountAlreadyExistsException;
 import site.one_question.api.auth.domain.exception.GoogleAccountAlreadyExistsException;
 import site.one_question.api.auth.domain.exception.InvalidTokenException;
 import site.one_question.global.security.service.JwtService;
+import site.one_question.api.auth.infrastructure.oauth.AppleAuthClient;
 import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier.AppleTokenPayload;
 import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier;
@@ -19,11 +21,14 @@ import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier.Fir
 import site.one_question.api.auth.infrastructure.oauth.GoogleTokenVerifier;
 import site.one_question.api.auth.presentation.request.AnonymousAuthRequest;
 import site.one_question.api.auth.presentation.request.AppleAuthRequest;
+import site.one_question.api.auth.presentation.request.CheckAppleLinkRequest;
 import site.one_question.api.auth.presentation.request.GoogleAuthRequest;
 import site.one_question.api.auth.presentation.request.CheckGoogleLinkRequest;
+import site.one_question.api.auth.presentation.request.LinkToAppleRequest;
 import site.one_question.api.auth.presentation.request.LinkToGoogleRequest;
 import site.one_question.api.auth.presentation.request.ReissueAuthTokenRequest;
 import site.one_question.api.auth.presentation.response.AuthResponse;
+import site.one_question.api.auth.presentation.response.CheckAppleLinkResponse;
 import site.one_question.api.auth.presentation.response.CheckGoogleLinkResponse;
 import site.one_question.api.auth.presentation.response.ReissueAuthTokenResponse;
 import site.one_question.api.member.domain.AuthSocialProvider;
@@ -47,6 +52,7 @@ public class AuthApplication {
 
     private final GoogleTokenVerifier googleTokenVerifier;
     private final AppleTokenVerifier appleTokenVerifier;
+    private final AppleAuthClient appleAuthClient;
     private final FirebaseTokenVerifier firebaseTokenVerifier;
     private final JwtService jwtService;
     private final MemberService memberService;
@@ -81,10 +87,10 @@ public class AuthApplication {
     }
 
     public AuthResponse appleAuth(AppleAuthRequest request, String locale, String timezone) {
-        AppleTokenPayload payload = appleTokenVerifier.verify(request.identityToken());
+        AppleTokenPayload payload = appleTokenVerifier.verify(request.identityToken(), request.rawNonce());
         LocalDate joinedDate = LocalDate.now(ZoneId.of(timezone));
 
-        return loginOrSignup(
+        MemberLookup result = findOrCreateMember(
                 AuthSocialProvider.APPLE,
                 payload.providerId(),
                 payload.email(),
@@ -93,9 +99,40 @@ public class AuthApplication {
                 joinedDate,
                 timezone
         );
+
+        // 회원 탈퇴 시 Apple revoke를 위해 authorizationCode를 refresh_token으로 교환해 저장.
+        // 이미 refresh_token이 있는 회원은 덮어쓰지 않는다 (Apple은 한 사용자당 활성 refresh_token 1개를 보장).
+        if (result.member().getAppleRefreshToken() == null) {
+            exchangeAndStoreAppleRefreshToken(result.member(), request.authorizationCode());
+        }
+
+        return issueAuthResponse(result.member(), result.isNewMember());
+    }
+
+    private void exchangeAndStoreAppleRefreshToken(Member member, String authorizationCode) {
+        if (authorizationCode == null || authorizationCode.isBlank()) {
+            return;
+        }
+        String refreshToken = appleAuthClient.exchangeCodeForRefreshToken(authorizationCode);
+        if (refreshToken != null) {
+            member.updateAppleRefreshToken(refreshToken);
+        }
     }
 
     private AuthResponse loginOrSignup(
+            AuthSocialProvider provider,
+            String providerId,
+            String email,
+            String name,
+            String locale,
+            LocalDate localDate,
+            String timezone
+    ) {
+        MemberLookup result = findOrCreateMember(provider, providerId, email, name, locale, localDate, timezone);
+        return issueAuthResponse(result.member(), result.isNewMember());
+    }
+
+    private MemberLookup findOrCreateMember(
             AuthSocialProvider provider,
             String providerId,
             String email,
@@ -120,10 +157,13 @@ public class AuthApplication {
             return newMember;
         });
 
-        String accessToken = jwtService.issueAccessToken(member.getId(),member.getEmail(),member.getPermission());
-        String refreshToken = jwtService.issueRefreshToken(member.getId(),member.getEmail(),member.getPermission());
-        refreshTokenService.save(member, refreshToken, jwtService.extractExpiration(refreshToken));
+        return new MemberLookup(member, isNewMember);
+    }
 
+    private AuthResponse issueAuthResponse(Member member, boolean isNewMember) {
+        String accessToken = jwtService.issueAccessToken(member.getId(), member.getEmail(), member.getPermission());
+        String refreshToken = jwtService.issueRefreshToken(member.getId(), member.getEmail(), member.getPermission());
+        refreshTokenService.save(member, refreshToken, jwtService.extractExpiration(refreshToken));
         return new AuthResponse(accessToken, refreshToken, isNewMember);
     }
 
@@ -174,11 +214,41 @@ public class AuthApplication {
 
         member.linkToGoogle(email, name, googleProviderId);
 
-        String accessToken = jwtService.issueAccessToken(member.getId(), member.getEmail(), member.getPermission());
-        String refreshToken = jwtService.issueRefreshToken(member.getId(), member.getEmail(), member.getPermission());
-        refreshTokenService.save(member, refreshToken, jwtService.extractExpiration(refreshToken));
+        return issueAuthResponse(member, false);
+    }
 
-        return new AuthResponse(accessToken, refreshToken, false);
+    @Transactional(readOnly = true)
+    public CheckAppleLinkResponse checkAppleLinking(CheckAppleLinkRequest request) {
+        AppleTokenPayload payload = appleTokenVerifier.verify(request.identityToken(), request.rawNonce());
+        String providerId = payload.providerId();
+
+        boolean exists = memberService.existsByProviderAndProviderId(AuthSocialProvider.APPLE, providerId);
+        return new CheckAppleLinkResponse(exists);
+    }
+
+    public AuthResponse linkToApple(Long memberId, LinkToAppleRequest request) {
+        Member member = memberService.findById(memberId);
+
+        if (!member.isAnonymous()) {
+            throw new AccountAlreadyLinkedException();
+        }
+
+        AppleTokenPayload payload = appleTokenVerifier.verify(request.identityToken(), request.rawNonce());
+        String appleProviderId = payload.providerId();
+        String email = payload.email();
+        String name = request.name();
+
+        Optional<Member> existing = memberService.findByProviderAndProviderId(
+                AuthSocialProvider.APPLE, appleProviderId
+        );
+        if (existing.isPresent()) {
+            throw new AppleAccountAlreadyExistsException();
+        }
+
+        member.linkToApple(email, name, appleProviderId);
+        exchangeAndStoreAppleRefreshToken(member, request.authorizationCode());
+
+        return issueAuthResponse(member, false);
     }
 
     public ReissueAuthTokenResponse reissueToken(ReissueAuthTokenRequest request) {
@@ -206,6 +276,13 @@ public class AuthApplication {
     }
 
     public void withdraw(Long memberId) {
+        // App Store Review Guideline 5.1.1(v): Apple 로그인 사용자의 경우 탈퇴 시 Apple 권한도 revoke해야 한다.
+        // 실패해도 회원 탈퇴 흐름은 계속 진행 (best-effort)
+        Member member = memberService.findById(memberId);
+        if (member.isApple() && member.getAppleRefreshToken() != null) {
+            appleAuthClient.revokeRefreshToken(member.getAppleRefreshToken());
+        }
+
         refreshTokenService.deleteByMemberId(memberId);
         fcmTokenService.deleteByMemberId(memberId);
         questionReminderSettingService.deleteByMemberId(memberId);
@@ -218,4 +295,6 @@ public class AuthApplication {
         questionCycleService.deleteByMemberId(memberId);
         memberService.withdraw(memberId);
     }
+
+    private record MemberLookup(Member member, boolean isNewMember) {}
 }

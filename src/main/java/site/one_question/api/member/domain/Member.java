@@ -57,6 +57,9 @@ public class Member extends BaseEntity {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    @Column(name = "apple_refresh_token", length = 500)
+    private String appleRefreshToken;
+
     public static Member create(
             String email,
             String fullName,
@@ -77,6 +80,7 @@ public class Member extends BaseEntity {
                 MemberPermission.FREE,
                 locale,
                 MemberStatus.ACTIVE,
+                null,
                 null
         );
     }
@@ -105,5 +109,22 @@ public class Member extends BaseEntity {
         if (fullName != null) {
             this.fullName = fullName;
         }
+    }
+
+    public void linkToApple(String email, String fullName, String providerId) {
+        this.provider = AuthSocialProvider.APPLE;
+        this.providerId = providerId;
+        this.email = email;
+        if (fullName != null) {
+            this.fullName = fullName;
+        }
+    }
+
+    public boolean isApple() {
+        return this.provider == AuthSocialProvider.APPLE;
+    }
+
+    public void updateAppleRefreshToken(String refreshToken) {
+        this.appleRefreshToken = refreshToken;
     }
 }

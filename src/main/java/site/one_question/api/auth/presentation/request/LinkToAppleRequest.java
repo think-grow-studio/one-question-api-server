@@ -3,8 +3,8 @@ package site.one_question.api.auth.presentation.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
-@Schema(description = "Apple OAuth 인증 요청")
-public record AppleAuthRequest(
+@Schema(description = "Apple 계정 연결 요청")
+public record LinkToAppleRequest(
         @Schema(description = "Apple Identity 토큰", example = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...")
         @NotBlank
         String identityToken,

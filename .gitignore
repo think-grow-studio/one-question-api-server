@@ -40,3 +40,14 @@ out/
 *wallet/
 
 *firebase-adminsdk*.json
+
+### Secrets (NEVER commit) ###
+# Apple Sign In private key
+*.p8
+AuthKey_*
+
+# Base64-encoded secret blobs
+*_base64.txt
+
+# macOS
+.DS_Store

@@ -85,6 +85,12 @@ public enum AuthExceptionSpec implements ExceptionSpec {
             "AUTH-013",
             "이미 존재하는 Google 계정",
             "error.auth.google-account-already-exists"
+    ),
+    APPLE_ACCOUNT_ALREADY_EXISTS(
+            HttpStatus.CONFLICT,
+            "AUTH-014",
+            "이미 존재하는 Apple 계정",
+            "error.auth.apple-account-already-exists"
     );
 
 

@@ -16,11 +16,14 @@ import site.one_question.api.auth.application.AuthApplication;
 import site.one_question.api.auth.infrastructure.annotation.PrincipalId;
 import site.one_question.api.auth.presentation.request.AnonymousAuthRequest;
 import site.one_question.api.auth.presentation.request.AppleAuthRequest;
+import site.one_question.api.auth.presentation.request.CheckAppleLinkRequest;
 import site.one_question.api.auth.presentation.request.GoogleAuthRequest;
 import site.one_question.api.auth.presentation.request.CheckGoogleLinkRequest;
+import site.one_question.api.auth.presentation.request.LinkToAppleRequest;
 import site.one_question.api.auth.presentation.request.LinkToGoogleRequest;
 import site.one_question.api.auth.presentation.request.ReissueAuthTokenRequest;
 import site.one_question.api.auth.presentation.response.AuthResponse;
+import site.one_question.api.auth.presentation.response.CheckAppleLinkResponse;
 import site.one_question.api.auth.presentation.response.CheckGoogleLinkResponse;
 import site.one_question.api.auth.presentation.response.ReissueAuthTokenResponse;
 import site.one_question.global.common.HttpHeaderConstant;
@@ -93,6 +96,30 @@ public class AuthController implements AuthApi {
         log.info("[API] Google 계정 연결 요청 시작 - memberId: {}", memberId);
         AuthResponse response = authApplication.linkToGoogle(memberId, request);
         log.info("[API] Google 계정 연결 요청 종료");
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    @PostMapping("/apple/link/check")
+    public ResponseEntity<CheckAppleLinkResponse> checkAppleLinking(
+            @PrincipalId Long memberId,
+            @Valid @RequestBody CheckAppleLinkRequest request
+    ) {
+        log.info("[API] Apple 계정 연결 확인 요청 시작");
+        CheckAppleLinkResponse response = authApplication.checkAppleLinking(request);
+        log.info("[API] Apple 계정 연결 확인 요청 종료 - exists: {}", response.exists());
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    @PostMapping("/apple/link")
+    public ResponseEntity<AuthResponse> linkToApple(
+            @PrincipalId Long memberId,
+            @Valid @RequestBody LinkToAppleRequest request
+    ) {
+        log.info("[API] Apple 계정 연결 요청 시작 - memberId: {}", memberId);
+        AuthResponse response = authApplication.linkToApple(memberId, request);
+        log.info("[API] Apple 계정 연결 요청 종료");
         return ResponseEntity.ok(response);
     }
 

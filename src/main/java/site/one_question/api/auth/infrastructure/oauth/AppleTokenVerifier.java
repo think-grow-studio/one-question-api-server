@@ -9,12 +9,15 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
+import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.spec.RSAPublicKeySpec;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +50,7 @@ public class AppleTokenVerifier {
         this.objectMapper = objectMapper;
     }
 
-    public AppleTokenPayload verify(String identityToken) {
+    public AppleTokenPayload verify(String identityToken, String rawNonce) {
         try {
             JwtHeader header = extractHeader(identityToken);
 
@@ -65,6 +68,8 @@ public class AppleTokenVerifier {
                     .parseSignedClaims(identityToken)
                     .getPayload();
 
+            verifyNonce(claims.get("nonce", String.class), rawNonce);
+
             String providerId = claims.getSubject();
             String email = claims.get("email", String.class);
             return new AppleTokenPayload(providerId, email);
@@ -73,6 +78,38 @@ public class AppleTokenVerifier {
         } catch (Exception e) {
             log.error("Apple ID Token 검증 실패: {}", e.getMessage());
             throw new AppleTokenVerificationException(e);
+        }
+    }
+
+    /**
+     * Replay attack 방지용 nonce 검증.
+     *
+     * 클라이언트가 raw nonce → SHA256 hex(lowercase)를 Apple에 nonce 옵션으로 넘기면
+     * Apple은 그 hex 값을 identity_token의 nonce claim에 그대로 박아서 돌려준다.
+     * 서버는 토큰의 nonce claim과 SHA256(rawNonce) hex를 상수시간 비교한다.
+     *
+     * rawNonce는 DTO 단에서 @NotBlank로 강제되므로 여기서는 토큰 측 nonce만 검증한다.
+     */
+    private void verifyNonce(String tokenNonce, String rawNonce) {
+        if (tokenNonce == null || tokenNonce.isBlank()) {
+            throw new AppleTokenVerificationException("Token missing nonce claim");
+        }
+
+        String expected = sha256Hex(rawNonce);
+        byte[] a = expected.getBytes(StandardCharsets.UTF_8);
+        byte[] b = tokenNonce.getBytes(StandardCharsets.UTF_8);
+        if (!MessageDigest.isEqual(a, b)) {
+            throw new AppleTokenVerificationException("Nonce mismatch");
+        }
+    }
+
+    private String sha256Hex(String input) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256")
+                    .digest(input.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (Exception e) {
+            throw new AppleTokenVerificationException("SHA-256 not available: " + e.getMessage());
         }
     }
 
