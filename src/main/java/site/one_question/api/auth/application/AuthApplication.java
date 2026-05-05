@@ -101,10 +101,9 @@ public class AuthApplication {
         );
 
         // 회원 탈퇴 시 Apple revoke를 위해 authorizationCode를 refresh_token으로 교환해 저장.
-        // 이미 refresh_token이 있는 회원은 덮어쓰지 않는다 (Apple은 한 사용자당 활성 refresh_token 1개를 보장).
-        if (result.member().getAppleRefreshToken() == null) {
-            exchangeAndStoreAppleRefreshToken(result.member(), request.authorizationCode());
-        }
+        // 사용자가 iOS 설정에서 권한 해제 후 재로그인하면 기존 token은 무효화되므로 매번 갱신.
+        // 단, 교환 실패(null 반환) 시에는 기존 token을 유지한다 (exchangeAndStoreAppleRefreshToken 내부 처리).
+        exchangeAndStoreAppleRefreshToken(result.member(), request.authorizationCode());
 
         return issueAuthResponse(result.member(), result.isNewMember());
     }
