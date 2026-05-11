@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import site.one_question.api.question.presentation.request.CreateAnswerRequest;
-import site.one_question.global.common.HttpHeaderConstant;
+import site.one_question.common.HttpHeaderConstant;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.question.domain.DailyQuestion;
 import site.one_question.api.question.domain.DailyQuestionAnswer;

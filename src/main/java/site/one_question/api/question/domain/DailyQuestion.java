@@ -7,7 +7,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import site.one_question.global.common.domain.BaseEntity;
+import site.one_question.common.domain.BaseEntity;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.question.domain.exception.ReloadLimitExceededException;
 

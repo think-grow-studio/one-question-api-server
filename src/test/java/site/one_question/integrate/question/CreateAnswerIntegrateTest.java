@@ -19,7 +19,7 @@ import site.one_question.api.question.domain.Question;
 import site.one_question.api.question.domain.QuestionCycle;
 import site.one_question.api.question.domain.exception.QuestionExceptionSpec;
 import site.one_question.api.question.presentation.request.CreateAnswerRequest;
-import site.one_question.global.common.HttpHeaderConstant;
+import site.one_question.common.HttpHeaderConstant;
 import site.one_question.integrate.test_config.IntegrateTest;
 
 import java.time.LocalDate;

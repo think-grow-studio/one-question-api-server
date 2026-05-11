@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import site.one_question.api.auth.infrastructure.oauth.GoogleTokenVerifier;
-import site.one_question.global.common.HttpHeaderConstant;
+import site.one_question.common.HttpHeaderConstant;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.question.domain.QuestionCycle;
 import site.one_question.integrate.test_config.IntegrateTest;

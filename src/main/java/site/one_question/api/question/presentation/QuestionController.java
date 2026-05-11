@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import site.one_question.api.auth.infrastructure.annotation.PrincipalId;
-import site.one_question.global.common.HttpHeaderConstant;
+import site.one_question.common.HttpHeaderConstant;
 import site.one_question.api.question.application.QuestionApplication;
 import site.one_question.api.question.presentation.request.CheckCandidateCycleRequest;
 import site.one_question.api.question.presentation.request.CreateAnswerRequest;

@@ -26,7 +26,7 @@ import site.one_question.api.auth.presentation.response.AuthResponse;
 import site.one_question.api.auth.presentation.response.CheckAppleLinkResponse;
 import site.one_question.api.auth.presentation.response.CheckGoogleLinkResponse;
 import site.one_question.api.auth.presentation.response.ReissueAuthTokenResponse;
-import site.one_question.global.common.HttpHeaderConstant;
+import site.one_question.common.HttpHeaderConstant;
 
 @Slf4j
 @RestController

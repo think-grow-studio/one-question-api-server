@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import site.one_question.global.security.service.JwtService;
+import site.one_question.security.service.JwtService;
 import site.one_question.api.member.domain.MemberPermission;
 
 @Controller

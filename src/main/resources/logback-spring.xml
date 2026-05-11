@@ -26,10 +26,10 @@
         </encoder>
     </appender>
 
-    <appender name="DISCORD" class="site.one_question.global.logging.DiscordWebhookAppender">
+    <appender name="DISCORD" class="site.one_question.logging.DiscordWebhookAppender">
         <webhookUrl>${DISCORD_WEBHOOK_URL}</webhookUrl>
         <applicationName>${APP_NAME} (${ACTIVE_PROFILE})</applicationName>
-        <filter class="site.one_question.global.logging.DiscordSkipJwtExpiredFilter"/>
+        <filter class="site.one_question.logging.DiscordSkipJwtExpiredFilter"/>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>ERROR</level>
         </filter>

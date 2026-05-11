@@ -5,7 +5,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import site.one_question.api.member.domain.exception.MemberNotFoundException;
-import site.one_question.global.i18n.LocaleNormalizer;
+import site.one_question.i18n.LocaleNormalizer;
 
 @Component
 @RequiredArgsConstructor

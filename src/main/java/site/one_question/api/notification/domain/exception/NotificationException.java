@@ -1,8 +1,8 @@
 package site.one_question.api.notification.domain.exception;
 
 import java.util.Map;
-import site.one_question.global.exception.BaseException;
-import site.one_question.global.exception.spec.ExceptionSpec;
+import site.one_question.exception.BaseException;
+import site.one_question.exception.spec.ExceptionSpec;
 
 public abstract class NotificationException extends BaseException {
 

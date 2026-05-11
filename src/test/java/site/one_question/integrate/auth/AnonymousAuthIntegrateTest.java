@@ -18,7 +18,7 @@ import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier.Fir
 import site.one_question.api.member.domain.AuthSocialProvider;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.question.domain.QuestionCycle;
-import site.one_question.global.common.HttpHeaderConstant;
+import site.one_question.common.HttpHeaderConstant;
 import site.one_question.integrate.test_config.IntegrateTest;
 
 @DisplayName("익명 인증 API 통합 테스트")

@@ -5,7 +5,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import site.one_question.global.common.domain.BaseEntity;
+import site.one_question.common.domain.BaseEntity;
 
 @Entity
 @Getter

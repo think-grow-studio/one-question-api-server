@@ -11,7 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 import site.one_question.api.auth.domain.OneQuestionPrincipal;
-import site.one_question.global.security.service.JwtService;
+import site.one_question.security.service.JwtService;
 import site.one_question.api.member.domain.MemberPermission;
 
 @RequiredArgsConstructor

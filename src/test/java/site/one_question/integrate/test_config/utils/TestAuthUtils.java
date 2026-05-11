@@ -2,7 +2,7 @@ package site.one_question.integrate.test_config.utils;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import site.one_question.global.security.service.JwtService;
+import site.one_question.security.service.JwtService;
 import site.one_question.api.member.domain.Member;
 
 @Component

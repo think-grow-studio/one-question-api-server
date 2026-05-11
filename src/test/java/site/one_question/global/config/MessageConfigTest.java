@@ -7,6 +7,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import site.one_question.config.MessageConfig;
 
 @DisplayName("메시지 설정 테스트")
 class MessageConfigTest {

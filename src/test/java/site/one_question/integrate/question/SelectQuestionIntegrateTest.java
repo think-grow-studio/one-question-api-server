@@ -22,7 +22,7 @@ import site.one_question.api.question.domain.DailyQuestion;
 import site.one_question.api.question.domain.Question;
 import site.one_question.api.question.domain.QuestionCycle;
 import site.one_question.api.question.domain.exception.QuestionExceptionSpec;
-import site.one_question.global.common.HttpHeaderConstant;
+import site.one_question.common.HttpHeaderConstant;
 import site.one_question.integrate.test_config.IntegrateTest;
 
 @DisplayName("후보 질문 선택 통합 테스트")

@@ -12,7 +12,7 @@ import site.one_question.api.auth.domain.exception.AccountAlreadyLinkedException
 import site.one_question.api.auth.domain.exception.AppleAccountAlreadyExistsException;
 import site.one_question.api.auth.domain.exception.GoogleAccountAlreadyExistsException;
 import site.one_question.api.auth.domain.exception.InvalidTokenException;
-import site.one_question.global.security.service.JwtService;
+import site.one_question.security.service.JwtService;
 import site.one_question.api.auth.infrastructure.oauth.AppleAuthClient;
 import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier.AppleTokenPayload;
@@ -43,7 +43,6 @@ import site.one_question.api.question.domain.DailyQuestionService;
 import site.one_question.api.notification.domain.FcmTokenService;
 import site.one_question.api.notification.domain.QuestionReminderSettingService;
 import site.one_question.api.question.domain.QuestionCycleService;
-import site.one_question.global.i18n.LocaleNormalizer;
 
 @Service
 @Transactional

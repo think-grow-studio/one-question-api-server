@@ -9,7 +9,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import site.one_question.global.security.service.JwtService;
+import site.one_question.security.service.JwtService;
 
 @Configuration
 public class AdminSecurityConfig {

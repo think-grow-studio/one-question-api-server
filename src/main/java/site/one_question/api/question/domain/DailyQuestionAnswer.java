@@ -6,7 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import site.one_question.api.answerpost.domain.AnswerPost;
-import site.one_question.global.common.domain.BaseEntity;
+import site.one_question.common.domain.BaseEntity;
 import site.one_question.api.member.domain.Member;
 
 @Entity

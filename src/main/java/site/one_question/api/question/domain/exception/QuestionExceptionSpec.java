@@ -3,7 +3,7 @@ package site.one_question.api.question.domain.exception;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
-import site.one_question.global.exception.spec.ExceptionSpec;
+import site.one_question.exception.spec.ExceptionSpec;
 
 @Getter
 @AllArgsConstructor
