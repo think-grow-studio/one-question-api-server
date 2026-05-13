@@ -3,14 +3,14 @@ package site.one_question.logging;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
+import site.one_question.security.filter.JwtValidationFilter;
 
 /**
  * Prevents noisy JWT 만료 예외 logs from generating Discord alerts.
  */
 public class DiscordSkipJwtExpiredFilter extends Filter<ILoggingEvent> {
 
-    private static final String JWT_FILTER_LOGGER =
-            "site.one_question.global.security.filter.JwtValidationFilter";
+    private static final String JWT_FILTER_LOGGER = JwtValidationFilter.class.getName();
     private static final String KEYWORD = "JWT 만료 예외 발생";
 
     @Override
