@@ -66,6 +66,10 @@ public class JwtService {
         }
     }
 
+    public void validate(String token) {
+        parseToken(token);
+    }
+
     public boolean isRefreshToken(String token) {
         return REFRESH_TYPE.equals(parseToken(token).get(TYPE, String.class));
     }

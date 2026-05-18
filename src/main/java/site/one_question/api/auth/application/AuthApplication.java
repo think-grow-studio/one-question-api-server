@@ -1,6 +1,8 @@
 package site.one_question.api.auth.application;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Optional;
@@ -12,6 +14,8 @@ import site.one_question.api.auth.domain.exception.AccountAlreadyLinkedException
 import site.one_question.api.auth.domain.exception.AppleAccountAlreadyExistsException;
 import site.one_question.api.auth.domain.exception.GoogleAccountAlreadyExistsException;
 import site.one_question.api.auth.domain.exception.InvalidTokenException;
+import site.one_question.api.auth.domain.exception.MalformedTokenException;
+import site.one_question.api.auth.domain.exception.RefreshTokenExpiredException;
 import site.one_question.security.service.JwtService;
 import site.one_question.api.auth.infrastructure.oauth.AppleAuthClient;
 import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier;
@@ -252,8 +256,17 @@ public class AuthApplication {
     public ReissueAuthTokenResponse reissueToken(ReissueAuthTokenRequest request) {
         String token = request.refreshToken();
 
-        if (!jwtService.isValid(token) || !jwtService.isRefreshToken(token)) {
-            throw new InvalidTokenException("Invalid refresh token");
+        try {
+            jwtService.validate(token);
+        } catch (ExpiredJwtException e) {
+            Long expiredMemberId = Long.valueOf(e.getClaims().getSubject());
+            throw new RefreshTokenExpiredException(expiredMemberId);
+        } catch (JwtException e) {
+            throw new MalformedTokenException();
+        }
+
+        if (!jwtService.isRefreshToken(token)) {
+            throw new InvalidTokenException("Not a refresh token");
         }
 
         Long memberId = jwtService.extractMemberId(token);

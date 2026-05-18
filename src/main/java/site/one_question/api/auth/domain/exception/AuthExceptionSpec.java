@@ -91,6 +91,12 @@ public enum AuthExceptionSpec implements ExceptionSpec {
             "AUTH-014",
             "이미 존재하는 Apple 계정",
             "error.auth.apple-account-already-exists"
+    ),
+    MALFORMED_TOKEN(
+            HttpStatus.UNAUTHORIZED,
+            "AUTH-015",
+            "변조되었거나 형식이 잘못된 토큰",
+            "error.auth.malformed-token"
     );
 
 
