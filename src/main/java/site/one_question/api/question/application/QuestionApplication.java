@@ -23,7 +23,6 @@ import site.one_question.api.question.domain.QuestionLike;
 import site.one_question.api.question.domain.QuestionLikeService;
 import site.one_question.api.question.domain.QuestionService;
 import site.one_question.api.question.domain.DailyQuestionService;
-import site.one_question.api.question.domain.exception.AlreadyAnsweredException;
 import site.one_question.api.question.domain.exception.ReloadLimitExceededException;
 import site.one_question.api.question.domain.Question;
 import site.one_question.api.question.domain.QuestionCycle;
@@ -94,7 +93,7 @@ public class QuestionApplication {
 
         // 2. 답변 여부 확인
         if (dailyQuestion.hasAnswer()) {
-            throw new AlreadyAnsweredException();
+            throw new AnswerAlreadyExistsException(dailyQuestion.getId());
         }
 
         // 3. 변경 가능 여부 확인
@@ -134,7 +133,7 @@ public class QuestionApplication {
         DailyQuestion dailyQuestion = dailyQuestionService.findByMemberIdAndDateOrThrow(memberId, date);
 
         if (dailyQuestion.hasAnswer()) {
-            throw new AlreadyAnsweredException();
+            throw new AnswerAlreadyExistsException(dailyQuestion.getId());
         }
 
         // 후보 목록에 있는지 검증
