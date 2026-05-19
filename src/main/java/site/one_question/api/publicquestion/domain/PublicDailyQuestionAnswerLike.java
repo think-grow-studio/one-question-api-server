@@ -14,21 +14,21 @@ import site.one_question.common.domain.BaseEntity;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(
-        name = "public_daily_answer_like",
+        name = "public_daily_question_answer_like",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_pdal_answer_member",
-                columnNames = {"public_daily_answer_id", "member_id"}
+                name = "uk_pdqal_answer_member",
+                columnNames = {"public_daily_question_answer_id", "member_id"}
         )
 )
-public class PublicDailyAnswerLike extends BaseEntity {
+public class PublicDailyQuestionAnswerLike extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "public_daily_answer_id", nullable = false)
-    private PublicDailyAnswer publicDailyAnswer;
+    @JoinColumn(name = "public_daily_question_answer_id", nullable = false)
+    private PublicDailyQuestionAnswer publicDailyQuestionAnswer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
@@ -37,7 +37,7 @@ public class PublicDailyAnswerLike extends BaseEntity {
     @Column(name = "liked_at", nullable = false)
     private Instant likedAt;
 
-    public static PublicDailyAnswerLike create(PublicDailyAnswer answer, Member member) {
-        return new PublicDailyAnswerLike(null, answer, member, Instant.now());
+    public static PublicDailyQuestionAnswerLike create(PublicDailyQuestionAnswer answer, Member member) {
+        return new PublicDailyQuestionAnswerLike(null, answer, member, Instant.now());
     }
 }

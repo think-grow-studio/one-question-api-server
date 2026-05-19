@@ -17,16 +17,16 @@ import site.one_question.common.domain.BaseEntity;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(
-        name = "public_daily_answer",
+        name = "public_daily_question_answer",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_pda_question_member",
+                name = "uk_pdqa_question_member",
                 columnNames = {"public_daily_question_id", "member_id"}
         ),
         indexes = {
-                @Index(name = "idx_pda_question_answered", columnList = "public_daily_question_id, answered_at DESC")
+                @Index(name = "idx_pdqa_question_answered", columnList = "public_daily_question_id, answered_at DESC")
         }
 )
-public class PublicDailyAnswer extends BaseEntity {
+public class PublicDailyQuestionAnswer extends BaseEntity {
 
     private static final int MAX_CONTENT_LENGTH = 3000;
 
@@ -55,7 +55,7 @@ public class PublicDailyAnswer extends BaseEntity {
     @Column(nullable = false, length = 30)
     private String timezone;
 
-    public static PublicDailyAnswer create(
+    public static PublicDailyQuestionAnswer create(
             PublicDailyQuestion question,
             Member member,
             String content,
@@ -63,7 +63,7 @@ public class PublicDailyAnswer extends BaseEntity {
     ) {
         validateContent(content);
         String nickname = AnonymousNickname.generate(member.getLocale()).getValue();
-        return new PublicDailyAnswer(
+        return new PublicDailyQuestionAnswer(
                 null,
                 question,
                 member,
