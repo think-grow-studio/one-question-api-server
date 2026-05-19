@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import site.one_question.api.answerpost.domain.AnonymousNickname;
 import site.one_question.api.member.domain.Member;
+import site.one_question.api.publicquestion.domain.exception.AnswerContentTooLongException;
+import site.one_question.api.publicquestion.domain.exception.EmptyAnswerContentException;
 import site.one_question.common.domain.BaseEntity;
 
 @Entity
@@ -83,10 +85,10 @@ public class PublicDailyAnswer extends BaseEntity {
 
     private static void validateContent(String content) {
         if (content == null || content.isBlank()) {
-            throw new IllegalArgumentException("답변 내용은 비어있을 수 없습니다.");
+            throw new EmptyAnswerContentException();
         }
         if (content.length() > MAX_CONTENT_LENGTH) {
-            throw new IllegalArgumentException("답변 내용은 " + MAX_CONTENT_LENGTH + "자를 초과할 수 없습니다.");
+            throw new AnswerContentTooLongException(MAX_CONTENT_LENGTH);
         }
     }
 }
