@@ -19,6 +19,12 @@ public enum PublicQuestionExceptionSpec implements ExceptionSpec {
         "PUBLIC-QUESTION-002",
         "답변 내용 길이 초과",
         "error.public-question.answer-content-too-long"
+    ),
+    PDQ_NOT_FOUND(
+        HttpStatus.NOT_FOUND,
+        "PUBLIC-QUESTION-003",
+        "공개 일일 질문을 찾을 수 없음",
+        "error.public-question.pdq-not-found"
     );
 
     private final HttpStatus status;
