@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import site.one_question.api.publicquestion.application.PublicDailyQuestionScheduler;
+import site.one_question.api.publicquestion.application.PublicDailyQuestionProvisionApplication;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestion;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionRepository;
 import site.one_question.api.question.domain.Question;
@@ -18,13 +18,13 @@ import site.one_question.api.question.domain.QuestionStatus;
 import site.one_question.integrate.test_config.IntegrateTest;
 
 @DisplayName("공개 일일 질문 스케줄러 통합 테스트")
-class PublicDailyQuestionSchedulerIntegrateTest extends IntegrateTest {
+class PublicDailyQuestionProvisionSchedulerIntegrateTest extends IntegrateTest {
 
     private static final String LOCALE_KO = Locale.KOREA.toLanguageTag();
     private static final int BUFFER_DAYS = 7;
 
     @Autowired
-    private PublicDailyQuestionScheduler scheduler;
+    private PublicDailyQuestionProvisionApplication provisionApplication;
 
     @Autowired
     private PublicDailyQuestionRepository publicDailyQuestionRepository;
@@ -36,7 +36,7 @@ class PublicDailyQuestionSchedulerIntegrateTest extends IntegrateTest {
         testQuestionUtils.createSave();
 
         // when
-        scheduler.provisionPublicDailyQuestions();
+        provisionApplication.provision();
 
         // then
         LocalDate todayUtc = LocalDate.now(ZoneOffset.UTC);
@@ -61,7 +61,7 @@ class PublicDailyQuestionSchedulerIntegrateTest extends IntegrateTest {
         publicDailyQuestionRepository.save(PublicDailyQuestion.publish(q, todayUtc.plusDays(2)));
 
         // when
-        scheduler.provisionPublicDailyQuestions();
+        provisionApplication.provision();
 
         // then - 총 7개 (기존 2 + 신규 5)
         List<PublicDailyQuestion> all = publicDailyQuestionRepository.findAll();
@@ -91,7 +91,7 @@ class PublicDailyQuestionSchedulerIntegrateTest extends IntegrateTest {
         // q3, q4 는 사용 횟수 0
 
         // when
-        scheduler.provisionPublicDailyQuestions();
+        provisionApplication.provision();
 
         // then - today 이후 신규 PDQ 들은 모두 q3 또는 q4 만 가리켜야 함
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
@@ -120,7 +120,7 @@ class PublicDailyQuestionSchedulerIntegrateTest extends IntegrateTest {
         testQuestionUtils.createSave_With_Locale("en-US");
 
         // when
-        scheduler.provisionPublicDailyQuestions();
+        provisionApplication.provision();
 
         // then - 모든 PDQ 가 ko-KR 질문을 가리킴
         List<PublicDailyQuestion> all = publicDailyQuestionRepository.findAll();
@@ -143,7 +143,7 @@ class PublicDailyQuestionSchedulerIntegrateTest extends IntegrateTest {
         );
 
         // when
-        scheduler.provisionPublicDailyQuestions();
+        provisionApplication.provision();
 
         // then - 모든 PDQ 가 ACTIVE 질문만 가리킴
         List<PublicDailyQuestion> all = publicDailyQuestionRepository.findAll();
@@ -162,7 +162,7 @@ class PublicDailyQuestionSchedulerIntegrateTest extends IntegrateTest {
         }
 
         // when
-        scheduler.provisionPublicDailyQuestions();
+        provisionApplication.provision();
 
         // then - 여전히 7개
         assertThat(publicDailyQuestionRepository.findAll()).hasSize(BUFFER_DAYS);
@@ -175,8 +175,8 @@ class PublicDailyQuestionSchedulerIntegrateTest extends IntegrateTest {
         testQuestionUtils.createSave();
 
         // when
-        scheduler.provisionPublicDailyQuestions();
-        scheduler.provisionPublicDailyQuestions();
+        provisionApplication.provision();
+        provisionApplication.provision();
 
         // then
         assertThat(publicDailyQuestionRepository.findAll()).hasSize(BUFFER_DAYS);
@@ -189,7 +189,7 @@ class PublicDailyQuestionSchedulerIntegrateTest extends IntegrateTest {
         Question q = testQuestionUtils.createSave();
 
         // when
-        scheduler.provisionPublicDailyQuestions();
+        provisionApplication.provision();
 
         // then
         List<PublicDailyQuestion> all = publicDailyQuestionRepository.findAll();
@@ -204,7 +204,7 @@ class PublicDailyQuestionSchedulerIntegrateTest extends IntegrateTest {
         testQuestionUtils.createSave_With_Locale("en-US");
 
         // when - 예외 없이 정상 종료해야 함
-        scheduler.provisionPublicDailyQuestions();
+        provisionApplication.provision();
 
         // then - PDQ 생성 0개
         assertThat(publicDailyQuestionRepository.findAll()).isEmpty();

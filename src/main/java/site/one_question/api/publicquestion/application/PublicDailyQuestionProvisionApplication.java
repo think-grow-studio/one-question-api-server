@@ -7,8 +7,6 @@ import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestion;
@@ -21,22 +19,16 @@ import site.one_question.api.question.domain.QuestionStatus;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class PublicDailyQuestionScheduler {
+public class PublicDailyQuestionProvisionApplication {
 
-    private static final String LOCALE_KO = Locale.KOREA.toLanguageTag(); // ko-KR
+    private static final String LOCALE_KO = Locale.KOREA.toLanguageTag();
     private static final int BUFFER_DAYS = 7;
 
     private final QuestionRepository questionRepository;
     private final PublicDailyQuestionRepository publicDailyQuestionRepository;
 
     @Transactional
-    @Scheduled(cron = "0 0 0 * * *", zone = "UTC")
-    @SchedulerLock(
-            name = "provisionPublicDailyQuestions",
-            lockAtLeastFor = "PT1M",
-            lockAtMostFor = "PT10M"
-    )
-    public void provisionPublicDailyQuestions() {
+    public void provision() {
         LocalDate todayUtc = LocalDate.now(ZoneOffset.UTC);
         int provisioned = 0;
         int skipped = 0;

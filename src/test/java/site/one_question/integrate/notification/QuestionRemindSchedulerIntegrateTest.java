@@ -26,17 +26,17 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberStatus;
-import site.one_question.api.notification.application.NotificationScheduler;
+import site.one_question.api.notification.application.QuestionRemindApplication;
 import site.one_question.integrate.test_config.IntegrateTest;
 
 @DisplayName("알림 스케줄러 통합 테스트")
-class NotificationSchedulerIntegrateTest extends IntegrateTest {
+class QuestionRemindSchedulerIntegrateTest extends IntegrateTest {
 
     private static final String TIMEZONE = "Asia/Seoul";
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     @Autowired
-    private NotificationScheduler notificationScheduler;
+    private QuestionRemindApplication remindApplication;
 
     @Autowired
     private FirebaseMessaging firebaseMessaging;
@@ -57,7 +57,7 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
         testFcmTokenUtils.createSave(member, "test-token");
         testQuestionReminderSettingUtils.createSave(member, currentAlarmTime, TIMEZONE);
 
-        notificationScheduler.sendAlarmNotifications();
+        remindApplication.sendAlarmNotifications();
 
         verify(firebaseMessaging).send(any(Message.class));
     }
@@ -72,7 +72,7 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
         when(ex.getMessagingErrorCode()).thenReturn(MessagingErrorCode.UNREGISTERED);
         when(firebaseMessaging.send(any(Message.class))).thenThrow(ex);
 
-        notificationScheduler.sendAlarmNotifications();
+        remindApplication.sendAlarmNotifications();
 
         assertThat(fcmTokenRepository.findByMember(member)).isEmpty();
     }
@@ -87,7 +87,7 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
         when(ex.getMessagingErrorCode()).thenReturn(MessagingErrorCode.SENDER_ID_MISMATCH);
         when(firebaseMessaging.send(any(Message.class))).thenThrow(ex);
 
-        notificationScheduler.sendAlarmNotifications();
+        remindApplication.sendAlarmNotifications();
 
         assertThat(fcmTokenRepository.findByMember(member)).isEmpty();
     }
@@ -105,7 +105,7 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
         testQuestionReminderSettingUtils.createSave(seoulMember, seoulTime, "Asia/Seoul");
         testQuestionReminderSettingUtils.createSave(newYorkMember, newYorkTime, "America/New_York");
 
-        notificationScheduler.sendAlarmNotifications();
+        remindApplication.sendAlarmNotifications();
 
         verify(firebaseMessaging, times(2)).send(any(Message.class));
     }
@@ -122,7 +122,7 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
         testQuestionReminderSettingUtils.createSave(seoulMember, seoulCurrentTime, "Asia/Seoul");
         testQuestionReminderSettingUtils.createSave(newYorkMember, seoulCurrentTime, "America/New_York");
 
-        notificationScheduler.sendAlarmNotifications();
+        remindApplication.sendAlarmNotifications();
 
         verify(firebaseMessaging, times(1)).send(any(Message.class));
     }
@@ -133,7 +133,7 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
         testFcmTokenUtils.createSave(member, "test-token");
         testQuestionReminderSettingUtils.createSave_Disabled(member, currentAlarmTime, TIMEZONE);
 
-        notificationScheduler.sendAlarmNotifications();
+        remindApplication.sendAlarmNotifications();
 
         verify(firebaseMessaging, never()).send(any(Message.class));
     }
@@ -145,7 +145,7 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
         String nextMinute = LocalTime.now(ZoneId.of(TIMEZONE)).plusMinutes(1).format(TIME_FORMATTER);
         testQuestionReminderSettingUtils.createSave(member, nextMinute, TIMEZONE);
 
-        notificationScheduler.sendAlarmNotifications();
+        remindApplication.sendAlarmNotifications();
 
         verify(firebaseMessaging, never()).send(any(Message.class));
     }
@@ -162,7 +162,7 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
         testQuestionReminderSettingUtils.createSave(member2, currentAlarmTime, TIMEZONE);
         testQuestionReminderSettingUtils.createSave(member3, currentAlarmTime, TIMEZONE);
 
-        notificationScheduler.sendAlarmNotifications();
+        remindApplication.sendAlarmNotifications();
 
         verify(firebaseMessaging, times(3)).send(any(Message.class));
     }
@@ -177,7 +177,7 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
         when(ex.getMessagingErrorCode()).thenReturn(MessagingErrorCode.INVALID_ARGUMENT);
         when(firebaseMessaging.send(any(Message.class))).thenThrow(ex);
 
-        notificationScheduler.sendAlarmNotifications();
+        remindApplication.sendAlarmNotifications();
 
         assertThat(fcmTokenRepository.findByMember(member)).isPresent();
     }
@@ -197,7 +197,7 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
                 .thenThrow(ex)
                 .thenReturn("message-id");
 
-        notificationScheduler.sendAlarmNotifications();
+        remindApplication.sendAlarmNotifications();
 
         verify(firebaseMessaging, times(2)).send(any(Message.class));
         assertThat(fcmTokenRepository.findAll()).hasSize(1);
@@ -210,8 +210,8 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
         testQuestionReminderSettingUtils.createSave(member, currentAlarmTime, TIMEZONE);
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
-        Future<?> f1 = executor.submit(() -> notificationScheduler.sendAlarmNotifications());
-        Future<?> f2 = executor.submit(() -> notificationScheduler.sendAlarmNotifications());
+        Future<?> f1 = executor.submit(() -> remindApplication.sendAlarmNotifications());
+        Future<?> f2 = executor.submit(() -> remindApplication.sendAlarmNotifications());
         f1.get(10, TimeUnit.SECONDS);
         f2.get(10, TimeUnit.SECONDS);
         executor.shutdown();
@@ -232,7 +232,7 @@ class NotificationSchedulerIntegrateTest extends IntegrateTest {
                         .executeUpdate()
         );
 
-        notificationScheduler.sendAlarmNotifications();
+        remindApplication.sendAlarmNotifications();
 
         verify(firebaseMessaging, never()).send(any(Message.class));
     }
