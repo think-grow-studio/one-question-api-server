@@ -15,6 +15,8 @@ import org.springframework.http.HttpHeaders;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestion;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswer;
+import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerLike;
+import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerLikeRepository;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerRepository;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionRepository;
 import site.one_question.api.publicquestion.domain.exception.PublicQuestionExceptionSpec;
@@ -32,6 +34,9 @@ class GetPublicDailyQuestionIntegrateTest extends IntegrateTest {
 
     @Autowired
     private PublicDailyQuestionAnswerRepository publicDailyQuestionAnswerRepository;
+
+    @Autowired
+    private PublicDailyQuestionAnswerLikeRepository publicDailyQuestionAnswerLikeRepository;
 
     private Member member;
     private String token;
@@ -80,7 +85,7 @@ class GetPublicDailyQuestionIntegrateTest extends IntegrateTest {
         }
 
         @Test
-        @DisplayName("내 답변이 있으면 myAnswer 필드가 채워져 반환됨")
+        @DisplayName("내 답변이 있으면 myAnswer 필드가 채워져 반환됨 (좋아요 없음 → likeCount=0, liked=false)")
         void returns_my_answer_when_already_answered() throws Exception {
             // given
             LocalDate today = LocalDate.now(ZoneOffset.UTC);
@@ -96,7 +101,52 @@ class GetPublicDailyQuestionIntegrateTest extends IntegrateTest {
                     .andExpect(jsonPath("$.myAnswer.publicDailyQuestionAnswerId").value(answer.getId()))
                     .andExpect(jsonPath("$.myAnswer.content").value("내 답변 내용"))
                     .andExpect(jsonPath("$.myAnswer.anonymousNickname").isNotEmpty())
-                    .andExpect(jsonPath("$.myAnswer.answeredAt").exists());
+                    .andExpect(jsonPath("$.myAnswer.answeredAt").exists())
+                    .andExpect(jsonPath("$.myAnswer.likeCount").value(0))
+                    .andExpect(jsonPath("$.myAnswer.liked").value(false));
+        }
+
+        @Test
+        @DisplayName("내 답변에 좋아요가 있으면 likeCount/liked 가 정확히 반환됨")
+        void returns_like_info_when_my_answer_has_likes() throws Exception {
+            // given - 내 답변 + 본인 좋아요 + 다른 멤버 좋아요
+            LocalDate today = LocalDate.now(ZoneOffset.UTC);
+            Question question = testQuestionUtils.createSave();
+            PublicDailyQuestion pdq = publicDailyQuestionRepository.save(PublicDailyQuestion.publish(question, today));
+            PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerRepository.save(
+                    PublicDailyQuestionAnswer.create(pdq, member, "내 답변", TIMEZONE));
+
+            Member other = testMemberUtils.createSave();
+            publicDailyQuestionAnswerLikeRepository.save(PublicDailyQuestionAnswerLike.create(answer, member));
+            publicDailyQuestionAnswerLikeRepository.save(PublicDailyQuestionAnswerLike.create(answer, other));
+
+            // when & then
+            mockMvc.perform(get(API + "/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.myAnswer.likeCount").value(2))
+                    .andExpect(jsonPath("$.myAnswer.liked").value(true));
+        }
+
+        @Test
+        @DisplayName("다른 멤버만 좋아요 누른 경우 likeCount는 증가하지만 liked는 false")
+        void returns_not_liked_when_only_other_member_liked() throws Exception {
+            // given - 본인 답변에 다른 멤버만 좋아요
+            LocalDate today = LocalDate.now(ZoneOffset.UTC);
+            Question question = testQuestionUtils.createSave();
+            PublicDailyQuestion pdq = publicDailyQuestionRepository.save(PublicDailyQuestion.publish(question, today));
+            PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerRepository.save(
+                    PublicDailyQuestionAnswer.create(pdq, member, "내 답변", TIMEZONE));
+
+            Member other = testMemberUtils.createSave();
+            publicDailyQuestionAnswerLikeRepository.save(PublicDailyQuestionAnswerLike.create(answer, other));
+
+            // when & then
+            mockMvc.perform(get(API + "/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.myAnswer.likeCount").value(1))
+                    .andExpect(jsonPath("$.myAnswer.liked").value(false));
         }
 
         @Test
