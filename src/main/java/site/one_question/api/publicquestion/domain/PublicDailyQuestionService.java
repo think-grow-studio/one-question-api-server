@@ -18,4 +18,9 @@ public class PublicDailyQuestionService {
                 .findByQuestionDateAndLocale(date, locale)
                 .orElseThrow(() -> new PublicDailyQuestionNotFoundException(date, locale));
     }
+
+    public PublicDailyQuestion findById(Long pdqId) {
+        return publicDailyQuestionRepository.findById(pdqId)
+                .orElseThrow(() -> new PublicDailyQuestionNotFoundException(pdqId));
+    }
 }

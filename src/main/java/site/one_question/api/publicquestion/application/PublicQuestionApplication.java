@@ -7,7 +7,10 @@ import org.springframework.transaction.annotation.Transactional;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberService;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestion;
+import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswer;
+import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerService;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionService;
+import site.one_question.api.publicquestion.presentation.response.CreatePublicDailyQuestionAnswerResponse;
 import site.one_question.api.publicquestion.presentation.response.GetPublicDailyQuestionResponse;
 
 @Service
@@ -17,10 +20,27 @@ public class PublicQuestionApplication {
 
     private final MemberService memberService;
     private final PublicDailyQuestionService publicDailyQuestionService;
+    private final PublicDailyQuestionAnswerService publicDailyQuestionAnswerService;
 
     public GetPublicDailyQuestionResponse getPublicDailyQuestion(Long memberId, LocalDate date) {
         Member member = memberService.findById(memberId);
         PublicDailyQuestion pdq = publicDailyQuestionService.findByDateAndMember(date, member);
         return GetPublicDailyQuestionResponse.from(pdq);
+    }
+
+    @Transactional
+    public CreatePublicDailyQuestionAnswerResponse createAnswer(
+            Long memberId,
+            Long pdqId,
+            String content,
+            String timezone
+    ) {
+        Member member = memberService.findById(memberId);
+        PublicDailyQuestion pdq = publicDailyQuestionService.findById(pdqId);
+
+        publicDailyQuestionAnswerService.validateAnswerNotExists(pdq, member);
+        PublicDailyQuestionAnswer saved = publicDailyQuestionAnswerService.createAndSave(pdq, member, content, timezone);
+
+        return CreatePublicDailyQuestionAnswerResponse.from(saved, timezone);
     }
 }

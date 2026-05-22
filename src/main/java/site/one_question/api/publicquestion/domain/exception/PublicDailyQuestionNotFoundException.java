@@ -8,4 +8,8 @@ public class PublicDailyQuestionNotFoundException extends PublicQuestionExceptio
     public PublicDailyQuestionNotFoundException(LocalDate date, String locale) {
         super(PublicQuestionExceptionSpec.PDQ_NOT_FOUND, Map.of("date", date, "locale", locale));
     }
+
+    public PublicDailyQuestionNotFoundException(Long pdqId) {
+        super(PublicQuestionExceptionSpec.PDQ_NOT_FOUND, Map.of("pdqId", pdqId));
+    }
 }
