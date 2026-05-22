@@ -18,6 +18,7 @@ import site.one_question.api.publicquestion.presentation.request.CreatePublicDai
 import site.one_question.api.publicquestion.presentation.request.UpdatePublicDailyQuestionAnswerRequest;
 import site.one_question.api.publicquestion.presentation.response.CreatePublicDailyQuestionAnswerResponse;
 import site.one_question.api.publicquestion.presentation.response.GetPublicDailyQuestionResponse;
+import site.one_question.api.publicquestion.presentation.response.ToggleLikeResponse;
 import site.one_question.api.publicquestion.presentation.response.UpdatePublicDailyQuestionAnswerResponse;
 import site.one_question.common.HttpHeaderConstant;
 
@@ -68,6 +69,18 @@ public class PublicQuestionController implements PublicQuestionApi {
         UpdatePublicDailyQuestionAnswerResponse response = publicQuestionApplication.updateAnswer(
                 memberId, pdqId, request.content(), timezone);
         log.info("[API] 공개 일일 질문 답변 수정 요청 종료 - pdqId: {}", pdqId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    @PostMapping("/answers/{answerId}/like")
+    public ResponseEntity<ToggleLikeResponse> toggleLike(
+            @PrincipalId Long memberId,
+            @PathVariable Long answerId
+    ) {
+        log.info("[API] 공개 일일 질문 답변 좋아요 토글 요청 시작 - answerId: {}", answerId);
+        ToggleLikeResponse response = publicQuestionApplication.toggleLike(memberId, answerId);
+        log.info("[API] 공개 일일 질문 답변 좋아요 토글 요청 종료 - answerId: {}, liked: {}", answerId, response.liked());
         return ResponseEntity.ok(response);
     }
 }

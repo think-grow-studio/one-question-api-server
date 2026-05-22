@@ -8,10 +8,13 @@ import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberService;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestion;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswer;
+import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerLike;
+import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerLikeService;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerService;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionService;
 import site.one_question.api.publicquestion.presentation.response.CreatePublicDailyQuestionAnswerResponse;
 import site.one_question.api.publicquestion.presentation.response.GetPublicDailyQuestionResponse;
+import site.one_question.api.publicquestion.presentation.response.ToggleLikeResponse;
 import site.one_question.api.publicquestion.presentation.response.UpdatePublicDailyQuestionAnswerResponse;
 
 @Service
@@ -22,6 +25,7 @@ public class PublicQuestionApplication {
     private final MemberService memberService;
     private final PublicDailyQuestionService publicDailyQuestionService;
     private final PublicDailyQuestionAnswerService publicDailyQuestionAnswerService;
+    private final PublicDailyQuestionAnswerLikeService publicDailyQuestionAnswerLikeService;
 
     public GetPublicDailyQuestionResponse getPublicDailyQuestion(Long memberId, LocalDate date) {
         Member member = memberService.findById(memberId);
@@ -57,5 +61,24 @@ public class PublicQuestionApplication {
         PublicDailyQuestion pdq = publicDailyQuestionService.findById(pdqId);
         PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService.update(pdq, member, content);
         return UpdatePublicDailyQuestionAnswerResponse.from(answer, timezone);
+    }
+
+    @Transactional
+    public ToggleLikeResponse toggleLike(Long memberId, Long answerId) {
+        PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService.findByIdOrThrow(answerId);
+        Member member = memberService.findById(memberId);
+
+        var existingLike = publicDailyQuestionAnswerLikeService.findByAnswerAndMember(answer, member);
+
+        boolean liked;
+        if (existingLike.isPresent()) {
+            publicDailyQuestionAnswerLikeService.delete(existingLike.get());
+            liked = false;
+        } else {
+            publicDailyQuestionAnswerLikeService.save(PublicDailyQuestionAnswerLike.create(answer, member));
+            liked = true;
+        }
+
+        return new ToggleLikeResponse(liked);
     }
 }

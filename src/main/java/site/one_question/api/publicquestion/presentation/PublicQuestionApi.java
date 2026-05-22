@@ -13,6 +13,7 @@ import site.one_question.api.publicquestion.presentation.request.CreatePublicDai
 import site.one_question.api.publicquestion.presentation.request.UpdatePublicDailyQuestionAnswerRequest;
 import site.one_question.api.publicquestion.presentation.response.CreatePublicDailyQuestionAnswerResponse;
 import site.one_question.api.publicquestion.presentation.response.GetPublicDailyQuestionResponse;
+import site.one_question.api.publicquestion.presentation.response.ToggleLikeResponse;
 import site.one_question.api.publicquestion.presentation.response.UpdatePublicDailyQuestionAnswerResponse;
 
 @Tag(name = "PublicQuestion", description = "공개 질문 관련 API")
@@ -160,4 +161,40 @@ public interface PublicQuestionApi {
             String timezone,
             UpdatePublicDailyQuestionAnswerRequest request
     );
+
+    @Operation(
+            summary = "공개 일일 질문 답변 좋아요 토글",
+            description = "공개 일일 질문 답변에 좋아요를 누르거나 취소합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "좋아요 토글 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ToggleLikeResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 실패",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "답변을 찾을 수 없음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "PUBLIC-QUESTION-005",
+                                                "message": "해당 답변을 찾을 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    ResponseEntity<ToggleLikeResponse> toggleLike(Long memberId, Long answerId);
 }

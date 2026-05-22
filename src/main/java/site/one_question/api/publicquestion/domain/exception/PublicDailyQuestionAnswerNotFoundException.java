@@ -10,4 +10,11 @@ public class PublicDailyQuestionAnswerNotFoundException extends PublicQuestionEx
                 Map.of("pdqId", pdqId, "memberId", memberId)
         );
     }
+
+    public PublicDailyQuestionAnswerNotFoundException(Long answerId) {
+        super(
+                PublicQuestionExceptionSpec.PUBLIC_ANSWER_NOT_FOUND,
+                Map.of("answerId", answerId)
+        );
+    }
 }

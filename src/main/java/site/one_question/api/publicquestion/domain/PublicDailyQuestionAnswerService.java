@@ -37,6 +37,11 @@ public class PublicDailyQuestionAnswerService {
         return publicDailyQuestionAnswerRepository.findByPublicDailyQuestionAndMember(publicDailyQuestion, member);
     }
 
+    public PublicDailyQuestionAnswer findByIdOrThrow(Long answerId) {
+        return publicDailyQuestionAnswerRepository.findById(answerId)
+                .orElseThrow(() -> new PublicDailyQuestionAnswerNotFoundException(answerId));
+    }
+
     public PublicDailyQuestionAnswer update(PublicDailyQuestion pdq, Member member, String newContent) {
         PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerRepository
                 .findByPublicDailyQuestionAndMember(pdq, member)
