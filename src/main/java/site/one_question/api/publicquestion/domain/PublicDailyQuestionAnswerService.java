@@ -42,6 +42,18 @@ public class PublicDailyQuestionAnswerService {
                 .orElseThrow(() -> new PublicDailyQuestionAnswerNotFoundException(answerId));
     }
 
+    public PublicDailyQuestionAnswer findOwnedByIdOrThrow(Long answerId, Long memberId) {
+        PublicDailyQuestionAnswer answer = findByIdOrThrow(answerId);
+        if (!answer.isOwnedBy(memberId)) {
+            throw new PublicDailyQuestionAnswerNotFoundException(answerId);
+        }
+        return answer;
+    }
+
+    public void delete(PublicDailyQuestionAnswer answer) {
+        publicDailyQuestionAnswerRepository.delete(answer);
+    }
+
     public PublicDailyQuestionAnswer update(PublicDailyQuestion pdq, Member member, String newContent) {
         PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerRepository
                 .findByPublicDailyQuestionAndMember(pdq, member)

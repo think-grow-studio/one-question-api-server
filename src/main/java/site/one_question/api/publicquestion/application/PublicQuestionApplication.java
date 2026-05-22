@@ -72,6 +72,13 @@ public class PublicQuestionApplication {
     }
 
     @Transactional
+    public void deleteAnswer(Long memberId, Long answerId) {
+        PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService.findOwnedByIdOrThrow(answerId, memberId);
+        publicDailyQuestionAnswerLikeService.deleteByAnswer(answer);
+        publicDailyQuestionAnswerService.delete(answer);
+    }
+
+    @Transactional
     public ToggleLikeResponse toggleLike(Long memberId, Long answerId) {
         PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService.findByIdOrThrow(answerId);
         Member member = memberService.findById(memberId);

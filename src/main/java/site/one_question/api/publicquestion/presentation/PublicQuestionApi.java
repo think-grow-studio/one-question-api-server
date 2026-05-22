@@ -197,4 +197,29 @@ public interface PublicQuestionApi {
             )
     })
     ResponseEntity<ToggleLikeResponse> toggleLike(Long memberId, Long answerId);
+
+    @Operation(
+            summary = "공개 일일 질문 답변 삭제",
+            description = "본인이 작성한 공개 일일 질문 답변을 삭제합니다. 관련 좋아요도 함께 삭제됩니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "삭제 성공", content = @Content),
+            @ApiResponse(responseCode = "401", description = "인증 실패", content = @Content),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "본인 답변을 찾을 수 없음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "PUBLIC-QUESTION-005",
+                                                "message": "해당 답변을 찾을 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    ResponseEntity<Void> deleteAnswer(Long memberId, Long answerId);
 }

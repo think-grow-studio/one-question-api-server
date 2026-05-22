@@ -31,4 +31,8 @@ public class PublicDailyQuestionAnswerLikeService {
     public void delete(PublicDailyQuestionAnswerLike like) {
         publicDailyQuestionAnswerLikeRepository.delete(like);
     }
+
+    public void deleteByAnswer(PublicDailyQuestionAnswer answer) {
+        publicDailyQuestionAnswerLikeRepository.deleteByPublicDailyQuestionAnswer(answer);
+    }
 }

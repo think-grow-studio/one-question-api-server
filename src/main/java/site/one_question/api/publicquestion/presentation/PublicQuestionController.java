@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -70,6 +71,18 @@ public class PublicQuestionController implements PublicQuestionApi {
                 memberId, pdqId, request.content(), timezone);
         log.info("[API] 공개 일일 질문 답변 수정 요청 종료 - pdqId: {}", pdqId);
         return ResponseEntity.ok(response);
+    }
+
+    @Override
+    @DeleteMapping("/answers/{answerId}")
+    public ResponseEntity<Void> deleteAnswer(
+            @PrincipalId Long memberId,
+            @PathVariable Long answerId
+    ) {
+        log.info("[API] 공개 일일 질문 답변 삭제 요청 시작 - answerId: {}", answerId);
+        publicQuestionApplication.deleteAnswer(memberId, answerId);
+        log.info("[API] 공개 일일 질문 답변 삭제 요청 종료 - answerId: {}", answerId);
+        return ResponseEntity.noContent().build();
     }
 
     @Override

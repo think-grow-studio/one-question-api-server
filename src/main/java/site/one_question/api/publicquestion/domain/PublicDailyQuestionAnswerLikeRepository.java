@@ -2,6 +2,7 @@ package site.one_question.api.publicquestion.domain;
 
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import site.one_question.api.member.domain.Member;
 
 public interface PublicDailyQuestionAnswerLikeRepository extends JpaRepository<PublicDailyQuestionAnswerLike, Long> {
@@ -13,4 +14,7 @@ public interface PublicDailyQuestionAnswerLikeRepository extends JpaRepository<P
             PublicDailyQuestionAnswer publicDailyQuestionAnswer, Member member);
 
     long countByPublicDailyQuestionAnswer(PublicDailyQuestionAnswer publicDailyQuestionAnswer);
+
+    @Modifying
+    int deleteByPublicDailyQuestionAnswer(PublicDailyQuestionAnswer publicDailyQuestionAnswer);
 }
