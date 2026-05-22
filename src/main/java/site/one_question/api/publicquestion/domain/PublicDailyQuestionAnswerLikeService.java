@@ -35,4 +35,12 @@ public class PublicDailyQuestionAnswerLikeService {
     public void deleteByAnswer(PublicDailyQuestionAnswer answer) {
         publicDailyQuestionAnswerLikeRepository.deleteByPublicDailyQuestionAnswer(answer);
     }
+
+    public void deleteByMemberId(Long memberId) {
+        publicDailyQuestionAnswerLikeRepository.deleteByMemberId(memberId);
+    }
+
+    public void deleteByAnswerOwnerId(Long memberId) {
+        publicDailyQuestionAnswerLikeRepository.deleteByAnswerOwnerId(memberId);
+    }
 }

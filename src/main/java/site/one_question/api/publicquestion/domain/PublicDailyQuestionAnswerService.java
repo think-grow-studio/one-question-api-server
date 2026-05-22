@@ -61,4 +61,8 @@ public class PublicDailyQuestionAnswerService {
     public void delete(PublicDailyQuestionAnswer answer) {
         publicDailyQuestionAnswerRepository.delete(answer);
     }
+
+    public void deleteByMemberId(Long memberId) {
+        publicDailyQuestionAnswerRepository.deleteByMemberId(memberId);
+    }
 }
