@@ -1,4 +1,4 @@
-package site.one_question.api.answerpost.domain;
+package site.one_question.api.publicquestion.domain;
 
 import java.security.SecureRandom;
 import java.util.List;

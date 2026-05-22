@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import site.one_question.api.member.domain.Member;
+import site.one_question.api.publicquestion.domain.AnonymousNickname;
 import site.one_question.api.question.domain.DailyQuestionAnswer;
 import site.one_question.common.domain.BaseEntity;
 
