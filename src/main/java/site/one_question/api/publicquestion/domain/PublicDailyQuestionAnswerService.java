@@ -1,5 +1,6 @@
 package site.one_question.api.publicquestion.domain;
 
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import site.one_question.api.member.domain.Member;
@@ -29,5 +30,9 @@ public class PublicDailyQuestionAnswerService {
 
     public boolean existsBy(PublicDailyQuestion publicDailyQuestion, Member member) {
         return publicDailyQuestionAnswerRepository.existsByPublicDailyQuestionAndMember(publicDailyQuestion, member);
+    }
+
+    public Optional<PublicDailyQuestionAnswer> findBy(PublicDailyQuestion publicDailyQuestion, Member member) {
+        return publicDailyQuestionAnswerRepository.findByPublicDailyQuestionAndMember(publicDailyQuestion, member);
     }
 }

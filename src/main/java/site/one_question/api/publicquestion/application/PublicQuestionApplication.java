@@ -25,7 +25,8 @@ public class PublicQuestionApplication {
     public GetPublicDailyQuestionResponse getPublicDailyQuestion(Long memberId, LocalDate date) {
         Member member = memberService.findById(memberId);
         PublicDailyQuestion pdq = publicDailyQuestionService.findByDateAndMember(date, member);
-        return GetPublicDailyQuestionResponse.from(pdq);
+        PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService.findBy(pdq, member).orElse(null);
+        return GetPublicDailyQuestionResponse.from(pdq, answer);
     }
 
     @Transactional
