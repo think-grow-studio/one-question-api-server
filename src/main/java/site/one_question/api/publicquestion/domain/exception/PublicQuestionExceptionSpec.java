@@ -31,6 +31,12 @@ public enum PublicQuestionExceptionSpec implements ExceptionSpec {
         "PUBLIC-QUESTION-004",
         "이미 답변한 공개 일일 질문",
         "error.public-question.answer-already-exists"
+    ),
+    PUBLIC_ANSWER_NOT_FOUND(
+        HttpStatus.NOT_FOUND,
+        "PUBLIC-QUESTION-005",
+        "공개 일일 질문 답변을 찾을 수 없음",
+        "error.public-question.answer-not-found"
     );
 
     private final HttpStatus status;

@@ -12,6 +12,7 @@ import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerServ
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionService;
 import site.one_question.api.publicquestion.presentation.response.CreatePublicDailyQuestionAnswerResponse;
 import site.one_question.api.publicquestion.presentation.response.GetPublicDailyQuestionResponse;
+import site.one_question.api.publicquestion.presentation.response.UpdatePublicDailyQuestionAnswerResponse;
 
 @Service
 @Transactional(readOnly = true)
@@ -43,5 +44,18 @@ public class PublicQuestionApplication {
         PublicDailyQuestionAnswer saved = publicDailyQuestionAnswerService.createAndSave(pdq, member, content, timezone);
 
         return CreatePublicDailyQuestionAnswerResponse.from(saved, timezone);
+    }
+
+    @Transactional
+    public UpdatePublicDailyQuestionAnswerResponse updateAnswer(
+            Long memberId,
+            Long pdqId,
+            String content,
+            String timezone
+    ) {
+        Member member = memberService.findById(memberId);
+        PublicDailyQuestion pdq = publicDailyQuestionService.findById(pdqId);
+        PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService.update(pdq, member, content);
+        return UpdatePublicDailyQuestionAnswerResponse.from(answer, timezone);
     }
 }

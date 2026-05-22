@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,8 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 import site.one_question.api.auth.infrastructure.annotation.PrincipalId;
 import site.one_question.api.publicquestion.application.PublicQuestionApplication;
 import site.one_question.api.publicquestion.presentation.request.CreatePublicDailyQuestionAnswerRequest;
+import site.one_question.api.publicquestion.presentation.request.UpdatePublicDailyQuestionAnswerRequest;
 import site.one_question.api.publicquestion.presentation.response.CreatePublicDailyQuestionAnswerResponse;
 import site.one_question.api.publicquestion.presentation.response.GetPublicDailyQuestionResponse;
+import site.one_question.api.publicquestion.presentation.response.UpdatePublicDailyQuestionAnswerResponse;
 import site.one_question.common.HttpHeaderConstant;
 
 @Slf4j
@@ -50,6 +53,21 @@ public class PublicQuestionController implements PublicQuestionApi {
         CreatePublicDailyQuestionAnswerResponse response = publicQuestionApplication.createAnswer(
                 memberId, pdqId, request.content(), timezone);
         log.info("[API] 공개 일일 질문 답변 작성 요청 종료 - pdqId: {}", pdqId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    @PatchMapping("/{pdqId}/answer")
+    public ResponseEntity<UpdatePublicDailyQuestionAnswerResponse> updateAnswer(
+            @PrincipalId Long memberId,
+            @PathVariable Long pdqId,
+            @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone,
+            @RequestBody UpdatePublicDailyQuestionAnswerRequest request
+    ) {
+        log.info("[API] 공개 일일 질문 답변 수정 요청 시작 - pdqId: {}", pdqId);
+        UpdatePublicDailyQuestionAnswerResponse response = publicQuestionApplication.updateAnswer(
+                memberId, pdqId, request.content(), timezone);
+        log.info("[API] 공개 일일 질문 답변 수정 요청 종료 - pdqId: {}", pdqId);
         return ResponseEntity.ok(response);
     }
 }

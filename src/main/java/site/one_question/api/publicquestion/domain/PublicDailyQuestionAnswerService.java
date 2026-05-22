@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.publicquestion.domain.exception.PublicDailyQuestionAnswerAlreadyExistsException;
+import site.one_question.api.publicquestion.domain.exception.PublicDailyQuestionAnswerNotFoundException;
 
 @Service
 @RequiredArgsConstructor
@@ -34,5 +35,13 @@ public class PublicDailyQuestionAnswerService {
 
     public Optional<PublicDailyQuestionAnswer> findBy(PublicDailyQuestion publicDailyQuestion, Member member) {
         return publicDailyQuestionAnswerRepository.findByPublicDailyQuestionAndMember(publicDailyQuestion, member);
+    }
+
+    public PublicDailyQuestionAnswer update(PublicDailyQuestion pdq, Member member, String newContent) {
+        PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerRepository
+                .findByPublicDailyQuestionAndMember(pdq, member)
+                .orElseThrow(() -> new PublicDailyQuestionAnswerNotFoundException(pdq.getId(), member.getId()));
+        answer.updateContent(newContent);
+        return answer;
     }
 }
