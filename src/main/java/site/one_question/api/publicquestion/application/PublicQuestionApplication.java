@@ -8,7 +8,6 @@ import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberService;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestion;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswer;
-import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerLike;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerLikeService;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerService;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionService;
@@ -51,10 +50,7 @@ public class PublicQuestionApplication {
     ) {
         Member member = memberService.findById(memberId);
         PublicDailyQuestion pdq = publicDailyQuestionService.findById(pdqId);
-
-        publicDailyQuestionAnswerService.validateAnswerNotExists(pdq, member);
         PublicDailyQuestionAnswer saved = publicDailyQuestionAnswerService.createAndSave(pdq, member, content, timezone);
-
         return CreatePublicDailyQuestionAnswerResponse.from(saved, timezone);
     }
 
@@ -85,18 +81,7 @@ public class PublicQuestionApplication {
         PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService
                 .findByIdAndPdqIdOrThrow(answerId, pdqId);
         Member member = memberService.findById(memberId);
-
-        var existingLike = publicDailyQuestionAnswerLikeService.findByAnswerAndMember(answer, member);
-
-        boolean liked;
-        if (existingLike.isPresent()) {
-            publicDailyQuestionAnswerLikeService.delete(existingLike.get());
-            liked = false;
-        } else {
-            publicDailyQuestionAnswerLikeService.save(PublicDailyQuestionAnswerLike.create(answer, member));
-            liked = true;
-        }
-
+        boolean liked = publicDailyQuestionAnswerLikeService.toggle(answer, member);
         return new ToggleLikeResponse(liked);
     }
 }

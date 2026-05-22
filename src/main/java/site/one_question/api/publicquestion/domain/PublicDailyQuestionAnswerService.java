@@ -19,18 +19,17 @@ public class PublicDailyQuestionAnswerService {
             String content,
             String timezone
     ) {
+        validateAnswerNotExists(pdq, member);
         PublicDailyQuestionAnswer answer = PublicDailyQuestionAnswer.create(pdq, member, content, timezone);
         return publicDailyQuestionAnswerRepository.save(answer);
     }
 
-    public void validateAnswerNotExists(PublicDailyQuestion pdq, Member member) {
-        if (existsBy(pdq, member)) {
+    private void validateAnswerNotExists(PublicDailyQuestion pdq, Member member) {
+        boolean exists = publicDailyQuestionAnswerRepository
+                .existsByPublicDailyQuestionAndMember(pdq, member);
+        if (exists) {
             throw new PublicDailyQuestionAnswerAlreadyExistsException(pdq.getId(), member.getId());
         }
-    }
-
-    public boolean existsBy(PublicDailyQuestion publicDailyQuestion, Member member) {
-        return publicDailyQuestionAnswerRepository.existsByPublicDailyQuestionAndMember(publicDailyQuestion, member);
     }
 
     public Optional<PublicDailyQuestionAnswer> findBy(PublicDailyQuestion publicDailyQuestion, Member member) {

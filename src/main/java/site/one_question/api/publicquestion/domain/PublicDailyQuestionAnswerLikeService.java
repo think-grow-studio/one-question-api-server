@@ -11,13 +11,15 @@ public class PublicDailyQuestionAnswerLikeService {
 
     private final PublicDailyQuestionAnswerLikeRepository publicDailyQuestionAnswerLikeRepository;
 
-    public PublicDailyQuestionAnswerLike save(PublicDailyQuestionAnswerLike like) {
-        return publicDailyQuestionAnswerLikeRepository.save(like);
-    }
-
-    public Optional<PublicDailyQuestionAnswerLike> findByAnswerAndMember(
-            PublicDailyQuestionAnswer answer, Member member) {
-        return publicDailyQuestionAnswerLikeRepository.findByPublicDailyQuestionAnswerAndMember(answer, member);
+    public boolean toggle(PublicDailyQuestionAnswer answer, Member member) {
+        Optional<PublicDailyQuestionAnswerLike> existing =
+                publicDailyQuestionAnswerLikeRepository.findByPublicDailyQuestionAnswerAndMember(answer, member);
+        if (existing.isPresent()) {
+            publicDailyQuestionAnswerLikeRepository.delete(existing.get());
+            return false;
+        }
+        publicDailyQuestionAnswerLikeRepository.save(PublicDailyQuestionAnswerLike.create(answer, member));
+        return true;
     }
 
     public boolean isLikedBy(PublicDailyQuestionAnswer answer, Member member) {
@@ -26,10 +28,6 @@ public class PublicDailyQuestionAnswerLikeService {
 
     public long countBy(PublicDailyQuestionAnswer answer) {
         return publicDailyQuestionAnswerLikeRepository.countByPublicDailyQuestionAnswer(answer);
-    }
-
-    public void delete(PublicDailyQuestionAnswerLike like) {
-        publicDailyQuestionAnswerLikeRepository.delete(like);
     }
 
     public void deleteByAnswer(PublicDailyQuestionAnswer answer) {
