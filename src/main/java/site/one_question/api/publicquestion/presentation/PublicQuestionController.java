@@ -1,5 +1,6 @@
 package site.one_question.api.publicquestion.presentation;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,12 +13,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import site.one_question.api.auth.infrastructure.annotation.PrincipalId;
 import site.one_question.api.publicquestion.application.PublicQuestionApplication;
 import site.one_question.api.publicquestion.presentation.request.CreatePublicDailyQuestionAnswerRequest;
 import site.one_question.api.publicquestion.presentation.request.UpdatePublicDailyQuestionAnswerRequest;
 import site.one_question.api.publicquestion.presentation.response.CreatePublicDailyQuestionAnswerResponse;
+import site.one_question.api.publicquestion.presentation.response.GetPublicDailyQuestionAnswersResponse;
 import site.one_question.api.publicquestion.presentation.response.GetPublicDailyQuestionResponse;
 import site.one_question.api.publicquestion.presentation.response.ToggleLikeResponse;
 import site.one_question.api.publicquestion.presentation.response.UpdatePublicDailyQuestionAnswerResponse;
@@ -85,6 +88,22 @@ public class PublicQuestionController implements PublicQuestionApi {
         publicQuestionApplication.deleteAnswer(memberId, pdqId, answerId);
         log.info("[API] 공개 일일 질문 답변 삭제 요청 종료 - pdqId: {}, answerId: {}", pdqId, answerId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @GetMapping("/{pdqId}/answers")
+    public ResponseEntity<GetPublicDailyQuestionAnswersResponse> getAnswers(
+            @PrincipalId Long memberId,
+            @PathVariable Long pdqId,
+            @RequestParam(required = false) Instant cursorAnsweredAt,
+            @RequestParam(required = false) Long cursorId,
+            @RequestParam(required = false, defaultValue = "20") Integer size
+    ) {
+        log.info("[API] 공개 일일 질문 답변 목록 조회 요청 시작 - pdqId: {}, size: {}", pdqId, size);
+        GetPublicDailyQuestionAnswersResponse response = publicQuestionApplication.getAnswers(
+                memberId, pdqId, cursorAnsweredAt, cursorId, size);
+        log.info("[API] 공개 일일 질문 답변 목록 조회 요청 종료 - pdqId: {}, hasNext: {}", pdqId, response.hasNext());
+        return ResponseEntity.ok(response);
     }
 
     @Override

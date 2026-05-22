@@ -49,9 +49,10 @@ public record GetPublicDailyQuestionResponse(
             boolean liked
     ) {
         public static MyAnswerDto from(PublicDailyQuestionAnswer answer, long likeCount, boolean liked) {
-            Instant timestamp = answer.getUpdatedAt() != null
-                    ? answer.getUpdatedAt()
-                    : answer.getAnsweredAt();
+            Instant timestamp = answer.getUpdatedAt();
+            if (timestamp == null) {
+                timestamp = answer.getAnsweredAt();
+            }
             LocalDateTime answeredAt = LocalDateTime.ofInstant(
                     timestamp, ZoneId.of(answer.getTimezone()));
             return new MyAnswerDto(
@@ -71,13 +72,17 @@ public record GetPublicDailyQuestionResponse(
             long likeCount,
             boolean liked
     ) {
+        MyAnswerDto myAnswer = null;
+        if (answer != null) {
+            myAnswer = MyAnswerDto.from(answer, likeCount, liked);
+        }
         return new GetPublicDailyQuestionResponse(
                 pdq.getId(),
                 pdq.getQuestion().getId(),
                 pdq.getQuestion().getContent(),
                 pdq.getQuestion().getDescription(),
                 pdq.getQuestionDate(),
-                answer == null ? null : MyAnswerDto.from(answer, likeCount, liked)
+                myAnswer
         );
     }
 }

@@ -9,9 +9,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import org.springframework.http.ResponseEntity;
+import java.time.Instant;
 import site.one_question.api.publicquestion.presentation.request.CreatePublicDailyQuestionAnswerRequest;
 import site.one_question.api.publicquestion.presentation.request.UpdatePublicDailyQuestionAnswerRequest;
 import site.one_question.api.publicquestion.presentation.response.CreatePublicDailyQuestionAnswerResponse;
+import site.one_question.api.publicquestion.presentation.response.GetPublicDailyQuestionAnswersResponse;
 import site.one_question.api.publicquestion.presentation.response.GetPublicDailyQuestionResponse;
 import site.one_question.api.publicquestion.presentation.response.ToggleLikeResponse;
 import site.one_question.api.publicquestion.presentation.response.UpdatePublicDailyQuestionAnswerResponse;
@@ -223,4 +225,28 @@ public interface PublicQuestionApi {
             )
     })
     ResponseEntity<Void> deleteAnswer(Long memberId, Long pdqId, Long answerId);
+
+    @Operation(
+            summary = "공개 일일 질문 답변 목록 조회 (커서 기반)",
+            description = "특정 PDQ 에 달린 다른 멤버들의 답변 목록을 최신순(answeredAt DESC, id DESC)으로 페이지네이션합니다. 본인 답변은 제외됩니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GetPublicDailyQuestionAnswersResponse.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "401", description = "인증 실패", content = @Content),
+            @ApiResponse(responseCode = "404", description = "PDQ 가 존재하지 않음", content = @Content)
+    })
+    ResponseEntity<GetPublicDailyQuestionAnswersResponse> getAnswers(
+            Long memberId,
+            Long pdqId,
+            Instant cursorAnsweredAt,
+            Long cursorId,
+            Integer size
+    );
 }

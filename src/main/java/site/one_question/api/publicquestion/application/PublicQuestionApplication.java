@@ -1,6 +1,10 @@
 package site.one_question.api.publicquestion.application;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +16,7 @@ import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerLike
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerService;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionService;
 import site.one_question.api.publicquestion.presentation.response.CreatePublicDailyQuestionAnswerResponse;
+import site.one_question.api.publicquestion.presentation.response.GetPublicDailyQuestionAnswersResponse;
 import site.one_question.api.publicquestion.presentation.response.GetPublicDailyQuestionResponse;
 import site.one_question.api.publicquestion.presentation.response.ToggleLikeResponse;
 import site.one_question.api.publicquestion.presentation.response.UpdatePublicDailyQuestionAnswerResponse;
@@ -74,6 +79,41 @@ public class PublicQuestionApplication {
                 .findOwnedByIdAndPdqIdOrThrow(answerId, pdqId, memberId);
         publicDailyQuestionAnswerLikeService.deleteByAnswer(answer);
         publicDailyQuestionAnswerService.delete(answer);
+    }
+
+    public GetPublicDailyQuestionAnswersResponse getAnswers(
+            Long memberId,
+            Long pdqId,
+            Instant cursorAnsweredAt,
+            Long cursorId,
+            int size
+    ) {
+        // PDQ 존재 확인 (없으면 404)
+        publicDailyQuestionService.findById(pdqId);
+
+        Instant effectiveAnsweredAt = cursorAnsweredAt;
+        if (effectiveAnsweredAt == null) {
+            effectiveAnsweredAt = Instant.now();
+        }
+        Long effectiveId = cursorId;
+        if (effectiveId == null) {
+            effectiveId = Long.MAX_VALUE;
+        }
+
+        List<PublicDailyQuestionAnswer> fetched = publicDailyQuestionAnswerService.findFeed(
+                pdqId, memberId, effectiveAnsweredAt, effectiveId, size + 1);
+
+        boolean hasNext = fetched.size() > size;
+        List<PublicDailyQuestionAnswer> items = fetched;
+        if (hasNext) {
+            items = fetched.subList(0, size);
+        }
+
+        List<Long> answerIds = items.stream().map(PublicDailyQuestionAnswer::getId).toList();
+        Map<Long, Long> likeCounts = publicDailyQuestionAnswerLikeService.countByAnswerIds(answerIds);
+        Set<Long> likedIds = publicDailyQuestionAnswerLikeService.findLikedAnswerIdsByMember(answerIds, memberId);
+
+        return GetPublicDailyQuestionAnswersResponse.from(items, likeCounts, likedIds, hasNext);
     }
 
     @Transactional

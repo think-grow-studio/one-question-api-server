@@ -1,7 +1,10 @@
 package site.one_question.api.publicquestion.domain;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.publicquestion.domain.exception.PublicDailyQuestionAnswerAlreadyExistsException;
@@ -63,5 +66,11 @@ public class PublicDailyQuestionAnswerService {
 
     public void deleteByMemberId(Long memberId) {
         publicDailyQuestionAnswerRepository.deleteByMemberId(memberId);
+    }
+
+    public List<PublicDailyQuestionAnswer> findFeed(
+            Long pdqId, Long excludeMemberId, Instant cursorAnsweredAt, Long cursorId, int limit) {
+        return publicDailyQuestionAnswerRepository.findFeed(
+                pdqId, excludeMemberId, cursorAnsweredAt, cursorId, PageRequest.of(0, limit));
     }
 }

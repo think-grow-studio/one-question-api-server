@@ -1,5 +1,6 @@
 package site.one_question.api.publicquestion.domain;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -17,6 +18,22 @@ public interface PublicDailyQuestionAnswerLikeRepository extends JpaRepository<P
 
     long countByPublicDailyQuestionAnswer(PublicDailyQuestionAnswer publicDailyQuestionAnswer);
 
+    @Query("""
+            SELECT new site.one_question.api.publicquestion.domain.AnswerLikeCount(
+                l.publicDailyQuestionAnswer.id, COUNT(l))
+            FROM PublicDailyQuestionAnswerLike l
+            WHERE l.publicDailyQuestionAnswer.id IN :answerIds
+            GROUP BY l.publicDailyQuestionAnswer.id
+            """)
+    List<AnswerLikeCount> countByAnswerIds(@Param("answerIds") List<Long> answerIds);
+
+    @Query("""
+            SELECT l.publicDailyQuestionAnswer.id FROM PublicDailyQuestionAnswerLike l
+            WHERE l.publicDailyQuestionAnswer.id IN :answerIds
+              AND l.member.id = :memberId
+            """)
+    List<Long> findLikedAnswerIdsByMember(@Param("answerIds") List<Long> answerIds, @Param("memberId") Long memberId);
+
     @Modifying
     int deleteByPublicDailyQuestionAnswer(PublicDailyQuestionAnswer publicDailyQuestionAnswer);
 
@@ -25,7 +42,9 @@ public interface PublicDailyQuestionAnswerLikeRepository extends JpaRepository<P
     int deleteByMemberId(@Param("memberId") Long memberId);
 
     @Modifying
-    @Query("DELETE FROM PublicDailyQuestionAnswerLike l " +
-           "WHERE l.publicDailyQuestionAnswer.member.id = :memberId")
+    @Query("""
+            DELETE FROM PublicDailyQuestionAnswerLike l
+            WHERE l.publicDailyQuestionAnswer.member.id = :memberId
+            """)
     int deleteByAnswerOwnerId(@Param("memberId") Long memberId);
 }
