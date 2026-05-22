@@ -1,6 +1,7 @@
 package site.one_question.api.publicquestion.presentation.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -38,12 +39,15 @@ public record GetPublicDailyQuestionResponse(
             @Schema(description = "익명 닉네임", example = "달리는 토끼")
             String anonymousNickname,
 
-            @Schema(description = "답변 작성 시각 (작성 당시 클라이언트 로컬 타임존 기준)", example = "2026-05-22T14:30:00")
+            @Schema(description = "답변 작성 시간 (수정된 경우 수정 시간, 작성 당시 클라이언트 로컬 타임존 기준)", example = "2026-05-22T14:30:00")
             LocalDateTime answeredAt
     ) {
         public static MyAnswerDto from(PublicDailyQuestionAnswer answer) {
+            Instant timestamp = answer.getUpdatedAt() != null
+                    ? answer.getUpdatedAt()
+                    : answer.getAnsweredAt();
             LocalDateTime answeredAt = LocalDateTime.ofInstant(
-                    answer.getAnsweredAt(), ZoneId.of(answer.getTimezone()));
+                    timestamp, ZoneId.of(answer.getTimezone()));
             return new MyAnswerDto(
                     answer.getId(),
                     answer.getContent(),
