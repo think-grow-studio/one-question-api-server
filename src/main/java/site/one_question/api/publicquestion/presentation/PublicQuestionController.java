@@ -44,7 +44,7 @@ public class PublicQuestionController implements PublicQuestionApi {
     }
 
     @Override
-    @PostMapping("/{pdqId}/answer")
+    @PostMapping("/{pdqId}/answers")
     public ResponseEntity<CreatePublicDailyQuestionAnswerResponse> createAnswer(
             @PrincipalId Long memberId,
             @PathVariable Long pdqId,
@@ -59,40 +59,43 @@ public class PublicQuestionController implements PublicQuestionApi {
     }
 
     @Override
-    @PatchMapping("/{pdqId}/answer")
+    @PatchMapping("/{pdqId}/answers/{answerId}")
     public ResponseEntity<UpdatePublicDailyQuestionAnswerResponse> updateAnswer(
             @PrincipalId Long memberId,
             @PathVariable Long pdqId,
+            @PathVariable Long answerId,
             @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone,
             @RequestBody UpdatePublicDailyQuestionAnswerRequest request
     ) {
-        log.info("[API] 공개 일일 질문 답변 수정 요청 시작 - pdqId: {}", pdqId);
+        log.info("[API] 공개 일일 질문 답변 수정 요청 시작 - pdqId: {}, answerId: {}", pdqId, answerId);
         UpdatePublicDailyQuestionAnswerResponse response = publicQuestionApplication.updateAnswer(
-                memberId, pdqId, request.content(), timezone);
-        log.info("[API] 공개 일일 질문 답변 수정 요청 종료 - pdqId: {}", pdqId);
+                memberId, pdqId, answerId, request.content(), timezone);
+        log.info("[API] 공개 일일 질문 답변 수정 요청 종료 - pdqId: {}, answerId: {}", pdqId, answerId);
         return ResponseEntity.ok(response);
     }
 
     @Override
-    @DeleteMapping("/answers/{answerId}")
+    @DeleteMapping("/{pdqId}/answers/{answerId}")
     public ResponseEntity<Void> deleteAnswer(
             @PrincipalId Long memberId,
+            @PathVariable Long pdqId,
             @PathVariable Long answerId
     ) {
-        log.info("[API] 공개 일일 질문 답변 삭제 요청 시작 - answerId: {}", answerId);
-        publicQuestionApplication.deleteAnswer(memberId, answerId);
-        log.info("[API] 공개 일일 질문 답변 삭제 요청 종료 - answerId: {}", answerId);
+        log.info("[API] 공개 일일 질문 답변 삭제 요청 시작 - pdqId: {}, answerId: {}", pdqId, answerId);
+        publicQuestionApplication.deleteAnswer(memberId, pdqId, answerId);
+        log.info("[API] 공개 일일 질문 답변 삭제 요청 종료 - pdqId: {}, answerId: {}", pdqId, answerId);
         return ResponseEntity.noContent().build();
     }
 
     @Override
-    @PostMapping("/answers/{answerId}/like")
+    @PostMapping("/{pdqId}/answers/{answerId}/like")
     public ResponseEntity<ToggleLikeResponse> toggleLike(
             @PrincipalId Long memberId,
+            @PathVariable Long pdqId,
             @PathVariable Long answerId
     ) {
-        log.info("[API] 공개 일일 질문 답변 좋아요 토글 요청 시작 - answerId: {}", answerId);
-        ToggleLikeResponse response = publicQuestionApplication.toggleLike(memberId, answerId);
+        log.info("[API] 공개 일일 질문 답변 좋아요 토글 요청 시작 - pdqId: {}, answerId: {}", pdqId, answerId);
+        ToggleLikeResponse response = publicQuestionApplication.toggleLike(memberId, pdqId, answerId);
         log.info("[API] 공개 일일 질문 답변 좋아요 토글 요청 종료 - answerId: {}, liked: {}", answerId, response.liked());
         return ResponseEntity.ok(response);
     }

@@ -64,7 +64,7 @@ class CreatePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
         void creates_answer_successfully() throws Exception {
             String content = "오늘 가장 인상 깊었던 일";
 
-            mockMvc.perform(post(API + "/{pdqId}/answer", pdq.getId())
+            mockMvc.perform(post(API + "/{pdqId}/answers", pdq.getId())
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -91,7 +91,7 @@ class CreatePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
         @DisplayName("이미 답변한 PDQ 에 재답변 시 409 반환")
         void returns_409_when_already_answered() throws Exception {
             // 첫 답변
-            mockMvc.perform(post(API + "/{pdqId}/answer", pdq.getId())
+            mockMvc.perform(post(API + "/{pdqId}/answers", pdq.getId())
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -99,7 +99,7 @@ class CreatePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
                     .andExpect(status().isOk());
 
             // 두 번째 답변 - 409
-            mockMvc.perform(post(API + "/{pdqId}/answer", pdq.getId())
+            mockMvc.perform(post(API + "/{pdqId}/answers", pdq.getId())
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -112,7 +112,7 @@ class CreatePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
         @DisplayName("존재하지 않는 pdqId 요청 시 404 반환")
         void returns_404_when_pdq_not_found() throws Exception {
             long nonExistentPdqId = 999999L;
-            mockMvc.perform(post(API + "/{pdqId}/answer", nonExistentPdqId)
+            mockMvc.perform(post(API + "/{pdqId}/answers", nonExistentPdqId)
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -124,7 +124,7 @@ class CreatePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
         @Test
         @DisplayName("빈 content 요청 시 400 반환")
         void returns_400_when_content_empty() throws Exception {
-            mockMvc.perform(post(API + "/{pdqId}/answer", pdq.getId())
+            mockMvc.perform(post(API + "/{pdqId}/answers", pdq.getId())
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -137,7 +137,7 @@ class CreatePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
         @DisplayName("content 길이 초과 시 400 반환")
         void returns_400_when_content_too_long() throws Exception {
             String tooLong = "a".repeat(3001);
-            mockMvc.perform(post(API + "/{pdqId}/answer", pdq.getId())
+            mockMvc.perform(post(API + "/{pdqId}/answers", pdq.getId())
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -149,7 +149,7 @@ class CreatePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
         @Test
         @DisplayName("인증 헤더 없으면 401 반환")
         void returns_401_when_no_auth() throws Exception {
-            mockMvc.perform(post(API + "/{pdqId}/answer", pdq.getId())
+            mockMvc.perform(post(API + "/{pdqId}/answers", pdq.getId())
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(body("답변")))

@@ -69,7 +69,7 @@ class UpdatePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
             PublicDailyQuestionAnswer answer = saveAnswer(member, "원래 답변");
             String newContent = "수정된 답변 내용";
 
-            mockMvc.perform(patch(API + "/{pdqId}/answer", pdq.getId())
+            mockMvc.perform(patch(API + "/{pdqId}/answers/{answerId}", pdq.getId(), answer.getId())
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -90,9 +90,12 @@ class UpdatePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
     class ExceptionTest {
 
         @Test
-        @DisplayName("본인 답변이 없는 PDQ 수정 시도 시 404 반환")
-        void returns_404_when_own_answer_not_found() throws Exception {
-            mockMvc.perform(patch(API + "/{pdqId}/answer", pdq.getId())
+        @DisplayName("다른 멤버의 답변을 수정 시도하면 404 반환")
+        void returns_404_when_updating_other_member_answer() throws Exception {
+            Member other = testMemberUtils.createSave();
+            PublicDailyQuestionAnswer otherAnswer = saveAnswer(other, "다른 멤버 답변");
+
+            mockMvc.perform(patch(API + "/{pdqId}/answers/{answerId}", pdq.getId(), otherAnswer.getId())
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -102,12 +105,18 @@ class UpdatePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
         }
 
         @Test
-        @DisplayName("다른 멤버의 답변만 존재할 때 본인 답변으로 간주되지 않아 404 반환")
-        void returns_404_when_only_other_member_answered() throws Exception {
-            Member other = testMemberUtils.createSave();
-            saveAnswer(other, "다른 멤버 답변");
+        @DisplayName("answerId가 path의 pdqId에 속하지 않으면 404 반환")
+        void returns_404_when_answer_does_not_belong_to_pdq() throws Exception {
+            PublicDailyQuestionAnswer myAnswer = saveAnswer(member, "원래 답변");
 
-            mockMvc.perform(patch(API + "/{pdqId}/answer", pdq.getId())
+            // 다른 PDQ 생성
+            Question otherQuestion = testQuestionUtils.createSave();
+            LocalDate tomorrow = LocalDate.now(ZoneOffset.UTC).plusDays(1);
+            PublicDailyQuestion otherPdq = publicDailyQuestionRepository.save(
+                    PublicDailyQuestion.publish(otherQuestion, tomorrow));
+
+            // myAnswer 는 pdq 소속인데, otherPdq 의 하위로 수정 시도
+            mockMvc.perform(patch(API + "/{pdqId}/answers/{answerId}", otherPdq.getId(), myAnswer.getId())
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE)
                             .contentType(MediaType.APPLICATION_JSON)

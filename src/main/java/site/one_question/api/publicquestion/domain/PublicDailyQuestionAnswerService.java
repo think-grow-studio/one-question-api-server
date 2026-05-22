@@ -42,8 +42,16 @@ public class PublicDailyQuestionAnswerService {
                 .orElseThrow(() -> new PublicDailyQuestionAnswerNotFoundException(answerId));
     }
 
-    public PublicDailyQuestionAnswer findOwnedByIdOrThrow(Long answerId, Long memberId) {
+    public PublicDailyQuestionAnswer findByIdAndPdqIdOrThrow(Long answerId, Long pdqId) {
         PublicDailyQuestionAnswer answer = findByIdOrThrow(answerId);
+        if (!answer.getPublicDailyQuestion().getId().equals(pdqId)) {
+            throw new PublicDailyQuestionAnswerNotFoundException(answerId);
+        }
+        return answer;
+    }
+
+    public PublicDailyQuestionAnswer findOwnedByIdAndPdqIdOrThrow(Long answerId, Long pdqId, Long memberId) {
+        PublicDailyQuestionAnswer answer = findByIdAndPdqIdOrThrow(answerId, pdqId);
         if (!answer.isOwnedBy(memberId)) {
             throw new PublicDailyQuestionAnswerNotFoundException(answerId);
         }
@@ -52,13 +60,5 @@ public class PublicDailyQuestionAnswerService {
 
     public void delete(PublicDailyQuestionAnswer answer) {
         publicDailyQuestionAnswerRepository.delete(answer);
-    }
-
-    public PublicDailyQuestionAnswer update(PublicDailyQuestion pdq, Member member, String newContent) {
-        PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerRepository
-                .findByPublicDailyQuestionAndMember(pdq, member)
-                .orElseThrow(() -> new PublicDailyQuestionAnswerNotFoundException(pdq.getId(), member.getId()));
-        answer.updateContent(newContent);
-        return answer;
     }
 }

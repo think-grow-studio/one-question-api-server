@@ -158,6 +158,7 @@ public interface PublicQuestionApi {
     ResponseEntity<UpdatePublicDailyQuestionAnswerResponse> updateAnswer(
             Long memberId,
             Long pdqId,
+            Long answerId,
             String timezone,
             UpdatePublicDailyQuestionAnswerRequest request
     );
@@ -196,7 +197,7 @@ public interface PublicQuestionApi {
                     )
             )
     })
-    ResponseEntity<ToggleLikeResponse> toggleLike(Long memberId, Long answerId);
+    ResponseEntity<ToggleLikeResponse> toggleLike(Long memberId, Long pdqId, Long answerId);
 
     @Operation(
             summary = "공개 일일 질문 답변 삭제",
@@ -221,5 +222,5 @@ public interface PublicQuestionApi {
                     )
             )
     })
-    ResponseEntity<Void> deleteAnswer(Long memberId, Long answerId);
+    ResponseEntity<Void> deleteAnswer(Long memberId, Long pdqId, Long answerId);
 }

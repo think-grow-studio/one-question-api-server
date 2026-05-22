@@ -69,7 +69,7 @@ class DeletePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
             publicDailyQuestionAnswerLikeRepository.save(PublicDailyQuestionAnswerLike.create(answer, member));
             publicDailyQuestionAnswerLikeRepository.save(PublicDailyQuestionAnswerLike.create(answer, liker));
 
-            mockMvc.perform(delete(API + "/answers/{answerId}", answer.getId())
+            mockMvc.perform(delete(API + "/{pdqId}/answers/{answerId}", pdq.getId(), answer.getId())
                             .header(HttpHeaders.AUTHORIZATION, token))
                     .andExpect(status().isNoContent());
 
@@ -88,7 +88,7 @@ class DeletePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
             Member other = testMemberUtils.createSave();
             PublicDailyQuestionAnswer otherAnswer = saveAnswer(other, "다른 멤버 답변");
 
-            mockMvc.perform(delete(API + "/answers/{answerId}", otherAnswer.getId())
+            mockMvc.perform(delete(API + "/{pdqId}/answers/{answerId}", pdq.getId(), otherAnswer.getId())
                             .header(HttpHeaders.AUTHORIZATION, token))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value(PublicQuestionExceptionSpec.PUBLIC_ANSWER_NOT_FOUND.getCode()));
@@ -100,7 +100,7 @@ class DeletePublicDailyQuestionAnswerIntegrateTest extends IntegrateTest {
         @DisplayName("존재하지 않는 answerId 요청 시 404 반환")
         void returns_404_when_answer_not_found() throws Exception {
             long nonExistentAnswerId = 999999L;
-            mockMvc.perform(delete(API + "/answers/{answerId}", nonExistentAnswerId)
+            mockMvc.perform(delete(API + "/{pdqId}/answers/{answerId}", pdq.getId(), nonExistentAnswerId)
                             .header(HttpHeaders.AUTHORIZATION, token))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value(PublicQuestionExceptionSpec.PUBLIC_ANSWER_NOT_FOUND.getCode()));

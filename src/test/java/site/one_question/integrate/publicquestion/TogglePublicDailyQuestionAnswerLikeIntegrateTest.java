@@ -40,6 +40,7 @@ class TogglePublicDailyQuestionAnswerLikeIntegrateTest extends IntegrateTest {
 
     private Member member;
     private String token;
+    private PublicDailyQuestion pdq;
     private PublicDailyQuestionAnswer answer;
 
     @BeforeEach
@@ -48,7 +49,7 @@ class TogglePublicDailyQuestionAnswerLikeIntegrateTest extends IntegrateTest {
         token = testAuthUtils.createBearerToken(member);
         Question question = testQuestionUtils.createSave();
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
-        PublicDailyQuestion pdq = publicDailyQuestionRepository.save(PublicDailyQuestion.publish(question, today));
+        pdq = publicDailyQuestionRepository.save(PublicDailyQuestion.publish(question, today));
         Member author = testMemberUtils.createSave();
         answer = publicDailyQuestionAnswerRepository.save(
                 PublicDailyQuestionAnswer.create(pdq, author, "다른 멤버의 답변", TIMEZONE));
@@ -62,7 +63,7 @@ class TogglePublicDailyQuestionAnswerLikeIntegrateTest extends IntegrateTest {
         @DisplayName("좋아요 → 취소 토글 시 응답과 DB 상태 일관성 검증")
         void toggles_like_on_and_off() throws Exception {
             // 1st call: like ON
-            mockMvc.perform(post(API + "/answers/{answerId}/like", answer.getId())
+            mockMvc.perform(post(API + "/{pdqId}/answers/{answerId}/like", pdq.getId(), answer.getId())
                             .header(HttpHeaders.AUTHORIZATION, token))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.liked").value(true));
@@ -70,7 +71,7 @@ class TogglePublicDailyQuestionAnswerLikeIntegrateTest extends IntegrateTest {
             assertThat(publicDailyQuestionAnswerLikeRepository.findAll()).hasSize(1);
 
             // 2nd call: like OFF
-            mockMvc.perform(post(API + "/answers/{answerId}/like", answer.getId())
+            mockMvc.perform(post(API + "/{pdqId}/answers/{answerId}/like", pdq.getId(), answer.getId())
                             .header(HttpHeaders.AUTHORIZATION, token))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.liked").value(false));
@@ -87,7 +88,7 @@ class TogglePublicDailyQuestionAnswerLikeIntegrateTest extends IntegrateTest {
         @DisplayName("존재하지 않는 answerId 요청 시 404 반환")
         void returns_404_when_answer_not_found() throws Exception {
             long nonExistentAnswerId = 999999L;
-            mockMvc.perform(post(API + "/answers/{answerId}/like", nonExistentAnswerId)
+            mockMvc.perform(post(API + "/{pdqId}/answers/{answerId}/like", pdq.getId(), nonExistentAnswerId)
                             .header(HttpHeaders.AUTHORIZATION, token))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value(PublicQuestionExceptionSpec.PUBLIC_ANSWER_NOT_FOUND.getCode()));

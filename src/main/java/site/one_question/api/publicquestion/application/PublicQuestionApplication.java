@@ -62,25 +62,28 @@ public class PublicQuestionApplication {
     public UpdatePublicDailyQuestionAnswerResponse updateAnswer(
             Long memberId,
             Long pdqId,
+            Long answerId,
             String content,
             String timezone
     ) {
-        Member member = memberService.findById(memberId);
-        PublicDailyQuestion pdq = publicDailyQuestionService.findById(pdqId);
-        PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService.update(pdq, member, content);
+        PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService
+                .findOwnedByIdAndPdqIdOrThrow(answerId, pdqId, memberId);
+        answer.updateContent(content);
         return UpdatePublicDailyQuestionAnswerResponse.from(answer, timezone);
     }
 
     @Transactional
-    public void deleteAnswer(Long memberId, Long answerId) {
-        PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService.findOwnedByIdOrThrow(answerId, memberId);
+    public void deleteAnswer(Long memberId, Long pdqId, Long answerId) {
+        PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService
+                .findOwnedByIdAndPdqIdOrThrow(answerId, pdqId, memberId);
         publicDailyQuestionAnswerLikeService.deleteByAnswer(answer);
         publicDailyQuestionAnswerService.delete(answer);
     }
 
     @Transactional
-    public ToggleLikeResponse toggleLike(Long memberId, Long answerId) {
-        PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService.findByIdOrThrow(answerId);
+    public ToggleLikeResponse toggleLike(Long memberId, Long pdqId, Long answerId) {
+        PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService
+                .findByIdAndPdqIdOrThrow(answerId, pdqId);
         Member member = memberService.findById(memberId);
 
         var existingLike = publicDailyQuestionAnswerLikeService.findByAnswerAndMember(answer, member);
