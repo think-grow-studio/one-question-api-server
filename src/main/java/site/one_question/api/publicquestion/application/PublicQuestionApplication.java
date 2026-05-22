@@ -31,7 +31,15 @@ public class PublicQuestionApplication {
         Member member = memberService.findById(memberId);
         PublicDailyQuestion pdq = publicDailyQuestionService.findByDateAndMember(date, member);
         PublicDailyQuestionAnswer answer = publicDailyQuestionAnswerService.findBy(pdq, member).orElse(null);
-        return GetPublicDailyQuestionResponse.from(pdq, answer);
+
+        long likeCount = 0L;
+        boolean liked = false;
+        if (answer != null) {
+            likeCount = publicDailyQuestionAnswerLikeService.countBy(answer);
+            liked = publicDailyQuestionAnswerLikeService.isLikedBy(answer, member);
+        }
+
+        return GetPublicDailyQuestionResponse.from(pdq, answer, likeCount, liked);
     }
 
     @Transactional

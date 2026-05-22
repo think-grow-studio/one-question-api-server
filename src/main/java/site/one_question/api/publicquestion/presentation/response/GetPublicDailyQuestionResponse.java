@@ -40,9 +40,15 @@ public record GetPublicDailyQuestionResponse(
             String anonymousNickname,
 
             @Schema(description = "답변 작성 시간 (수정된 경우 수정 시간, 작성 당시 클라이언트 로컬 타임존 기준)", example = "2026-05-22T14:30:00")
-            LocalDateTime answeredAt
+            LocalDateTime answeredAt,
+
+            @Schema(description = "좋아요 수", example = "5")
+            long likeCount,
+
+            @Schema(description = "본인 좋아요 여부", example = "true")
+            boolean liked
     ) {
-        public static MyAnswerDto from(PublicDailyQuestionAnswer answer) {
+        public static MyAnswerDto from(PublicDailyQuestionAnswer answer, long likeCount, boolean liked) {
             Instant timestamp = answer.getUpdatedAt() != null
                     ? answer.getUpdatedAt()
                     : answer.getAnsweredAt();
@@ -52,19 +58,26 @@ public record GetPublicDailyQuestionResponse(
                     answer.getId(),
                     answer.getContent(),
                     answer.getAnonymousNickname(),
-                    answeredAt
+                    answeredAt,
+                    likeCount,
+                    liked
             );
         }
     }
 
-    public static GetPublicDailyQuestionResponse from(PublicDailyQuestion pdq, PublicDailyQuestionAnswer answer) {
+    public static GetPublicDailyQuestionResponse from(
+            PublicDailyQuestion pdq,
+            PublicDailyQuestionAnswer answer,
+            long likeCount,
+            boolean liked
+    ) {
         return new GetPublicDailyQuestionResponse(
                 pdq.getId(),
                 pdq.getQuestion().getId(),
                 pdq.getQuestion().getContent(),
                 pdq.getQuestion().getDescription(),
                 pdq.getQuestionDate(),
-                answer == null ? null : MyAnswerDto.from(answer)
+                answer == null ? null : MyAnswerDto.from(answer, likeCount, liked)
         );
     }
 }

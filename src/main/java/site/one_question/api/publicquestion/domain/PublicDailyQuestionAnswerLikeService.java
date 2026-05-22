@@ -20,6 +20,14 @@ public class PublicDailyQuestionAnswerLikeService {
         return publicDailyQuestionAnswerLikeRepository.findByPublicDailyQuestionAnswerAndMember(answer, member);
     }
 
+    public boolean isLikedBy(PublicDailyQuestionAnswer answer, Member member) {
+        return publicDailyQuestionAnswerLikeRepository.existsByPublicDailyQuestionAnswerAndMember(answer, member);
+    }
+
+    public long countBy(PublicDailyQuestionAnswer answer) {
+        return publicDailyQuestionAnswerLikeRepository.countByPublicDailyQuestionAnswer(answer);
+    }
+
     public void delete(PublicDailyQuestionAnswerLike like) {
         publicDailyQuestionAnswerLikeRepository.delete(like);
     }

@@ -8,4 +8,9 @@ public interface PublicDailyQuestionAnswerLikeRepository extends JpaRepository<P
 
     Optional<PublicDailyQuestionAnswerLike> findByPublicDailyQuestionAnswerAndMember(
             PublicDailyQuestionAnswer publicDailyQuestionAnswer, Member member);
+
+    boolean existsByPublicDailyQuestionAnswerAndMember(
+            PublicDailyQuestionAnswer publicDailyQuestionAnswer, Member member);
+
+    long countByPublicDailyQuestionAnswer(PublicDailyQuestionAnswer publicDailyQuestionAnswer);
 }
