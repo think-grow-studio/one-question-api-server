@@ -18,7 +18,10 @@ import site.one_question.common.domain.BaseEntity;
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_pdqal_answer_member",
                 columnNames = {"public_daily_question_answer_id", "member_id"}
-        )
+        ),
+        indexes = {
+                @Index(name = "idx_pdqal_member", columnList = "member_id")
+        }
 )
 public class PublicDailyQuestionAnswerLike extends BaseEntity {
 

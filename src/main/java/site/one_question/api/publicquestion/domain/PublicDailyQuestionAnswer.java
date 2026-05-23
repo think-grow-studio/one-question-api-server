@@ -22,7 +22,8 @@ import site.one_question.common.domain.BaseEntity;
                 columnNames = {"public_daily_question_id", "member_id"}
         ),
         indexes = {
-                @Index(name = "idx_pdqa_question_answered", columnList = "public_daily_question_id, answered_at DESC")
+                @Index(name = "idx_pdqa_question_answered", columnList = "public_daily_question_id, answered_at DESC"),
+                @Index(name = "idx_pdqa_member", columnList = "member_id")
         }
 )
 public class PublicDailyQuestionAnswer extends BaseEntity {

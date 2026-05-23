@@ -70,16 +70,11 @@ class AuthWithdrawIntegrateTest extends IntegrateTest {
             .header(HttpHeaders.AUTHORIZATION, token))
         .andExpect(status().isNoContent());
 
-    System.out.println("=== API 호출 완료 ===");
-
     assertThat(memberRepository.findById(member.getId()))
         .as("탈퇴 후 회원 정보가 삭제되어야 함")
         .isEmpty();
 
-    var tokenAfterDelete = refreshTokenRepository.findByMember_Id(member.getId());
-    System.out.println("삭제 후 RefreshToken 존재: " + tokenAfterDelete.isPresent());
-
-    assertThat(tokenAfterDelete)
+    assertThat(refreshTokenRepository.findByMember_Id(member.getId()))
         .as("탈퇴 후 리프레시 토큰이 삭제되어야 함")
         .isEmpty();
   }
@@ -229,7 +224,7 @@ class AuthWithdrawIntegrateTest extends IntegrateTest {
         .as("본인이 다른 답변에 누른 좋아요가 삭제되어야 함")
         .isEmpty();
     assertThat(publicDailyQuestionAnswerLikeRepository.findById(otherLikeOnMine.getId()))
-        .as("본인 답변에 달린 다른 사람 좋아요도 (DB CASCADE 로) 삭제되어야 함")
+        .as("본인 답변에 달린 다른 사람 좋아요도 애플리케이션 cleanup 으로 삭제되어야 함")
         .isEmpty();
   }
 }
