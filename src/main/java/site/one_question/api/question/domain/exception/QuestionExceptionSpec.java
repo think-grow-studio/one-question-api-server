@@ -32,12 +32,6 @@ public enum QuestionExceptionSpec implements ExceptionSpec {
         "답변이 이미 존재함",
         "error.question.answer-already-exists"
     ),
-    ALREADY_ANSWERED(
-        HttpStatus.BAD_REQUEST,
-        "QUESTION-005",
-        "이미 답변한 질문",
-        "error.question.already-answered"
-    ),
     BEFORE_SIGNUP_DATE(
         HttpStatus.BAD_REQUEST,
         "QUESTION-006",

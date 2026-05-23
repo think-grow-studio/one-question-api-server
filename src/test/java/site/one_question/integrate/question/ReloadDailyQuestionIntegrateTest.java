@@ -602,8 +602,8 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
             mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.ALREADY_ANSWERED.getCode()));
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.ANSWER_ALREADY_EXISTS.getCode()));
         }
 
         @Test

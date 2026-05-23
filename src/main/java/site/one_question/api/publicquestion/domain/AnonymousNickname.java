@@ -1,4 +1,4 @@
-package site.one_question.api.answerpost.domain;
+package site.one_question.api.publicquestion.domain;
 
 import java.security.SecureRandom;
 import java.util.List;
@@ -29,8 +29,8 @@ public class AnonymousNickname {
     private static final List<String> ANIMALS_EN = List.of(
             "Puppy", "Cat", "Rabbit", "Squirrel", "Hamster", "Fox", "Bear", "Panda",
             "Otter", "Penguin", "Duck", "Chick", "Hedgehog", "Raccoon", "Deer", "Cheetah",
-            "Koala", "Kangaroo", "Giraffe", "Elephant", "Wolf", "Tiger", "Lion", "Hippo",
-            "Mole", "Owl", "Parrot", "Dolphin", "Octopus", "Seal"
+            "Koala", "Kangaroo", "Giraffe", "Elephant", "Crocodile", "Wolf", "Tiger", "Lion",
+            "Hippo", "Mole", "Owl", "Parrot", "Dolphin", "Octopus"
     );
 
     private static final SecureRandom RANDOM = new SecureRandom();

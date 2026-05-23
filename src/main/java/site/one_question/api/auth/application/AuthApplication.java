@@ -40,6 +40,8 @@ import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberService;
 import site.one_question.api.answerpost.domain.AnswerPostLikeService;
 import site.one_question.api.answerpost.domain.AnswerPostService;
+import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerLikeService;
+import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerService;
 import site.one_question.api.question.domain.QuestionLikeService;
 import site.one_question.api.question.domain.DailyQuestionAnswerService;
 import site.one_question.api.question.domain.DailyQuestionCandidateRepository;
@@ -69,6 +71,8 @@ public class AuthApplication {
     private final AnswerPostService answerPostService;
     private final QuestionReminderSettingService questionReminderSettingService;
     private final FcmTokenService fcmTokenService;
+    private final PublicDailyQuestionAnswerService publicDailyQuestionAnswerService;
+    private final PublicDailyQuestionAnswerLikeService publicDailyQuestionAnswerLikeService;
 
     public AuthResponse googleAuth(GoogleAuthRequest request, String locale, String timezone) {
         GoogleIdToken.Payload payload = googleTokenVerifier.verify(request.idToken());
@@ -304,6 +308,9 @@ public class AuthApplication {
         dailyQuestionCandidateRepository.deleteByMemberId(memberId);
         dailyQuestionService.deleteByMemberId(memberId);
         questionCycleService.deleteByMemberId(memberId);
+        publicDailyQuestionAnswerLikeService.deleteByMemberId(memberId);
+        publicDailyQuestionAnswerLikeService.deleteByAnswerOwnerId(memberId);
+        publicDailyQuestionAnswerService.deleteByMemberId(memberId);
         memberService.withdraw(memberId);
     }
 

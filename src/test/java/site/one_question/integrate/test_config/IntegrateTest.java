@@ -154,6 +154,7 @@ public abstract class IntegrateTest {
     protected static final String MEMBERS_API = API_V1 + "/members";
     protected static final String QUESTIONS_API = API_V1 + "/questions";
     protected static final String ANSWER_POSTS_API = API_V1 + "/answer-posts";
+    protected static final String PUBLIC_QUESTIONS_API = API_V1 + "/public-questions";
     protected static final String NOTIFICATION_API = API_V1 + "/members/me/notifications";
     protected static final String FCM_TOKEN_API = NOTIFICATION_API + "/fcm-token";
     protected static final String NOTIFICATION_SETTING_API = NOTIFICATION_API + "/settings";
