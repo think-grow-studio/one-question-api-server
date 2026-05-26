@@ -97,7 +97,7 @@ public class PublicQuestionController implements PublicQuestionApi {
             @PathVariable Long pdqId,
             @RequestParam(required = false) Instant cursorAnsweredAt,
             @RequestParam(required = false) Long cursorId,
-            @RequestParam(required = false, defaultValue = "20") Integer size
+            @RequestParam(required = false, defaultValue = "10") Integer size
     ) {
         log.info("[API] 공개 일일 질문 답변 목록 조회 요청 시작 - pdqId: {}, size: {}", pdqId, size);
         GetPublicDailyQuestionAnswersResponse response = publicQuestionApplication.getAnswers(
