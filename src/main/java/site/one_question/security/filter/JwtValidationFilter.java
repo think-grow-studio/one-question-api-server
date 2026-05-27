@@ -47,15 +47,15 @@ public class JwtValidationFilter extends OncePerRequestFilter {
       return;
     }
     try {
-      jwtService.isValid(token);
+      jwtService.validate(token);
       setAuthentication(token);
       filterChain.doFilter(request, response);
     } catch (ExpiredJwtException e) {
       logger.error("JWT 만료 예외 발생 : {}", e.getMessage());
-      writeErrorResponse(response, ACCESS_TOKEN_EXPIRED, "토큰이 만료되었습니다.");
+      writeErrorResponse(response, ACCESS_TOKEN_EXPIRED, "다시 로그인해주세요.");
     } catch (JwtException e) {
       logger.error("JWT 예외 발생 : {}", e.getMessage());
-      writeErrorResponse(response, ACCESS_TOKEN_EXCEPTION, "유효하지 않은 토큰입니다.");
+      writeErrorResponse(response, ACCESS_TOKEN_EXCEPTION, "다시 로그인해주세요.");
     }
   }
 

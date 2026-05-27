@@ -241,8 +241,8 @@ class SelectQuestionIntegrateTest extends IntegrateTest {
         }
 
         @Test
-        @DisplayName("답변 완료 후 후보 선택 시 400 ALREADY_ANSWERED")
-        void select_candidate_when_already_answered_returns_400() throws Exception {
+        @DisplayName("답변 완료 후 후보 선택 시 409 ANSWER_ALREADY_EXISTS")
+        void select_candidate_when_already_answered_returns_409() throws Exception {
             // given - 답변 생성
             testDailyQuestionAnswerUtils.createSave(dailyQuestion, member);
 
@@ -251,8 +251,8 @@ class SelectQuestionIntegrateTest extends IntegrateTest {
                             .header(HttpHeaders.AUTHORIZATION, token)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(body(initialQuestion.getId())))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.ALREADY_ANSWERED.getCode()));
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.code").value(QuestionExceptionSpec.ANSWER_ALREADY_EXISTS.getCode()));
         }
 
         @Test

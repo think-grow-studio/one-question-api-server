@@ -35,6 +35,16 @@ public class TestQuestionUtils {
         return questionRepository.save(question);
     }
 
+    public Question createSave_With_QuestionNumber(int questionNumber) {
+        Question question = createQuestion(
+                "테스트 질문 내용 " + questionNumber,
+                "테스트 질문 설명 " + questionNumber,
+                "ko-KR",
+                questionNumber
+        );
+        return questionRepository.save(question);
+    }
+
     public Question createSave_With_Locale(String locale) {
         Question question = createQuestion(
                 "테스트 질문 내용 " + uniqueId,

@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -36,16 +37,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ExceptionResponse> handleBaseException(BaseException e) {
-        log.error(e.getLogMessage());
+        HttpStatus status = e.getSpec().getStatus();
+        if (status.is5xxServerError()) {
+            log.error(e.getLogMessage(), e);
+        } else {
+            log.error(e.getLogMessage());
+        }
 
         String clientMessage = messageResolver.resolve(e.getClientMessageKey(), e.getMessageArgs());
 
         ExceptionResponse response = ExceptionResponse.of(
                 getTraceId(),
-                e.getSpec().getStatus().value(),
+                status.value(),
                 e.getSpec().getCode(),
                 clientMessage);
-        return ResponseEntity.status(e.getSpec().getStatus()).body(response);
+        return ResponseEntity.status(status).body(response);
     }
 
     @Override

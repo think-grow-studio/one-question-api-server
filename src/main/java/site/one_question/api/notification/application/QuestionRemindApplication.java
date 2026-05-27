@@ -6,20 +6,18 @@ import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import site.one_question.api.notification.domain.FcmToken;
 import site.one_question.api.notification.domain.FcmTokenService;
 import site.one_question.api.notification.domain.QuestionReminderSettingService;
-import site.one_question.api.notification.infrastructure.NotificationGateway;
 import site.one_question.api.notification.domain.exception.FcmTokenExpiredException;
+import site.one_question.api.notification.infrastructure.NotificationGateway;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class NotificationScheduler {
+public class QuestionRemindApplication {
 
     private static final String NOTIFICATION_TITLE_KEY = "notification.question-reminder.title";
     private static final String NOTIFICATION_BODY_KEY = "notification.question-reminder.body";
@@ -31,8 +29,6 @@ public class NotificationScheduler {
     private final MessageSource messageSource;
     private final TransactionTemplate transactionTemplate;
 
-    @Scheduled(cron = "0 * * * * *")
-    @SchedulerLock(name = "sendAlarmNotifications", lockAtLeastFor = "PT55S", lockAtMostFor = "PT55S")
     public void sendAlarmNotifications() {
         long startMs = System.currentTimeMillis();
         int success = 0;
