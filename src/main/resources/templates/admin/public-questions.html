@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공개 일일 질문 - One Question Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .header {
+            background: #fff;
+            padding: 16px 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left { display: flex; align-items: center; gap: 24px; }
+        .header h1 { font-size: 20px; color: #333; }
+        .nav { display: flex; gap: 4px; }
+        .nav a {
+            padding: 6px 14px; border-radius: 6px; font-size: 14px;
+            text-decoration: none; color: #555; transition: background-color 0.15s;
+        }
+        .nav a:hover { background-color: #f0f4ff; color: #4A90D9; }
+        .nav a.active { background-color: #EBF4FF; color: #4A90D9; font-weight: 600; }
+        .btn-logout {
+            padding: 8px 16px; background-color: #e0e0e0; color: #555; border: none;
+            border-radius: 6px; font-size: 14px; cursor: pointer; transition: background-color 0.2s;
+        }
+        .btn-logout:hover { background-color: #d0d0d0; }
+        .content { max-width: 1400px; margin: 32px auto; padding: 0 24px; }
+        .page-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+
+        .two-col { display: grid; grid-template-columns: 2fr 3fr; gap: 16px; }
+
+        .card {
+            background: #fff; border-radius: 10px; padding: 20px 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 24px;
+        }
+        .card:last-child { margin-bottom: 0; }
+        .card-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 16px; }
+        .card-subtitle { font-size: 13px; font-weight: 400; color: #888; margin-left: 6px; }
+
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            background-color: #f8f9fa; padding: 10px 14px; text-align: left;
+            font-size: 12px; color: #666; font-weight: 600;
+            border-bottom: 1px solid #e9ecef; white-space: nowrap;
+        }
+        .data-table td {
+            padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0;
+            vertical-align: top; word-break: break-word; overflow-wrap: anywhere;
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover { background-color: #f8f9ff; }
+        .nowrap { white-space: nowrap; }
+
+        .date-link {
+            color: #4A90D9; text-decoration: none; font-weight: 600;
+        }
+        .date-link:hover { text-decoration: underline; }
+        .date-selected { background-color: #EBF4FF; }
+
+        .bar-cell { display: flex; align-items: center; gap: 8px; }
+        .bar-track { flex: 1; height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+        .bar-fill { height: 100%; background: #4A90D9; }
+
+        .truncate {
+            display: block; white-space: pre-wrap; word-break: break-word;
+            overflow-wrap: anywhere; line-height: 1.45;
+        }
+
+        .member-id {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            background: #f0f4ff; color: #4A90D9; font-size: 11px;
+            font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            padding: 32px; text-align: center; color: #aaa; font-size: 14px;
+        }
+
+        .selected-info {
+            background: #f8f9ff; border-left: 3px solid #4A90D9;
+            padding: 12px 16px; border-radius: 6px; margin-bottom: 16px;
+        }
+        .selected-info-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .selected-info-date { font-size: 15px; font-weight: 600; color: #4A90D9; }
+        .selected-info-question { font-size: 14px; color: #333; margin-top: 6px; line-height: 1.5; }
+
+        .date-filter {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+        }
+        .date-filter label { font-size: 13px; color: #555; }
+        .date-filter input[type="date"] {
+            padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px;
+            font-size: 13px; outline: none;
+        }
+        .date-filter input[type="date"]:focus { border-color: #4A90D9; }
+        .btn-search {
+            padding: 6px 16px; background-color: #4A90D9; color: #fff; border: none;
+            border-radius: 6px; font-size: 13px; cursor: pointer;
+        }
+        .btn-search:hover { background-color: #357ABD; }
+
+        @media (max-width: 900px) {
+            .two-col { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .content { padding: 12px 8px; margin: 12px auto; }
+            .page-title { font-size: 18px; margin-bottom: 16px; }
+            .card { padding: 14px 10px; }
+            .card-title { font-size: 15px; }
+            .header { padding: 12px 16px; }
+            .header h1 { font-size: 16px; }
+            .header-left { gap: 12px; }
+            .data-table th, .data-table td { padding: 7px 8px; font-size: 12px; }
+            .data-table th { white-space: nowrap; }
+            .member-id { font-size: 10px; padding: 1px 6px; }
+        }
+        @media (max-width: 480px) {
+            .header { padding: 10px 12px; }
+            .header h1 { font-size: 15px; }
+            .header-left { gap: 8px; }
+            .nav { gap: 2px; }
+            .nav a { padding: 5px 8px; font-size: 12px; }
+            .btn-logout { padding: 6px 12px; font-size: 13px; }
+            .page-title { font-size: 17px; }
+            .card { padding: 10px 8px; }
+            .data-table th, .data-table td { padding: 6px 7px; font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="header-left">
+        <h1>One Question Admin</h1>
+        <nav class="nav">
+            <a href="/admin/dashboard">대시보드</a>
+            <a href="/admin/answer-posts">AI 답변 피드</a>
+            <a href="/admin/public-questions" class="active">공개 일일 질문</a>
+        </nav>
+    </div>
+    <form method="post" action="/admin/logout">
+        <button type="submit" class="btn-logout">로그아웃</button>
+    </form>
+</div>
+
+<div class="content">
+    <h2 class="page-title">공개 일일 질문</h2>
+
+    <div class="two-col">
+        <div class="card" style="margin-bottom:0;">
+            <div class="card-title">
+                일자별 답변 수
+                <span class="card-subtitle">(최근 2주)</span>
+            </div>
+            <div th:if="${#lists.isEmpty(dailyCounts)}" class="empty-state">데이터가 없습니다.</div>
+            <table th:if="${!#lists.isEmpty(dailyCounts)}" class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:130px;">날짜</th>
+                        <th style="width:70px;text-align:right;">답변 수</th>
+                        <th>비율</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="row : ${dailyCounts}"
+                        th:classappend="${row.date().toString() == selectedDate.toString()} ? 'date-selected' : ''">
+                        <td class="nowrap">
+                            <a class="date-link"
+                               th:href="@{/admin/public-questions(date=${row.date()})}"
+                               th:text="${row.date()}"></a>
+                        </td>
+                        <td style="text-align:right;font-weight:600;" th:text="${row.count()}"></td>
+                        <td>
+                            <div class="bar-cell">
+                                <div class="bar-track">
+                                    <div class="bar-fill"
+                                         th:style="'width:' + ${maxDailyCount > 0 ? (row.count() * 100 / maxDailyCount) : 0} + '%'"></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card" style="margin-bottom:0;">
+            <div class="card-title">
+                선택 일자 답변
+                <span class="card-subtitle">(최근 30개, 답변시간 desc)</span>
+            </div>
+
+            <form method="get" action="/admin/public-questions" class="date-filter">
+                <label for="date">날짜 선택</label>
+                <input type="date" id="date" name="date" th:value="${selectedDate}">
+                <button type="submit" class="btn-search">조회</button>
+            </form>
+
+            <div class="selected-info">
+                <div class="selected-info-label">선택된 날짜</div>
+                <div class="selected-info-date" th:text="${selectedDate}"></div>
+                <div th:if="${questionContent != null}" class="selected-info-question" th:text="${questionContent}"></div>
+                <div th:if="${questionContent == null}" class="selected-info-question" style="color:#aaa;">해당 일자의 공개 질문에 답변이 없습니다.</div>
+            </div>
+
+            <div th:if="${#lists.isEmpty(answers)}" class="empty-state">답변이 없습니다.</div>
+            <table th:if="${!#lists.isEmpty(answers)}" class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:80px;">멤버 ID</th>
+                        <th>답변 내용</th>
+                        <th style="width:150px;">답변 시각</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="row : ${answers}">
+                        <td><span class="member-id" th:text="${row.memberId()}"></span></td>
+                        <td><span class="truncate" th:text="${row.content()}"></span></td>
+                        <td class="nowrap" th:text="${#temporals.format(row.answeredAt(), 'yyyy-MM-dd HH:mm')}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
