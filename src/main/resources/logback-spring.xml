@@ -35,9 +35,10 @@
         </filter>
     </appender>
 
-    <!-- local: INFO + Hibernate SQL DEBUG -->
+    <!-- local: 앱 코드 DEBUG + Hibernate SQL DEBUG -->
     <springProfile name="local">
         <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <logger name="site.one_question" level="DEBUG"/>
 
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
@@ -46,8 +47,10 @@
         </root>
     </springProfile>
 
-    <!-- dev: INFO -->
+    <!-- dev: 앱 코드 DEBUG -->
     <springProfile name="dev">
+        <logger name="site.one_question" level="DEBUG"/>
+
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
