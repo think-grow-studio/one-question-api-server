@@ -9,7 +9,7 @@ on:
 jobs:
   dev-docker-build-and-push:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event != 'pull_request' && github.event.workflow_run.head_branch == 'develop' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event != 'pull_request' && (github.event.workflow_run.head_branch == 'develop' || startsWith(github.event.workflow_run.head_branch, 'vm-test/')) }}
     permissions:
       contents: read
       packages: write
@@ -34,7 +34,8 @@ jobs:
           OWNER=$(echo ${{ github.repository }} | cut -d'/' -f1 | tr '[:upper:]' '[:lower:]')
           if [ "$BRANCH" = "release" ]; then
             IMAGE="ghcr.io/${OWNER}/release-one-question-api"
-          elif [ "$BRANCH" = "develop" ]; then
+          elif [ "$BRANCH" = "develop" ] || [[ "$BRANCH" == vm-test/* ]]; then
+            # vm-test/* 브랜치는 develop 과 동일한 dev 이미지로 빌드되어 dev VM 에 배포된다.
             IMAGE="ghcr.io/${OWNER}/develop-one-question-api"
           fi
           echo "name=${IMAGE}" >> $GITHUB_OUTPUT

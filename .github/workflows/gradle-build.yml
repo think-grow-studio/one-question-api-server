@@ -2,7 +2,7 @@ name: Spring Build With Gradle
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, "vm-test/**"]
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
