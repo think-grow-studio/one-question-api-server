@@ -6,6 +6,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,8 @@ import site.one_question.common.MdcKey;
 
 @Component
 public class MdcLoggingFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(MdcLoggingFilter.class);
 
     @Override
     protected void doFilterInternal(
@@ -26,6 +30,8 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
             MDC.put(MdcKey.REQUEST_ID, traceId);
             MDC.put(MdcKey.CLIENT_IP, getClientIp(request));
             MDC.put(MdcKey.REQUEST_URI, request.getRequestURI());
+
+            log.debug("[HTTP] {} {} {}", request.getProtocol(), request.getMethod(), request.getRequestURI());
 
             filterChain.doFilter(request, response);
         } finally {
