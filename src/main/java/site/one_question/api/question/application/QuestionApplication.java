@@ -206,31 +206,11 @@ public class QuestionApplication {
             endDate = today;
         }
 
-        // DailyQuestion 애그리거트 루트 조회
         List<DailyQuestion> dailyQuestions = dailyQuestionService.findByMemberIdAndDateBetween(
-            memberId, startDate, endDate);
+                memberId, startDate, endDate);
 
-        // UNANSWERED dailyQuestion ID 배치 수집
-        List<Long> unansweredIds = dailyQuestions.stream()
-            .filter(dq -> !dq.hasAnswer())
-            .map(DailyQuestion::getId)
-            .collect(Collectors.toList());
-
-        // UNANSWERED candidates 배치 조회 및 그룹화
-        Map<Long, List<DailyQuestionCandidate>> dqIdWithCandidates;
-        if (unansweredIds.isEmpty()) {
-            dqIdWithCandidates = Map.of();
-        } else {
-            dqIdWithCandidates = dailyQuestionService.findCandidatesByDailyQuestionIds(unansweredIds)
-                .stream()
-                .collect(Collectors.groupingBy(c -> c.getDailyQuestion().getId()));
-        }
-
-        // 좋아요 배치 조회: 각 날짜의 선택된 질문 ID만 (후보 질문 liked 불필요)
-        List<Long> selectedQuestionIds = dailyQuestions.stream()
-            .map(dq -> dq.getQuestion().getId())
-            .collect(Collectors.toList());
-        Set<Long> likedQuestionIds = questionLikeService.findLikedQuestionIdsByMember(selectedQuestionIds, memberId);
+        Map<Long, List<DailyQuestionCandidate>> dqIdWithCandidates = findCandidatesForUnanswered(dailyQuestions);
+        Set<Long> likedQuestionIds = findLikedSelectedQuestionIds(dailyQuestions, memberId);
 
         // DailyQuestion을 날짜 기준 Map으로 변환
         Map<LocalDate, DailyQuestion> dateWithQuestions = dailyQuestions.stream()
@@ -257,6 +237,65 @@ public class QuestionApplication {
         boolean hasNext = endDate.isBefore(today);
 
         return new GetQuestionHistoryResponse(histories, hasPrevious, hasNext, startDate, endDate);
+    }
+
+    @Transactional(readOnly = true)
+    public GetQuestionHistoryResponse getQuestionTimeline(
+            Long memberId, LocalDate baseDate, int size, String timezone) {
+
+        DatePolicy.requireNotFuture(baseDate, timezone);
+
+        // 커서(baseDate) 포함 과거 방향으로, 질문이 없는 날짜는 건너뛰고 실제 레코드만 최신순으로 size개 조회
+        // size + 1개를 조회해서 hasPrevious(더 가져올 데이터 존재 여부)를 판단한다
+        List<DailyQuestion> dailyQuestions = dailyQuestionService.findRecentByMemberIdAndDateOnOrBefore(
+                memberId, baseDate, size + 1);
+
+        boolean hasPrevious = dailyQuestions.size() > size;
+        if (hasPrevious) {
+            dailyQuestions = dailyQuestions.subList(0, size);
+        }
+
+        Map<Long, List<DailyQuestionCandidate>> dqIdWithCandidates = findCandidatesForUnanswered(dailyQuestions);
+        Set<Long> likedQuestionIds = findLikedSelectedQuestionIds(dailyQuestions, memberId);
+
+        List<QuestionHistoryItemDto> histories = dailyQuestions.stream()
+                .map(dq -> QuestionHistoryItemDto.from(
+                        dq,
+                        timezone,
+                        likedQuestionIds.contains(dq.getQuestion().getId()),
+                        dqIdWithCandidates.getOrDefault(dq.getId(), List.of())))
+                .collect(Collectors.toList());
+
+        // 조회 결과 기준 날짜 범위 (조회 결과가 없으면 null)
+        LocalDate endDate = dailyQuestions.isEmpty() ? null : dailyQuestions.get(0).getQuestionDate();
+        LocalDate startDate = dailyQuestions.isEmpty() ? null
+                : dailyQuestions.get(dailyQuestions.size() - 1).getQuestionDate();
+        boolean hasNext = dailyQuestionService.existsByMemberIdAndDateAfter(memberId, baseDate);
+
+        return new GetQuestionHistoryResponse(histories, hasPrevious, hasNext, startDate, endDate);
+    }
+
+    // UNANSWERED 상태의 DailyQuestion에 대한 후보 질문을 배치 조회해 dailyQuestionId 기준으로 그룹화한다
+    private Map<Long, List<DailyQuestionCandidate>> findCandidatesForUnanswered(List<DailyQuestion> dailyQuestions) {
+        List<Long> unansweredIds = dailyQuestions.stream()
+            .filter(dq -> !dq.hasAnswer())
+            .map(DailyQuestion::getId)
+            .collect(Collectors.toList());
+
+        if (unansweredIds.isEmpty()) {
+            return Map.of();
+        }
+        return dailyQuestionService.findCandidatesByDailyQuestionIds(unansweredIds)
+            .stream()
+            .collect(Collectors.groupingBy(c -> c.getDailyQuestion().getId()));
+    }
+
+    // 좋아요 배치 조회: 각 날짜의 선택된 질문 ID만 (후보 질문 liked 불필요)
+    private Set<Long> findLikedSelectedQuestionIds(List<DailyQuestion> dailyQuestions, Long memberId) {
+        List<Long> selectedQuestionIds = dailyQuestions.stream()
+            .map(dq -> dq.getQuestion().getId())
+            .collect(Collectors.toList());
+        return questionLikeService.findLikedQuestionIdsByMember(selectedQuestionIds, memberId);
     }
 
     public CreateAnswerResponse createAnswer(Long memberId, LocalDate date, String content, boolean publish, String timezone) {

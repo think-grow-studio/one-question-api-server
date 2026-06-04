@@ -3,6 +3,7 @@ package site.one_question.api.question.domain;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -45,7 +46,6 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
         LEFT JOIN FETCH dq.question q
         LEFT JOIN FETCH dq.questionCycle qc
         LEFT JOIN FETCH dq.answer a
-        LEFT JOIN FETCH a.answerPost ap
         WHERE dq.member.id = :memberId
         AND dq.questionDate BETWEEN :startDate AND :endDate
         ORDER BY dq.questionDate DESC
@@ -55,6 +55,23 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
         @Param("startDate") LocalDate startDate,
         @Param("endDate") LocalDate endDate
     );
+
+    @Query("""
+        SELECT dq FROM DailyQuestion dq
+        LEFT JOIN FETCH dq.question q
+        LEFT JOIN FETCH dq.questionCycle qc
+        LEFT JOIN FETCH dq.answer a
+        WHERE dq.member.id = :memberId
+        AND dq.questionDate <= :baseDate
+        ORDER BY dq.questionDate DESC
+        """)
+    List<DailyQuestion> findByMemberIdAndDateOnOrBefore(
+        @Param("memberId") Long memberId,
+        @Param("baseDate") LocalDate baseDate,
+        Pageable pageable
+    );
+
+    boolean existsByMemberIdAndQuestionDateGreaterThan(Long memberId, LocalDate date);
 
     @Query("""
         SELECT dq FROM DailyQuestion dq

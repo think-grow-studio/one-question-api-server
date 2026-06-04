@@ -211,6 +211,77 @@ public interface QuestionApi {
     );
 
     @Operation(
+            summary = "질문 타임라인 조회",
+            description = """
+                    질문/답변 타임라인을 무한 스크롤용으로 조회합니다.
+                    baseDate(커서)를 포함해서 과거 방향으로, 질문이 실제 존재하는 날짜의 기록만 최신순으로 size개 조회합니다.
+                    질문이 없는 날짜는 건너뛰므로 history와 달리 NO_QUESTION 항목이 포함되지 않습니다.
+
+                    페이징:
+                    - hasPrevious: startDate 이전에 기록이 더 존재하는지 여부 (다음 페이지는 baseDate를 startDate - 1일로 요청)
+                    - hasNext: baseDate 이후에 기록이 존재하는지 여부
+                    - startDate / endDate: 조회된 기록의 가장 과거 / 최신 날짜 (조회 결과가 없으면 null)
+
+                    **중요**: baseDate는 클라이언트의 로컬 타임존 기준 날짜를 전송해야 합니다.
+                    Timezone 헤더를 통해 미래 날짜 조회를 방지합니다.
+
+                    상태:
+                    - ANSWERED: 질문 받음 + 답변 완료
+                    - UNANSWERED: 질문 받음
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "타임라인 조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GetQuestionHistoryResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "미래 날짜 조회 요청",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = """
+                                            {
+                                                "code": "QUESTION-007",
+                                                "message": "미래 날짜의 질문은 미리 받아볼 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    ResponseEntity<GetQuestionHistoryResponse> getQuestionTimeline(
+            Long memberId,
+
+            @Parameter(
+                    description = "커서 날짜 (yyyy-MM-dd 형식). 해당 날짜를 포함해서 과거 방향으로 실제 기록만 조회합니다.",
+                    example = "2024-01-15",
+                    required = true
+            )
+            LocalDate baseDate,
+
+            @Parameter(
+                    description = "가져올 기록 개수 (기본값: 15)",
+                    example = "15"
+            )
+            Integer size,
+
+            @Parameter(
+                    name = "Timezone",
+                    description = "클라이언트의 타임존 (IANA 타임존 형식). 미래 날짜 조회 방지 및 답변 시각 변환에 사용됩니다.",
+                    example = "Asia/Seoul",
+                    required = true,
+                    in = ParameterIn.HEADER
+            )
+            String timezone
+    );
+
+    @Operation(
             summary = "오늘의 질문 재할당",
             description = """
                     지정한 날짜의 질문을 새로운 질문으로 재할당합니다.

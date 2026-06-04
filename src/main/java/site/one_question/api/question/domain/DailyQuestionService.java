@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import site.one_question.api.question.domain.exception.CandidateNotFoundException;
 import site.one_question.api.question.domain.exception.DailyQuestionNotFoundException;
@@ -116,6 +117,19 @@ public class DailyQuestionService {
     public List<DailyQuestion> findByMemberIdAndDateBetween(
             Long memberId, LocalDate startDate, LocalDate endDate) {
         return dailyQuestionRepository.findByMemberIdAndDateBetween(memberId, startDate, endDate);
+    }
+
+    /**
+     * baseDate 이하의 DailyQuestion을 최신순으로 최대 limit개 조회한다.
+     * 질문이 없는 날짜는 건너뛰고 실제 존재하는 레코드만 가져온다.
+     */
+    public List<DailyQuestion> findRecentByMemberIdAndDateOnOrBefore(Long memberId, LocalDate baseDate, int limit) {
+        return dailyQuestionRepository.findByMemberIdAndDateOnOrBefore(
+            memberId, baseDate, PageRequest.of(0, limit));
+    }
+
+    public boolean existsByMemberIdAndDateAfter(Long memberId, LocalDate date) {
+        return dailyQuestionRepository.existsByMemberIdAndQuestionDateGreaterThan(memberId, date);
     }
 
     public List<DailyQuestionCandidate> findCandidatesByDailyQuestion(DailyQuestion dailyQuestion) {

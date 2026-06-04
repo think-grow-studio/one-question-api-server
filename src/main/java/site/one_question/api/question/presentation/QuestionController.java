@@ -66,6 +66,20 @@ public class QuestionController implements QuestionApi {
     }
 
     @Override
+    @GetMapping("/timelines")
+    public ResponseEntity<GetQuestionHistoryResponse> getQuestionTimeline(
+            @PrincipalId Long memberId,
+            @RequestParam LocalDate baseDate,
+            @RequestParam(defaultValue = "15") Integer size,
+            @RequestHeader(HttpHeaderConstant.TIMEZONE) String timezone
+    ) {
+        log.info("[API] 질문 타임라인 조회 요청 시작 - baseDate: {}, size: {}", baseDate, size);
+        GetQuestionHistoryResponse response = questionApplication.getQuestionTimeline(memberId, baseDate, size, timezone);
+        log.info("[API] 질문 타임라인 조회 요청 종료 - baseDate: {}, size: {}", baseDate, size);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
     @PostMapping("/daily/{date}/reload")
     public ResponseEntity<ServeDailyQuestionResponse> reloadDailyQuestion(
             @PrincipalId Long memberId,
