@@ -1,5 +1,6 @@
 package site.one_question.web.admin.service;
 
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -8,6 +9,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -41,12 +43,16 @@ public class AdminDashboardService {
 
     public record DailyAnswerCountRow(LocalDate date, long count, long existingCount, long newCount) {}
 
+    public record HourlyAnswerCountRow(int hour, long count) {}
+
     public record WauMemberRow(Long memberId, String fullName, LocalDate joinedDate, long answerCount) {}
 
     public record DashboardData(
             DashboardStats stats,
             List<DailyAnswerCountRow> dailyTrend,
             long maxDailyCount,
+            List<HourlyAnswerCountRow> hourlyDistribution,
+            long maxHourlyCount,
             List<MemberAnswerCountRow> leaderboard,
             List<RecentAnswerRow> recentAnswers,
             List<WauMemberRow> wauMembers
@@ -60,8 +66,11 @@ public class AdminDashboardService {
         Instant sevenDaysAgo = today.minusDays(7).atStartOfDay(KST).toInstant();
 
         List<WauMemberRow> wauMembers = buildWauMembers(sevenDaysAgo, todayStart);
-        List<DailyAnswerCountRow> dailyTrend = buildDailyTrend(today, thirtyDaysAgo);
+        List<AnswerDateRow> answerRows = dqaRepository.findAnswerDatesAndJoinedDatesSince(thirtyDaysAgo);
+        List<DailyAnswerCountRow> dailyTrend = buildDailyTrend(today, answerRows);
         long maxDailyCount = dailyTrend.stream().mapToLong(DailyAnswerCountRow::count).max().orElse(1L);
+        List<HourlyAnswerCountRow> hourlyDistribution = buildHourlyDistribution(answerRows);
+        long maxHourlyCount = hourlyDistribution.stream().mapToLong(HourlyAnswerCountRow::count).max().orElse(1L);
         List<MemberAnswerCountRow> leaderboard = buildLeaderboard();
         List<RecentAnswerRow> recentAnswers = buildRecentAnswers();
         DashboardStats stats = buildStats(today, todayStart, tomorrowStart, wauMembers.size());
@@ -71,7 +80,8 @@ public class AdminDashboardService {
                 stats.todayAnswers(), stats.todayExistingAnswers(), stats.todayNewAnswers(),
                 stats.wauCount());
 
-        return new DashboardData(stats, dailyTrend, maxDailyCount, leaderboard, recentAnswers, wauMembers);
+        return new DashboardData(stats, dailyTrend, maxDailyCount, hourlyDistribution, maxHourlyCount,
+                leaderboard, recentAnswers, wauMembers);
     }
 
     private DashboardStats buildStats(LocalDate today, Instant todayStart, Instant tomorrowStart, int wauCount) {
@@ -83,10 +93,10 @@ public class AdminDashboardService {
         return new DashboardStats(totalMembers, totalAnswers, todayAnswers, todayExisting, todayNew, wauCount);
     }
 
-    private List<DailyAnswerCountRow> buildDailyTrend(LocalDate today, Instant from) {
+    private List<DailyAnswerCountRow> buildDailyTrend(LocalDate today, List<AnswerDateRow> answerRows) {
         LocalDate thirtyDaysAgo = today.minusDays(29);
         Map<LocalDate, long[]> dailyMap = new HashMap<>();
-        for (AnswerDateRow row : dqaRepository.findAnswerDatesAndJoinedDatesSince(from)) {
+        for (AnswerDateRow row : answerRows) {
             LocalDate answerDate = row.answeredAt().atZone(KST).toLocalDate();
             boolean isNew = row.joinedDate().equals(answerDate);
             long[] c = dailyMap.computeIfAbsent(answerDate, d -> new long[2]);
@@ -99,6 +109,25 @@ public class AdminDashboardService {
                 })
                 .sorted(Comparator.comparing(DailyAnswerCountRow::date).reversed())
                 .toList();
+    }
+
+    private List<HourlyAnswerCountRow> buildHourlyDistribution(List<AnswerDateRow> answerRows) {
+        long[] counts = new long[24];
+        for (AnswerDateRow row : answerRows) {
+            counts[row.answeredAt().atZone(toZoneId(row.timezone())).getHour()]++;
+        }
+        return IntStream.range(0, 24)
+                .mapToObj(hour -> new HourlyAnswerCountRow(hour, counts[hour]))
+                .toList();
+    }
+
+    private ZoneId toZoneId(String timezone) {
+        try {
+            return ZoneId.of(timezone);
+        } catch (DateTimeException e) {
+            log.warn("[Dashboard] 잘못된 timezone 값, KST로 대체: {}", timezone);
+            return KST;
+        }
     }
 
     private List<MemberAnswerCountRow> buildLeaderboard() {

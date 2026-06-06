@@ -25,6 +25,8 @@ public class AdminDashboardController {
         model.addAttribute("stats", data.stats());
         model.addAttribute("dailyTrend", data.dailyTrend());
         model.addAttribute("maxDailyCount", data.maxDailyCount());
+        model.addAttribute("hourlyDistribution", data.hourlyDistribution());
+        model.addAttribute("maxHourlyCount", data.maxHourlyCount());
         model.addAttribute("leaderboard", data.leaderboard());
         model.addAttribute("recentAnswers", data.recentAnswers());
         model.addAttribute("wauMembers", data.wauMembers());

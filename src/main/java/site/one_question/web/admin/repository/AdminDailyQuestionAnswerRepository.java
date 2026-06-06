@@ -40,7 +40,7 @@ public interface AdminDailyQuestionAnswerRepository extends JpaRepository<DailyQ
     long countNewAnswersBetween(@Param("from") Instant from, @Param("to") Instant to, @Param("date") LocalDate date);
 
     @Query("""
-            SELECT new site.one_question.web.admin.dto.AnswerDateRow(dqa.answeredAt, m.joinedDate)
+            SELECT new site.one_question.web.admin.dto.AnswerDateRow(dqa.answeredAt, dqa.timezone, m.joinedDate)
             FROM DailyQuestionAnswer dqa JOIN dqa.member m
             WHERE m.id != 1 AND dqa.answeredAt >= :from
             """)
