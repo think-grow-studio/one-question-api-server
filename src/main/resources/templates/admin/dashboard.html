@@ -99,9 +99,10 @@
         .legend-new { background: #52C41A; }
 
         /* Hourly distribution chart */
-        .hour-chart { display: flex; align-items: flex-end; gap: 4px; height: 200px; padding-top: 8px; }
+        .hour-chart-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .hour-chart { display: flex; align-items: flex-end; gap: 4px; height: 200px; padding-top: 8px; min-width: 560px; }
         .hour-col { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; }
-        .hour-count { height: 16px; font-size: 11px; font-weight: 600; color: #4A90D9; }
+        .hour-count { height: 16px; font-size: 11px; font-weight: 600; color: #4A90D9; white-space: nowrap; }
         .hour-bar-track { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
         .hour-bar { width: 70%; max-width: 28px; background: #4A90D9; border-radius: 3px 3px 0 0; transition: height 0.2s; }
         .hour-label { margin-top: 6px; font-size: 11px; color: #888; }
@@ -172,8 +173,6 @@
             .card { padding: 10px 8px; }
             .data-table th, .data-table td { padding: 6px 7px; font-size: 11px; }
             .rank { width: 20px; height: 20px; font-size: 11px; }
-            .hour-count { display: none; }
-            .hour-col:nth-child(even) .hour-label { visibility: hidden; }
         }
     </style>
 </head>
@@ -306,15 +305,17 @@
             <span style="font-size:13px;font-weight:400;color:#888;">사용자 로컬 시간 기준</span>
         </div>
         <div th:if="${maxHourlyCount == 0}" class="empty-state">데이터가 없습니다.</div>
-        <div th:if="${maxHourlyCount > 0}" class="hour-chart">
-            <div class="hour-col" th:each="row : ${hourlyDistribution}"
-                 th:title="${row.hour()} + '시: ' + ${row.count()} + '건'">
-                <div class="hour-count" th:text="${row.count() > 0 ? row.count() : ''}"></div>
-                <div class="hour-bar-track">
-                    <div class="hour-bar"
-                         th:style="'height:' + ${row.count() * 100 / maxHourlyCount} + '%'"></div>
+        <div th:if="${maxHourlyCount > 0}" class="hour-chart-wrap">
+            <div class="hour-chart">
+                <div class="hour-col" th:each="row : ${hourlyDistribution}"
+                     th:title="${row.hour()} + '시: ' + ${row.count()} + '건'">
+                    <div class="hour-count" th:text="${row.count() > 0 ? row.count() : ''}"></div>
+                    <div class="hour-bar-track">
+                        <div class="hour-bar"
+                             th:style="'height:' + ${row.count() * 100 / maxHourlyCount} + '%'"></div>
+                    </div>
+                    <div class="hour-label" th:text="${row.hour()}"></div>
                 </div>
-                <div class="hour-label" th:text="${row.hour()}"></div>
             </div>
         </div>
     </div>
