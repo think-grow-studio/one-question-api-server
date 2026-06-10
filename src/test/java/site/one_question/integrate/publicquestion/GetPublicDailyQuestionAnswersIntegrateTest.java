@@ -20,6 +20,7 @@ import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswer;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerLike;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerLikeRepository;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerRepository;
+import site.one_question.api.publicquestion.domain.PublicDailyQuestionAnswerStatus;
 import site.one_question.api.publicquestion.domain.PublicDailyQuestionRepository;
 import site.one_question.api.question.domain.Question;
 import site.one_question.integrate.test_config.IntegrateTest;
@@ -57,9 +58,20 @@ class GetPublicDailyQuestionAnswersIntegrateTest extends IntegrateTest {
         publicDailyQuestionAnswerRepository.save(answer);
         // answeredAt 은 create 시 Instant.now() 로 박혀있어 정확한 시간 제어가 어려움.
         // 통합 테스트에서는 native query 로 강제 갱신해서 정렬 가시성을 확보.
-        transactionTemplate.executeWithoutResult(status -> {
+        transactionTemplate.executeWithoutResult(s -> {
             entityManager.createNativeQuery("UPDATE public_daily_question_answer SET answered_at = ?1 WHERE id = ?2")
                     .setParameter(1, answeredAt)
+                    .setParameter(2, answer.getId())
+                    .executeUpdate();
+        });
+        return publicDailyQuestionAnswerRepository.findById(answer.getId()).orElseThrow();
+    }
+
+    private PublicDailyQuestionAnswer saveAnswerWithStatus(Member owner, String content, Instant answeredAt, PublicDailyQuestionAnswerStatus answerStatus) {
+        PublicDailyQuestionAnswer answer = saveAnswerAt(owner, content, answeredAt);
+        transactionTemplate.executeWithoutResult(s -> {
+            entityManager.createNativeQuery("UPDATE public_daily_question_answer SET status = ?1 WHERE id = ?2")
+                    .setParameter(1, answerStatus.name())
                     .setParameter(2, answer.getId())
                     .executeUpdate();
         });
@@ -167,6 +179,22 @@ class GetPublicDailyQuestionAnswersIntegrateTest extends IntegrateTest {
                     .andExpect(jsonPath("$.items[1].publicDailyQuestionAnswerId").value(answerB.getId()))
                     .andExpect(jsonPath("$.items[1].likeCount").value(1))
                     .andExpect(jsonPath("$.items[1].liked").value(false));
+        }
+
+        @Test
+        @DisplayName("HIDDEN, BANNED 상태 답변은 피드에서 제외됨")
+        void excludes_hidden_and_banned_answers() throws Exception {
+            Instant base = Instant.now();
+            PublicDailyQuestionAnswer active = saveAnswerAt(testMemberUtils.createSave(), "활성", base.minusSeconds(10));
+            saveAnswerWithStatus(testMemberUtils.createSave(), "숨김", base.minusSeconds(20), PublicDailyQuestionAnswerStatus.HIDDEN);
+            saveAnswerWithStatus(testMemberUtils.createSave(), "밴", base.minusSeconds(30), PublicDailyQuestionAnswerStatus.BANNED);
+
+            mockMvc.perform(get(API + "/{pdqId}/answers", pdq.getId())
+                            .header(HttpHeaders.AUTHORIZATION, token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.items.length()").value(1))
+                    .andExpect(jsonPath("$.items[0].publicDailyQuestionAnswerId").value(active.getId()))
+                    .andExpect(jsonPath("$.hasNext").value(false));
         }
 
         @Test
