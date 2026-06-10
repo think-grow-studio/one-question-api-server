@@ -218,6 +218,11 @@
             <div class="stat-value" th:text="${stats.wauCount()}">0</div>
             <div class="stat-sub">최근 7일, 3회 이상</div>
         </div>
+        <div class="stat-card">
+            <div class="stat-label">주간 참여 (1회↑)</div>
+            <div class="stat-value" th:text="${#lists.size(weeklyParticipants)}">0</div>
+            <div class="stat-sub">최근 7일, 1회 이상</div>
+        </div>
     </div>
 
     <!-- Daily Trend + WAU Members -->
@@ -295,6 +300,36 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- Weekly Participants (1회↑) -->
+    <div class="card">
+        <div class="card-title">
+            7일 참여 멤버
+            <span style="font-size:13px;font-weight:400;color:#888;">(최근 7일, 1회↑)</span>
+            &nbsp;<span th:text="'총 ' + ${#lists.size(weeklyParticipants)} + '명'" style="font-size:13px;color:#4A90D9;font-weight:700;"></span>
+        </div>
+        <div th:if="${#lists.isEmpty(weeklyParticipants)}" class="empty-state">해당 멤버 없음</div>
+        <div th:if="${!#lists.isEmpty(weeklyParticipants)}" class="scroll-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:70px;">ID</th>
+                        <th>이름</th>
+                        <th style="width:100px;">가입일</th>
+                        <th style="width:80px;text-align:right;">7일 답변수</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="row : ${weeklyParticipants}">
+                        <td><span class="member-id" th:text="${row.memberId()}"></span></td>
+                        <td th:text="${row.fullName()}"></td>
+                        <td class="nowrap" th:text="${row.joinedDate()}"></td>
+                        <td style="text-align:right;font-weight:600;color:#4A90D9;" th:text="${row.answerCount()}"></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 

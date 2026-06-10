@@ -30,6 +30,7 @@ public class AdminDashboardController {
         model.addAttribute("leaderboard", data.leaderboard());
         model.addAttribute("recentAnswers", data.recentAnswers());
         model.addAttribute("wauMembers", data.wauMembers());
+        model.addAttribute("weeklyParticipants", data.weeklyParticipants());
         log.info("[Admin] 대시보드 조회 완료");
         return "admin/dashboard";
     }

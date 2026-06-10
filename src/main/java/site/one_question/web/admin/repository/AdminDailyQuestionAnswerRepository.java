@@ -67,4 +67,13 @@ public interface AdminDailyQuestionAnswerRepository extends JpaRepository<DailyQ
             """)
     List<WauRow> findWauData(@Param("from") Instant from, @Param("to") Instant to);
 
+    @Query("""
+            SELECT new site.one_question.web.admin.dto.WauRow(m.id, m.fullName, m.joinedDate, COUNT(dqa))
+            FROM DailyQuestionAnswer dqa JOIN dqa.member m
+            WHERE m.id != 1 AND dqa.answeredAt >= :from AND dqa.answeredAt < :to
+            GROUP BY m.id, m.fullName, m.joinedDate
+            ORDER BY m.id
+            """)
+    List<WauRow> findWeeklyParticipants(@Param("from") Instant from, @Param("to") Instant to);
+
 }

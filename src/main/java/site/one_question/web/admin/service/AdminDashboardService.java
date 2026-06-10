@@ -55,7 +55,8 @@ public class AdminDashboardService {
             long maxHourlyCount,
             List<MemberAnswerCountRow> leaderboard,
             List<RecentAnswerRow> recentAnswers,
-            List<WauMemberRow> wauMembers
+            List<WauMemberRow> wauMembers,
+            List<WauMemberRow> weeklyParticipants
     ) {}
 
     public DashboardData getDashboardData() {
@@ -66,6 +67,7 @@ public class AdminDashboardService {
         Instant sevenDaysAgo = today.minusDays(7).atStartOfDay(KST).toInstant();
 
         List<WauMemberRow> wauMembers = buildWauMembers(sevenDaysAgo, todayStart);
+        List<WauMemberRow> weeklyParticipants = buildWeeklyParticipants(sevenDaysAgo, todayStart);
         List<AnswerDateRow> answerRows = dqaRepository.findAnswerDatesAndJoinedDatesSince(thirtyDaysAgo);
         List<DailyAnswerCountRow> dailyTrend = buildDailyTrend(today, answerRows);
         long maxDailyCount = dailyTrend.stream().mapToLong(DailyAnswerCountRow::count).max().orElse(1L);
@@ -81,7 +83,7 @@ public class AdminDashboardService {
                 stats.wauCount());
 
         return new DashboardData(stats, dailyTrend, maxDailyCount, hourlyDistribution, maxHourlyCount,
-                leaderboard, recentAnswers, wauMembers);
+                leaderboard, recentAnswers, wauMembers, weeklyParticipants);
     }
 
     private DashboardStats buildStats(LocalDate today, Instant todayStart, Instant tomorrowStart, int wauCount) {
@@ -156,6 +158,12 @@ public class AdminDashboardService {
 
     private List<WauMemberRow> buildWauMembers(Instant from, Instant to) {
         return dqaRepository.findWauData(from, to).stream()
+                .map(row -> new WauMemberRow(row.memberId(), row.fullName(), row.joinedDate(), row.answerCount()))
+                .toList();
+    }
+
+    private List<WauMemberRow> buildWeeklyParticipants(Instant from, Instant to) {
+        return dqaRepository.findWeeklyParticipants(from, to).stream()
                 .map(row -> new WauMemberRow(row.memberId(), row.fullName(), row.joinedDate(), row.answerCount()))
                 .toList();
     }
