@@ -71,6 +71,6 @@ public class PublicDailyQuestionAnswerService {
     public List<PublicDailyQuestionAnswer> findFeed(
             Long pdqId, Long excludeMemberId, Instant cursorAnsweredAt, Long cursorId, int limit) {
         return publicDailyQuestionAnswerRepository.findFeed(
-                pdqId, excludeMemberId, cursorAnsweredAt, cursorId, PageRequest.of(0, limit));
+                pdqId, excludeMemberId, PublicDailyQuestionAnswerStatus.ACTIVE, cursorAnsweredAt, cursorId, PageRequest.of(0, limit));
     }
 }

@@ -24,6 +24,7 @@ public interface PublicDailyQuestionAnswerRepository extends JpaRepository<Publi
             SELECT a FROM PublicDailyQuestionAnswer a
             WHERE a.publicDailyQuestion.id = :pdqId
               AND a.member.id <> :excludeMemberId
+              AND a.status = :status
               AND (a.answeredAt < :cursorAnsweredAt
                    OR (a.answeredAt = :cursorAnsweredAt AND a.id < :cursorId))
             ORDER BY a.answeredAt DESC, a.id DESC
@@ -31,6 +32,7 @@ public interface PublicDailyQuestionAnswerRepository extends JpaRepository<Publi
     List<PublicDailyQuestionAnswer> findFeed(
             @Param("pdqId") Long pdqId,
             @Param("excludeMemberId") Long excludeMemberId,
+            @Param("status") PublicDailyQuestionAnswerStatus status,
             @Param("cursorAnsweredAt") Instant cursorAnsweredAt,
             @Param("cursorId") Long cursorId,
             Pageable pageable
