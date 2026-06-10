@@ -55,6 +55,10 @@ public class PublicDailyQuestionAnswer extends BaseEntity {
     @Column(nullable = false, length = 30)
     private String timezone;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PublicDailyQuestionAnswerStatus status;
+
     public static PublicDailyQuestionAnswer create(
             PublicDailyQuestion question,
             Member member,
@@ -70,7 +74,8 @@ public class PublicDailyQuestionAnswer extends BaseEntity {
                 content,
                 nickname,
                 Instant.now(),
-                timezone
+                timezone,
+                PublicDailyQuestionAnswerStatus.ACTIVE
         );
     }
 
