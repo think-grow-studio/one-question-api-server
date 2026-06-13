@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import site.one_question.api.member.domain.Member;
@@ -203,6 +204,46 @@ class GetQuestionTimelineIntegrateTest extends IntegrateTest {
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Nested
+    @DisplayName("좋아요 수 테스트")
+    class LikeCountTest {
+
+        @Test
+        @DisplayName("좋아요가 없는 질문의 타임라인은 likeCount=0 반환")
+        void timeline_returns_likeCount_0_when_no_likes() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            createDailyQuestion(today);
+
+            mockMvc.perform(get(TIMELINES_API)
+                            .param("baseDate", today.toString())
+                            .param("size", "1")
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.histories[0].question.likeCount").value(0));
+        }
+
+        @Test
+        @DisplayName("여러 멤버가 좋아요를 누른 질문의 타임라인에 likeCount 합산 반영")
+        void timeline_returns_total_likeCount_across_members() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            Question question = testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave_With_Date(member, cycle, question, today);
+
+            testQuestionLikeUtils.createSave(question, member);
+            Member other = testMemberUtils.createSave();
+            testQuestionLikeUtils.createSave(question, other);
+
+            mockMvc.perform(get(TIMELINES_API)
+                            .param("baseDate", today.toString())
+                            .param("size", "1")
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.histories[0].question.likeCount").value(2));
+        }
     }
 
     private void createDailyQuestion(LocalDate date) {
