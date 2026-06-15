@@ -180,6 +180,40 @@ class SelectQuestionIntegrateTest extends IntegrateTest {
     }
 
     @Nested
+    @DisplayName("좋아요 수 테스트")
+    class LikeCountTest {
+
+        @Test
+        @DisplayName("좋아요가 없는 후보 선택 시 likeCount=0 반환")
+        void select_returns_likeCount_0_when_no_likes() throws Exception {
+            mockMvc.perform(patch(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body(initialQuestion.getId())))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.likeCount").value(0));
+        }
+
+        @Test
+        @DisplayName("후보 선택 후 후보별 likeCount가 각각 올바르게 반환됨")
+        void select_returns_likeCount_per_candidate() throws Exception {
+            // initialQuestion(order=1)에 좋아요 2개, 리로드된 질문(order=2)에 좋아요 없음
+            Member other = testMemberUtils.createSave();
+            testQuestionLikeUtils.createSave(initialQuestion, member);
+            testQuestionLikeUtils.createSave(initialQuestion, other);
+
+            mockMvc.perform(patch(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body(initialQuestion.getId())))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.likeCount").value(2))
+                    .andExpect(jsonPath("$.candidates[0].likeCount").value(2))  // initialQuestion (order=1)
+                    .andExpect(jsonPath("$.candidates[1].likeCount").value(0)); // reloaded question (order=2)
+        }
+    }
+
+    @Nested
     @DisplayName("멱등성 테스트")
     class IdempotencyTest {
 

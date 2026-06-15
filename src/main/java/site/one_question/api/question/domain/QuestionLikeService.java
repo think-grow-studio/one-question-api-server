@@ -2,8 +2,10 @@ package site.one_question.api.question.domain;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import site.one_question.api.member.domain.Member;
@@ -31,6 +33,15 @@ public class QuestionLikeService {
             return Set.of();
         }
         return new HashSet<>(questionLikeRepository.findLikedQuestionIdsByMember(questionIds, memberId));
+    }
+
+    public Map<Long, Long> countLikesByQuestionIds(List<Long> questionIds) {
+        if (questionIds.isEmpty()) {
+            return Map.of();
+        }
+        return questionLikeRepository.countLikesByQuestionIds(questionIds)
+            .stream()
+            .collect(Collectors.toMap(QuestionLikeCount::getQuestionId, QuestionLikeCount::getLikeCount));
     }
 
     public void delete(QuestionLike like) {

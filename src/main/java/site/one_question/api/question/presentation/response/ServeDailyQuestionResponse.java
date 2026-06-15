@@ -2,6 +2,7 @@ package site.one_question.api.question.presentation.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import site.one_question.api.question.domain.DailyQuestion;
@@ -30,6 +31,9 @@ public record ServeDailyQuestionResponse(
         @Schema(description = "현재 선택된 질문 좋아요 여부", example = "false")
         boolean liked,
 
+        @Schema(description = "현재 선택된 질문 좋아요 수", example = "42")
+        long likeCount,
+
         @Schema(description = "후보 질문 목록 (최초 제공 질문 + 리로드한 질문들)")
         List<CandidateDto> candidates
 ) {
@@ -48,13 +52,17 @@ public record ServeDailyQuestionResponse(
             int receivedOrder,
 
             @Schema(description = "현재 선택된 질문 여부", example = "true")
-            boolean selected
+            boolean selected,
+
+            @Schema(description = "질문 좋아요 수", example = "42")
+            long likeCount
     ) {}
 
     public static ServeDailyQuestionResponse from(
             DailyQuestion dailyQuestion,
             List<DailyQuestionCandidate> candidates,
-            Set<Long> likedQuestionIds
+            Set<Long> likedQuestionIds,
+            Map<Long, Long> likeCountMap
     ) {
         Long currentQuestionId = dailyQuestion.getQuestion().getId();
 
@@ -64,7 +72,8 @@ public record ServeDailyQuestionResponse(
                         c.getQuestion().getContent(),
                         c.getQuestion().getDescription(),
                         c.getReceivedOrder(),
-                        c.getQuestion().getId().equals(currentQuestionId)
+                        c.getQuestion().getId().equals(currentQuestionId),
+                        likeCountMap.getOrDefault(c.getQuestion().getId(), 0L)
                 ))
                 .collect(Collectors.toList());
 
@@ -76,6 +85,7 @@ public record ServeDailyQuestionResponse(
                 (long) dailyQuestion.getQuestionCycle().getCycleNumber(),
                 (long) dailyQuestion.getChangeCount(),
                 likedQuestionIds.contains(currentQuestionId),
+                likeCountMap.getOrDefault(currentQuestionId, 0L),
                 candidateDtos
         );
     }

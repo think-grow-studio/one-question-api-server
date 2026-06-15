@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Schema(description = "질문 히스토리 항목")
@@ -56,7 +57,10 @@ public record QuestionHistoryItemDto(
             int receivedOrder,
 
             @Schema(description = "현재 선택된 질문 여부", example = "true")
-            boolean selected
+            boolean selected,
+
+            @Schema(description = "질문 좋아요 수", example = "42")
+            long likeCount
     ) {}
 
     @Schema(description = "질문 정보")
@@ -80,7 +84,10 @@ public record QuestionHistoryItemDto(
         Long changeCount,
 
         @Schema(description = "좋아요 여부", example = "false")
-        boolean liked
+        boolean liked,
+
+        @Schema(description = "질문 좋아요 수", example = "42")
+        long likeCount
     ) {}
 
     @Schema(description = "답변 정보")
@@ -119,28 +126,31 @@ public record QuestionHistoryItemDto(
             DailyQuestion dailyQuestion,
             String timezone,
             boolean liked,
-            List<DailyQuestionCandidate> candidates
+            List<DailyQuestionCandidate> candidates,
+            Map<Long, Long> likeCountMap
     ) {
+        Long currentQuestionId = dailyQuestion.getQuestion().getId();
         QuestionInfoDto questionInfo = new QuestionInfoDto(
             dailyQuestion.getId(),
-            dailyQuestion.getQuestion().getId(),
+            currentQuestionId,
             dailyQuestion.getQuestion().getContent(),
             dailyQuestion.getQuestion().getDescription(),
             (long) dailyQuestion.getQuestionCycle().getCycleNumber(),
             (long) dailyQuestion.getChangeCount(),
-            liked
+            liked,
+            likeCountMap.getOrDefault(currentQuestionId, 0L)
         );
 
         DailyQuestionAnswer answer = dailyQuestion.getAnswer();
         if (answer == null) {
-            Long currentQuestionId = dailyQuestion.getQuestion().getId();
             List<CandidateDto> candidateDtos = candidates.stream()
                 .map(c -> new CandidateDto(
                     c.getQuestion().getId(),
                     c.getQuestion().getContent(),
                     c.getQuestion().getDescription(),
                     c.getReceivedOrder(),
-                    c.getQuestion().getId().equals(currentQuestionId)
+                    c.getQuestion().getId().equals(currentQuestionId),
+                    likeCountMap.getOrDefault(c.getQuestion().getId(), 0L)
                 ))
                 .collect(Collectors.toList());
             return new QuestionHistoryItemDto(
