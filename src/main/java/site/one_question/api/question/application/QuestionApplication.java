@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,9 +63,11 @@ public class QuestionApplication {
             DailyQuestion dailyQuestion = existing.get();
             List<DailyQuestionCandidate> candidates =
                 dailyQuestionService.findCandidatesByDailyQuestion(dailyQuestion);
+            List<Long> allIds = candidates.stream().map(c -> c.getQuestion().getId()).collect(Collectors.toList());
             Set<Long> likedIds = questionLikeService.findLikedQuestionIdsByMember(
                 List.of(dailyQuestion.getQuestion().getId()), memberId);
-            return ServeDailyQuestionResponse.from(dailyQuestion, candidates, likedIds);
+            Map<Long, Long> likeCountMap = questionLikeService.countLikesByQuestionIds(allIds);
+            return ServeDailyQuestionResponse.from(dailyQuestion, candidates, likedIds, likeCountMap);
         }
 
         Member member = memberService.findById(memberId);
@@ -84,7 +87,8 @@ public class QuestionApplication {
 
         List<Long> questionIds = List.of(selectedQuestion.getId());
         Set<Long> likedIds = questionLikeService.findLikedQuestionIdsByMember(questionIds, memberId);
-        return ServeDailyQuestionResponse.from(saved, List.of(initial), likedIds);
+        Map<Long, Long> likeCountMap = questionLikeService.countLikesByQuestionIds(questionIds);
+        return ServeDailyQuestionResponse.from(saved, List.of(initial), likedIds, likeCountMap);
     }
 
     public ServeDailyQuestionResponse reloadDailyQuestion(Long memberId, LocalDate date, String timezone) {
@@ -124,9 +128,12 @@ public class QuestionApplication {
         // 8. 응답 반환 (기존 후보 + 새 후보 in-memory 합산)
         List<DailyQuestionCandidate> allCandidates = new ArrayList<>(candidates);
         allCandidates.add(newCandidate);
+        List<Long> allCandidateIds = allCandidates.stream()
+            .map(c -> c.getQuestion().getId()).collect(Collectors.toList());
         Set<Long> likedIds = questionLikeService.findLikedQuestionIdsByMember(
             List.of(newQuestion.getId()), memberId);
-        return ServeDailyQuestionResponse.from(dailyQuestion, allCandidates, likedIds);
+        Map<Long, Long> likeCountMap = questionLikeService.countLikesByQuestionIds(allCandidateIds);
+        return ServeDailyQuestionResponse.from(dailyQuestion, allCandidates, likedIds, likeCountMap);
     }
 
     public ServeDailyQuestionResponse selectQuestion(Long memberId, LocalDate date, Long questionId) {
@@ -144,9 +151,12 @@ public class QuestionApplication {
 
         List<DailyQuestionCandidate> allCandidates =
             dailyQuestionService.findCandidatesByDailyQuestion(dailyQuestion);
+        List<Long> allCandidateIds = allCandidates.stream()
+            .map(c -> c.getQuestion().getId()).collect(Collectors.toList());
         Set<Long> likedIds = questionLikeService.findLikedQuestionIdsByMember(
             List.of(question.getId()), memberId);
-        return ServeDailyQuestionResponse.from(dailyQuestion, allCandidates, likedIds);
+        Map<Long, Long> likeCountMap = questionLikeService.countLikesByQuestionIds(allCandidateIds);
+        return ServeDailyQuestionResponse.from(dailyQuestion, allCandidates, likedIds, likeCountMap);
     }
 
     @Transactional(readOnly = true)
@@ -211,6 +221,7 @@ public class QuestionApplication {
 
         Map<Long, List<DailyQuestionCandidate>> dqIdWithCandidates = findCandidatesForUnanswered(dailyQuestions);
         Set<Long> likedQuestionIds = findLikedSelectedQuestionIds(dailyQuestions, memberId);
+        Map<Long, Long> likeCountMap = findLikeCountsForAll(dailyQuestions, dqIdWithCandidates);
 
         // DailyQuestion을 날짜 기준 Map으로 변환
         Map<LocalDate, DailyQuestion> dateWithQuestions = dailyQuestions.stream()
@@ -227,7 +238,7 @@ public class QuestionApplication {
             } else {
                 boolean liked = likedQuestionIds.contains(dq.getQuestion().getId());
                 List<DailyQuestionCandidate> candidates = dqIdWithCandidates.getOrDefault(dq.getId(), List.of());
-                histories.add(QuestionHistoryItemDto.from(dq, timezone, liked, candidates));
+                histories.add(QuestionHistoryItemDto.from(dq, timezone, liked, candidates, likeCountMap));
             }
             currentDate = currentDate.minusDays(1);
         }
@@ -257,13 +268,15 @@ public class QuestionApplication {
 
         Map<Long, List<DailyQuestionCandidate>> dqIdWithCandidates = findCandidatesForUnanswered(dailyQuestions);
         Set<Long> likedQuestionIds = findLikedSelectedQuestionIds(dailyQuestions, memberId);
+        Map<Long, Long> likeCountMap = findLikeCountsForAll(dailyQuestions, dqIdWithCandidates);
 
         List<QuestionHistoryItemDto> histories = dailyQuestions.stream()
                 .map(dq -> QuestionHistoryItemDto.from(
                         dq,
                         timezone,
                         likedQuestionIds.contains(dq.getQuestion().getId()),
-                        dqIdWithCandidates.getOrDefault(dq.getId(), List.of())))
+                        dqIdWithCandidates.getOrDefault(dq.getId(), List.of()),
+                        likeCountMap))
                 .collect(Collectors.toList());
 
         // 조회 결과 기준 날짜 범위 (조회 결과가 없으면 null)
@@ -296,6 +309,19 @@ public class QuestionApplication {
             .map(dq -> dq.getQuestion().getId())
             .collect(Collectors.toList());
         return questionLikeService.findLikedQuestionIdsByMember(selectedQuestionIds, memberId);
+    }
+
+    // 좋아요 수 배치 조회: 선택된 질문 + 후보 질문 전체
+    private Map<Long, Long> findLikeCountsForAll(
+            List<DailyQuestion> dailyQuestions,
+            Map<Long, List<DailyQuestionCandidate>> dqIdWithCandidates) {
+        List<Long> allIds = Stream.concat(
+            dailyQuestions.stream().map(dq -> dq.getQuestion().getId()),
+            dqIdWithCandidates.values().stream()
+                .flatMap(List::stream)
+                .map(c -> c.getQuestion().getId())
+        ).distinct().collect(Collectors.toList());
+        return questionLikeService.countLikesByQuestionIds(allIds);
     }
 
     public CreateAnswerResponse createAnswer(Long memberId, LocalDate date, String content, boolean publish, String timezone) {

@@ -684,6 +684,72 @@ class GetQuestionHistoryIntegrateTest extends IntegrateTest {
     }
 
     @Nested
+    @DisplayName("좋아요 수 테스트")
+    class LikeCountTest {
+
+        @Test
+        @DisplayName("좋아요가 없는 질문의 히스토리는 likeCount=0 반환")
+        void history_returns_likeCount_0_when_no_likes() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            Question question = testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave_With_Date(member, cycle, question, today);
+
+            mockMvc.perform(get(HISTORIES_API)
+                            .param("baseDate", today.toString())
+                            .param("historyDirection", HistoryDirection.BOTH.name())
+                            .param("size", "1")
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.histories[0].question.likeCount").value(0));
+        }
+
+        @Test
+        @DisplayName("여러 멤버가 좋아요를 누른 질문의 히스토리에 likeCount 합산 반영")
+        void history_returns_total_likeCount_across_members() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            Question question = testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave_With_Date(member, cycle, question, today);
+
+            testQuestionLikeUtils.createSave(question, member);
+            Member other = testMemberUtils.createSave();
+            testQuestionLikeUtils.createSave(question, other);
+
+            mockMvc.perform(get(HISTORIES_API)
+                            .param("baseDate", today.toString())
+                            .param("historyDirection", HistoryDirection.BOTH.name())
+                            .param("size", "1")
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.histories[0].question.likeCount").value(2));
+        }
+
+        @Test
+        @DisplayName("미답변 질문의 후보에도 likeCount가 올바르게 반환됨")
+        void history_returns_likeCount_for_unanswered_candidate() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            Question question = testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave_With_Date(member, cycle, question, today);
+
+            testQuestionLikeUtils.createSave(question, member);
+            Member other = testMemberUtils.createSave();
+            testQuestionLikeUtils.createSave(question, other);
+
+            mockMvc.perform(get(HISTORIES_API)
+                            .param("baseDate", today.toString())
+                            .param("historyDirection", HistoryDirection.BOTH.name())
+                            .param("size", "1")
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.histories[0].status").value(Status.UNANSWERED.name()))
+                    .andExpect(jsonPath("$.histories[0].question.likeCount").value(2))
+                    .andExpect(jsonPath("$.histories[0].candidates[0].likeCount").value(2));
+        }
+    }
+
+    @Nested
     @DisplayName("예외 케이스 테스트")
     class ExceptionTest {
 

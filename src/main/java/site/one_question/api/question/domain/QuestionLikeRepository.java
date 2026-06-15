@@ -17,6 +17,9 @@ public interface QuestionLikeRepository extends JpaRepository<QuestionLike, Long
     @Query("SELECT ql.question.id FROM QuestionLike ql WHERE ql.question.id IN :questionIds AND ql.member.id = :memberId")
     List<Long> findLikedQuestionIdsByMember(@Param("questionIds") List<Long> questionIds, @Param("memberId") Long memberId);
 
+    @Query("SELECT ql.question.id AS questionId, COUNT(ql) AS likeCount FROM QuestionLike ql WHERE ql.question.id IN :questionIds GROUP BY ql.question.id")
+    List<QuestionLikeCount> countLikesByQuestionIds(@Param("questionIds") List<Long> questionIds);
+
     @Modifying
     @Query("DELETE FROM QuestionLike ql WHERE ql.member.id = :memberId")
     int deleteByMemberId(@Param("memberId") Long memberId);

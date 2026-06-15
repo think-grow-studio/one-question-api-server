@@ -319,6 +319,46 @@ class ServeDailyQuestionIntegrateTest extends IntegrateTest {
     }
 
     @Nested
+    @DisplayName("좋아요 수 테스트")
+    class LikeCountTest {
+
+        @Test
+        @DisplayName("좋아요가 없는 질문 조회 시 likeCount=0 반환")
+        void serve_returns_likeCount_0_when_no_likes() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.likeCount").value(0))
+                    .andExpect(jsonPath("$.candidates[0].likeCount").value(0));
+        }
+
+        @Test
+        @DisplayName("여러 멤버가 좋아요를 누른 경우 likeCount에 전체 합산 반영")
+        void serve_returns_total_likeCount_across_members() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question question = testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave(member, cycle, question);
+
+            testQuestionLikeUtils.createSave(question, member);
+            Member other1 = testMemberUtils.createSave();
+            testQuestionLikeUtils.createSave(question, other1);
+            Member other2 = testMemberUtils.createSave();
+            testQuestionLikeUtils.createSave(question, other2);
+
+            mockMvc.perform(get(QUESTIONS_API + "/daily/{date}", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.likeCount").value(3))
+                    .andExpect(jsonPath("$.candidates[0].likeCount").value(3));
+        }
+    }
+
+    @Nested
     @DisplayName("후보 상태 반영 테스트")
     class CandidateStateTest {
 

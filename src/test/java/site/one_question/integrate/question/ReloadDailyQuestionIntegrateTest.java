@@ -310,6 +310,67 @@ class ReloadDailyQuestionIntegrateTest extends IntegrateTest {
     }
 
     @Nested
+    @DisplayName("좋아요 수 테스트")
+    class LikeCountTest {
+
+        @Test
+        @DisplayName("리로드 후 새 질문에 좋아요가 없으면 likeCount=0 반환")
+        void reload_returns_likeCount_0_when_no_likes() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question question = testQuestionUtils.createSave();
+            testQuestionUtils.createSave();
+            testDailyQuestionUtils.createSave(member, cycle, question);
+
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.likeCount").value(0));
+        }
+
+        @Test
+        @DisplayName("리로드 후 여러 멤버가 좋아요를 누른 새 질문은 likeCount에 합산 반영")
+        void reload_returns_total_likeCount_for_new_question() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question original = testQuestionUtils.createSave();
+            Question newQuestion = testQuestionUtils.createSave(); // 리로드 후 유일하게 선택될 질문
+            testDailyQuestionUtils.createSave(member, cycle, original);
+
+            testQuestionLikeUtils.createSave(newQuestion, member);
+            Member other = testMemberUtils.createSave();
+            testQuestionLikeUtils.createSave(newQuestion, other);
+
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.likeCount").value(2));
+        }
+
+        @Test
+        @DisplayName("리로드 후 후보별 likeCount가 각각 올바르게 반환됨")
+        void reload_returns_likeCount_per_candidate() throws Exception {
+            LocalDate today = LocalDate.now(ZoneId.of(TIMEZONE));
+            QuestionCycle cycle = testQuestionCycleUtils.createSave(member);
+            Question original = testQuestionUtils.createSave();    // order=1, 좋아요 없음
+            Question newQuestion = testQuestionUtils.createSave(); // order=2, 좋아요 1개
+            testDailyQuestionUtils.createSave(member, cycle, original);
+
+            Member other = testMemberUtils.createSave();
+            testQuestionLikeUtils.createSave(newQuestion, other);
+
+            mockMvc.perform(post(QUESTIONS_API + "/daily/{date}/reload", today)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.TIMEZONE, TIMEZONE))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.candidates[0].likeCount").value(0))  // original (order=1)
+                    .andExpect(jsonPath("$.candidates[1].likeCount").value(1)); // newQuestion (order=2)
+        }
+    }
+
+    @Nested
     @DisplayName("후보 제외 및 fallback 테스트")
     class CandidateExclusionTest {
 
