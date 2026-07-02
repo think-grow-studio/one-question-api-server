@@ -3,7 +3,7 @@ services:
     image: ghcr.io/think-grow-studio/develop-one-question-api:latest
     container_name: one-question-api
     restart: unless-stopped
-    mem_limit: 1200m
+    mem_limit: 700m
     ports:
       - "8081:8081"
     volumes:

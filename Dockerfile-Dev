@@ -27,12 +27,12 @@ RUN mkdir -p /app/logs
 
 ENV SPRING_PROFILES_ACTIVE=dev
 ENTRYPOINT ["java", \
-"-Xms600m", \
-"-Xmx600m", \
-"-XX:MaxMetaspaceSize=160m", \
+"-Xms400m", \
+"-Xmx400m", \
+"-XX:MaxMetaspaceSize=128m", \
 "-XX:+UseStringDeduplication", \
-"-XX:MaxDirectMemorySize=64m", \
-"-XX:ReservedCodeCacheSize=64m", \
+"-XX:MaxDirectMemorySize=32m", \
+"-XX:ReservedCodeCacheSize=32m", \
 "-XX:TieredStopAtLevel=1", \
 "-Xlog:gc*:file=/app/logs/gc-%t.log:time,level,tags", \
 "-XX:+HeapDumpOnOutOfMemoryError", \
