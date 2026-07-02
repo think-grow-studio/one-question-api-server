@@ -169,10 +169,12 @@ jobs:
             echo "🎉 [DEV VM] Deployment completed successfully!"
 
   # 알림 Job
+  # deploy가 진짜로 시도됐을 때만 알림 (dev와 무관한 브랜치 push로 상위 워크플로가
+  # skipped 되면 deploy도 스킵되는데, 이걸 "실패"로 오탐하지 않도록 방지)
   notify:
     runs-on: ubuntu-latest
     needs: [deploy]
-    if: always()
+    if: ${{ always() && github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Send Discord Notification
