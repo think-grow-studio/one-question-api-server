@@ -38,6 +38,7 @@ out/
 
 .env*
 *wallet/
+*wallet-kr/
 
 *firebase-adminsdk*.json
 
@@ -48,6 +49,7 @@ AuthKey_*
 
 # Base64-encoded secret blobs
 *_base64.txt
+*.b64.txt
 
 # macOS
 .DS_Store

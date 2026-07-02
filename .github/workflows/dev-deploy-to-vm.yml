@@ -34,9 +34,9 @@ jobs:
         id: deployment
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.SUB_VM_HOST }}
-          username: ${{ secrets.SUB_VM_USERNAME }}
-          key: ${{ secrets.SUB_VM_SSH_KEY }}
+          host: ${{ secrets.DEV_VM_HOST }}
+          username: ${{ secrets.DEV_VM_USERNAME }}
+          key: ${{ secrets.DEV_VM_SSH_KEY }}
           port: 22
           script: |
             set -e

@@ -74,6 +74,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          secrets: |
+            wallet_base64=${{ secrets.ORACLE_DEV_WALLET_COMPRESSED_BASE64 }}
 
       - name: Save image URL for downstream workflows
         run: echo "${{ steps.image.outputs.name }}:latest" > image-url.txt
