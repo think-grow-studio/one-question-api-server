@@ -54,7 +54,9 @@ services:
       - "443:443"
       - "80:80"
     volumes:
-      - /home/ubuntu/nginx/prod.conf:/etc/nginx/conf.d/default.conf:ro
+      # 파일 단위 바인드 마운트는 inode가 고정되어 scp로 파일이 교체돼도 컨테이너가 옛날 내용을
+      # 계속 보는 문제가 있어, 디렉토리 단위로 마운트 (경로 조회가 매번 새로 일어나 최신 파일을 봄)
+      - /home/ubuntu/nginx:/etc/nginx/conf.d:ro
       - /home/ubuntu/certs:/etc/nginx/certs:ro
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "443"]
