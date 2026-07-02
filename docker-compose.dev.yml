@@ -1,0 +1,64 @@
+services:
+  app:
+    image: ghcr.io/think-grow-studio/develop-one-question-api:latest
+    container_name: one-question-api
+    restart: unless-stopped
+    mem_limit: 1200m
+    ports:
+      - "8081:8081"
+    volumes:
+      - /home/ubuntu/log-one:/root/log-one
+      - /home/ubuntu/heapdump:/app/logs
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "10"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      ORACLE_DB_DRIVER: ${ORACLE_DB_DRIVER}
+      ORACLE_DB_URL: ${ORACLE_DB_URL}
+      ORACLE_DB_USERNAME: ${ORACLE_DB_USERNAME}
+      ORACLE_DB_PASSWORD: ${ORACLE_DB_PASSWORD}
+      ORACLE_DB_DIALECT: ${ORACLE_DB_DIALECT}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ACCESS_EXPIRE_TIME: ${JWT_ACCESS_EXPIRE_TIME}
+      JWT_REFRESH_EXPIRE_TIME: ${JWT_REFRESH_EXPIRE_TIME}
+      APP_VERSION_MIN: ${APP_VERSION_MIN}
+      APP_VERSION_LATEST: ${APP_VERSION_LATEST}
+      APP_SERVER_LIVE: ${APP_SERVER_LIVE}
+      GOOGLE_WEB_CLIENT_ID: ${GOOGLE_WEB_CLIENT_ID}
+      DISCORD_LOGGING_WEBHOOK_URL: ${DISCORD_LOGGING_WEBHOOK_URL}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${FIREBASE_SERVICE_ACCOUNT_JSON}
+      APPLE_CLIENT_ID: ${APPLE_CLIENT_ID}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID}
+      APPLE_KEY_ID: ${APPLE_KEY_ID}
+      APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY}
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: one-question-nginx
+    restart: unless-stopped
+    mem_limit: 128m
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - /home/ubuntu/nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/nginx/certs:/etc/nginx/certs:ro
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "443"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
