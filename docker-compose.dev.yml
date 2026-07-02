@@ -55,7 +55,7 @@ services:
       - "80:80"
     volumes:
       - /home/ubuntu/nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
-      - /etc/nginx/certs:/etc/nginx/certs:ro
+      - /home/ubuntu/certs:/etc/nginx/certs:ro
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "443"]
       interval: 30s
