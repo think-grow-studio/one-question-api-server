@@ -99,6 +99,19 @@ jobs:
               sleep 30
             }
 
+            # nginx 설정 리로드 함수 (nginx.conf는 SCP로 덮어쓰기만 되고
+            # 컨테이너 자체는 up -d로 재생성되지 않을 수 있어, 최신 설정을 반영하려면 명시적 reload 필요)
+            reload_nginx() {
+              echo "🔄 [DEV VM] Reloading nginx to apply latest config..."
+              if docker exec one-question-nginx nginx -t; then
+                docker exec one-question-nginx nginx -s reload
+                echo "✅ [DEV VM] nginx reloaded"
+              else
+                echo "❌ [DEV VM] nginx config test failed, skipping reload"
+                return 1
+              fi
+            }
+
             # 헬스체크 함수
             health_check() {
               echo "🔍 [DEV VM] Starting health check..."
@@ -150,6 +163,7 @@ jobs:
 
             # 실행
             deploy_container
+            reload_nginx
             health_check
             echo "🎉 [DEV VM] Deployment completed successfully!"
 

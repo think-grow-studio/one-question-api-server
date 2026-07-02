@@ -15,6 +15,8 @@ jobs:
       image_url: ${{ steps.setup.outputs.image_url }}
 
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download image URL artifact
         uses: actions/download-artifact@v4
         with:
@@ -30,6 +32,17 @@ jobs:
           echo "image_url=$IMAGE_URL" >> $GITHUB_OUTPUT
           echo "Using image: $IMAGE_URL"
 
+      - name: Upload docker-compose.yml and nginx conf to MAIN VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.MAIN_VM_HOST }}
+          username: ${{ secrets.MAIN_VM_USERNAME }}
+          key: ${{ secrets.MAIN_VM_SSH_KEY }}
+          port: 22
+          source: "docker-compose.prod.yml,nginx/prod.conf"
+          target: "/home/ubuntu"
+          strip_components: 0
+
       - name: Deploy and Health Check MAIN VM
         id: deployment
         uses: appleboy/ssh-action@v1.0.0
@@ -42,60 +55,61 @@ jobs:
             set -e
 
             # 변수 설정
-            IMAGE_URL="${{ steps.setup.outputs.image_url }}"
             CONTAINER_NAME="one-question-api"
+            COMPOSE_FILE="/home/ubuntu/docker-compose.prod.yml"
 
-            echo "🚀 [MAIN VM] Starting deployment with image: $IMAGE_URL"
+            echo "🚀 [MAIN VM] Starting deployment (app + nginx via docker compose)"
 
             # GitHub Container Registry 로그인
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
             # 배포 함수
             deploy_container() {
-              echo "🧹 [MAIN VM] Cleaning up..."
+              echo "🧹 [MAIN VM] Removing legacy standalone container (pre-compose 배포 잔재)..."
               docker stop $CONTAINER_NAME 2>/dev/null || true
               docker rm $CONTAINER_NAME 2>/dev/null || true
-              docker rmi $IMAGE_URL 2>/dev/null || true
 
-              echo "📦 [MAIN VM] Deploying new container..."
-              docker pull $IMAGE_URL
-              docker run -d \
-                --name $CONTAINER_NAME \
-                --restart unless-stopped \
-                --memory=1200m \
-                -p 443:443 \
-                -p 8080:8080 \
-                -v /home/ubuntu/log-one:/root/log-one \
-                -v /home/ubuntu/heapdump:/app/logs \
-                -v /home/ubuntu/certs:/certs \
-                --log-driver json-file \
-                --log-opt max-size=50m \
-                --log-opt max-file=10 \
-                -e SPRING_PROFILES_ACTIVE=prod \
-                -e ORACLE_DB_DRIVER="${{ secrets.ORACLE_DB_DRIVER }}" \
-                -e ORACLE_DB_URL="${{ secrets.ORACLE_DB_URL }}" \
-                -e ORACLE_DB_USERNAME="${{ secrets.ORACLE_DB_USERNAME }}" \
-                -e ORACLE_DB_PASSWORD="${{ secrets.ORACLE_DB_PASSWORD }}" \
-                -e ORACLE_DB_DIALECT="${{ secrets.ORACLE_DB_DIALECT }}" \
-                -e JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}" \
-                -e JWT_ACCESS_EXPIRE_TIME="${{ secrets.JWT_ACCESS_EXPIRE_TIME }}" \
-                -e JWT_REFRESH_EXPIRE_TIME="${{ secrets.JWT_REFRESH_EXPIRE_TIME }}" \
-                -e APP_VERSION_MIN="${{ secrets.APP_VERSION_MIN }}" \
-                -e APP_VERSION_LATEST="${{ secrets.APP_VERSION_LATEST }}" \
-                -e APP_SERVER_LIVE="${{ secrets.APP_SERVER_LIVE }}" \
-                -e GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}" \
-                -e SSL_KEYSTORE_PASSWORD="${{ secrets.SSL_KEYSTORE_PASSWORD }}" \
-                -e DISCORD_LOGGING_WEBHOOK_URL="${{ secrets.DISCORD_LOGGING_WEBHOOK_URL }}" \
-                -e ADMIN_EMAIL="${{ secrets.ADMIN_EMAIL }}" \
-                -e FIREBASE_SERVICE_ACCOUNT_JSON="${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" \
-                -e APPLE_CLIENT_ID="${{ secrets.APPLE_CLIENT_ID }}" \
-                -e APPLE_TEAM_ID="${{ secrets.APPLE_TEAM_ID }}" \
-                -e APPLE_KEY_ID="${{ secrets.APPLE_KEY_ID }}" \
-                -e APPLE_PRIVATE_KEY="${{ secrets.APPLE_PRIVATE_KEY }}" \
-                $IMAGE_URL
+              export ORACLE_DB_DRIVER="${{ secrets.ORACLE_DB_DRIVER }}"
+              export ORACLE_DB_URL="${{ secrets.ORACLE_DB_URL }}"
+              export ORACLE_DB_USERNAME="${{ secrets.ORACLE_DB_USERNAME }}"
+              export ORACLE_DB_PASSWORD="${{ secrets.ORACLE_DB_PASSWORD }}"
+              export ORACLE_DB_DIALECT="${{ secrets.ORACLE_DB_DIALECT }}"
+              export JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}"
+              export JWT_ACCESS_EXPIRE_TIME="${{ secrets.JWT_ACCESS_EXPIRE_TIME }}"
+              export JWT_REFRESH_EXPIRE_TIME="${{ secrets.JWT_REFRESH_EXPIRE_TIME }}"
+              export APP_VERSION_MIN="${{ secrets.APP_VERSION_MIN }}"
+              export APP_VERSION_LATEST="${{ secrets.APP_VERSION_LATEST }}"
+              export APP_SERVER_LIVE="${{ secrets.APP_SERVER_LIVE }}"
+              export GOOGLE_WEB_CLIENT_ID="${{ secrets.GOOGLE_WEB_CLIENT_ID }}"
+              export DISCORD_LOGGING_WEBHOOK_URL="${{ secrets.DISCORD_LOGGING_WEBHOOK_URL }}"
+              export ADMIN_EMAIL="${{ secrets.ADMIN_EMAIL }}"
+              export FIREBASE_SERVICE_ACCOUNT_JSON="${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}"
+              export APPLE_CLIENT_ID="${{ secrets.APPLE_CLIENT_ID }}"
+              export APPLE_TEAM_ID="${{ secrets.APPLE_TEAM_ID }}"
+              export APPLE_KEY_ID="${{ secrets.APPLE_KEY_ID }}"
+              export APPLE_PRIVATE_KEY="${{ secrets.APPLE_PRIVATE_KEY }}"
 
-              echo "⏳ [MAIN VM] Waiting for container to start..."
+              echo "📦 [MAIN VM] Pulling images..."
+              docker compose -f $COMPOSE_FILE pull
+
+              echo "📦 [MAIN VM] Starting app + nginx..."
+              docker compose -f $COMPOSE_FILE up -d
+
+              echo "⏳ [MAIN VM] Waiting for containers to start..."
               sleep 30
+            }
+
+            # nginx 설정 리로드 함수 (nginx.conf는 SCP로 덮어쓰기만 되고
+            # 컨테이너 자체는 up -d로 재생성되지 않을 수 있어, 최신 설정을 반영하려면 명시적 reload 필요)
+            reload_nginx() {
+              echo "🔄 [MAIN VM] Reloading nginx to apply latest config..."
+              if docker exec one-question-nginx nginx -t; then
+                docker exec one-question-nginx nginx -s reload
+                echo "✅ [MAIN VM] nginx reloaded"
+              else
+                echo "❌ [MAIN VM] nginx config test failed, skipping reload"
+                return 1
+              fi
             }
 
             # 헬스체크 함수
@@ -149,6 +163,7 @@ jobs:
 
             # 실행
             deploy_container
+            reload_nginx
             health_check
             echo "🎉 [MAIN VM] Deployment completed successfully!"
 
