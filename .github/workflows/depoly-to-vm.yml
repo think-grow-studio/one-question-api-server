@@ -46,6 +46,7 @@ jobs:
           source: "docker-compose.prod.yml,nginx/prod.conf"
           target: "/home/ubuntu"
           strip_components: 0
+          overwrite: true
 
       - name: Deploy and Health Check MAIN VM
         id: deployment
@@ -194,6 +195,7 @@ jobs:
           source: "docker-compose.sub.yml"
           target: "/home/ubuntu"
           strip_components: 0
+          overwrite: true
 
       - name: Deploy and Health Check SUB VM
         id: deployment

@@ -42,6 +42,7 @@ jobs:
           source: "docker-compose.dev.yml,nginx/dev.conf"
           target: "/home/ubuntu"
           strip_components: 0
+          overwrite: true
 
       - name: Deploy and Health Check DEV VM
         id: deployment
