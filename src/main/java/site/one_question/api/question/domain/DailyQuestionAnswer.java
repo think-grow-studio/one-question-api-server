@@ -23,7 +23,7 @@ public class DailyQuestionAnswer extends BaseEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "daily_question_id", nullable = false)
-    private DailyQuestion dailyQuestionId;
+    private DailyQuestion dailyQuestion;
 
     @ManyToOne
     @JoinColumn(name = "member_id", nullable = false)
@@ -42,10 +42,10 @@ public class DailyQuestionAnswer extends BaseEntity {
     @OneToOne(mappedBy = "questionAnswer", fetch = FetchType.LAZY)
     private AnswerPost answerPost;
 
-    private DailyQuestionAnswer(Long id, DailyQuestion dailyQuestionId, Member member,
+    private DailyQuestionAnswer(Long id, DailyQuestion dailyQuestion, Member member,
                                 String content, Instant answeredAt, String timezone) {
         this.id = id;
-        this.dailyQuestionId = dailyQuestionId;
+        this.dailyQuestion = dailyQuestion;
         this.member = member;
         this.content = content;
         this.answeredAt = answeredAt;

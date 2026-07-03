@@ -26,7 +26,7 @@ public class AnalysisReportSourceService {
 
         List<DailyQuestionAnswer> orderedAnswers = answers.stream()
                 .sorted(Comparator.comparing(
-                        (DailyQuestionAnswer answer) -> answer.getDailyQuestionId().getQuestionDate()).reversed())
+                        (DailyQuestionAnswer answer) -> answer.getDailyQuestion().getQuestionDate()).reversed())
                 .toList();
         List<AnalysisReportSource> sources = IntStream.range(0, orderedAnswers.size())
                 .mapToObj(index -> AnalysisReportSource.create(analysisReport, orderedAnswers.get(index), index + 1))

@@ -149,8 +149,8 @@ public class AdminDashboardService {
                         dqa.getMember().getId(),
                         dqa.getMember().getFullName(),
                         dqa.getMember().getJoinedDate(),
-                        dqa.getDailyQuestionId().getChangeCount(),
-                        dqa.getDailyQuestionId().getQuestion().getContent(),
+                        dqa.getDailyQuestion().getChangeCount(),
+                        dqa.getDailyQuestion().getQuestion().getContent(),
                         dqa.getContent(),
                         LocalDateTime.ofInstant(dqa.getAnsweredAt(), KST)))
                 .toList();

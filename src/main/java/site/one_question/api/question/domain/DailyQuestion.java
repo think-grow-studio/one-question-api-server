@@ -52,7 +52,7 @@ public class DailyQuestion extends BaseEntity {
     @Column(name = "change_count", nullable = false)
     private int changeCount;
 
-    @OneToOne(mappedBy = "dailyQuestionId", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "dailyQuestion", fetch = FetchType.LAZY)
     private DailyQuestionAnswer answer;
 
     public static DailyQuestion create(

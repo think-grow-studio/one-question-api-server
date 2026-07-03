@@ -75,7 +75,7 @@ public class AnalysisReportSource extends BaseEntity {
                     "답변 내용이 최대 길이를 초과함: dailyQuestionAnswerId=" + dailyQuestionAnswer.getId());
         }
 
-        DailyQuestion dailyQuestion = dailyQuestionAnswer.getDailyQuestionId();
+        DailyQuestion dailyQuestion = dailyQuestionAnswer.getDailyQuestion();
         return new AnalysisReportSource(
                 null,
                 analysisReport,

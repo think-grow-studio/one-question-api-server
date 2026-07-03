@@ -16,7 +16,7 @@ public interface DailyQuestionAnswerRepository extends JpaRepository<DailyQuesti
 
     @Query("""
             SELECT answer FROM DailyQuestionAnswer answer
-            JOIN FETCH answer.dailyQuestionId dailyQuestion
+            JOIN FETCH answer.dailyQuestion dailyQuestion
             JOIN FETCH dailyQuestion.question
             WHERE answer.member.id = :memberId
               AND answer.id IN :answerIds
