@@ -37,6 +37,7 @@ CREATE TABLE analysis_report (
     background_job_id NUMBER                    NOT NULL,
     member_id         NUMBER                    NOT NULL,
     report_type       VARCHAR2(100)             NOT NULL,
+    status            VARCHAR2(30)              NOT NULL,
     result            CLOB,
     provider          VARCHAR2(30),
     model             VARCHAR2(100),

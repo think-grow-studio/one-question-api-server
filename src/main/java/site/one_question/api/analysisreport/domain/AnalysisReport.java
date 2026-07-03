@@ -13,6 +13,8 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import site.one_question.api.analysisreport.domain.exception.AnalysisReportCompletionDataInvalidException;
+import site.one_question.api.analysisreport.domain.exception.AnalysisReportNotPendingException;
 import site.one_question.api.backgroundjob.domain.BackgroundJob;
 import site.one_question.api.member.domain.Member;
 import site.one_question.common.domain.BaseEntity;
@@ -44,6 +46,10 @@ public class AnalysisReport extends BaseEntity {
     @Column(name = "report_type", nullable = false, length = 100)
     private AnalysisReportType reportType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private AnalysisReportStatus status;
+
     @Lob
     @Column(columnDefinition = "CLOB")
     private String result;
@@ -68,10 +74,42 @@ public class AnalysisReport extends BaseEntity {
                 backgroundJob,
                 member,
                 reportType,
+                AnalysisReportStatus.PENDING,
                 null,
                 null,
                 null,
                 null
         );
+    }
+
+    public void complete(String result, String provider, String model, String llmOptions) {
+        validatePending();
+        validateCompletionData(result, provider, model, llmOptions);
+        this.result = result;
+        this.provider = provider;
+        this.model = model;
+        this.llmOptions = llmOptions;
+        this.status = AnalysisReportStatus.COMPLETED;
+    }
+
+    public void fail() {
+        validatePending();
+        this.status = AnalysisReportStatus.FAILED;
+    }
+
+    private void validatePending() {
+        if (this.status != AnalysisReportStatus.PENDING) {
+            throw new AnalysisReportNotPendingException(id, status);
+        }
+    }
+
+    private void validateCompletionData(String result, String provider, String model, String llmOptions) {
+        if (isBlank(result) || isBlank(provider) || isBlank(model) || isBlank(llmOptions)) {
+            throw new AnalysisReportCompletionDataInvalidException(id);
+        }
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

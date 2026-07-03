@@ -19,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import site.one_question.api.analysisreport.domain.AnalysisReport;
 import site.one_question.api.analysisreport.domain.AnalysisReportSource;
+import site.one_question.api.analysisreport.domain.AnalysisReportStatus;
 import site.one_question.api.analysisreport.domain.AnalysisReportType;
 import site.one_question.api.analysisreport.domain.exception.AnalysisReportExceptionSpec;
 import site.one_question.api.analysisreport.presentation.request.CreateAnalysisReportRequest;
@@ -128,6 +129,9 @@ class CreateAnalysisReportIntegrateTest extends IntegrateTest {
             assertThat(report.getReportType())
                     .as("리포트 타입이 저장되어야 함")
                     .isEqualTo(AnalysisReportType.THINKING_PATTERN);
+            assertThat(report.getStatus())
+                    .as("생성 직후 리포트 상태는 PENDING이어야 함")
+                    .isEqualTo(AnalysisReportStatus.PENDING);
             assertThat(report.getResult())
                     .as("AI 처리 전 result는 NULL이어야 함")
                     .isNull();

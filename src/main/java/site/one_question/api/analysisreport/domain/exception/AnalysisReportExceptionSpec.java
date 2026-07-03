@@ -25,6 +25,18 @@ public enum AnalysisReportExceptionSpec implements ExceptionSpec {
             "AI-REPORT-003",
             "분석 리포트 소스 답변 소유권 오류",
             "error.ai-report.source-answer-not-owned"
+    ),
+    REPORT_NOT_PENDING(
+            HttpStatus.CONFLICT,
+            "AI-REPORT-004",
+            "분석 리포트 상태 전이 불가 (PENDING 아님)",
+            "error.ai-report.not-pending"
+    ),
+    COMPLETION_DATA_INVALID(
+            HttpStatus.BAD_REQUEST,
+            "AI-REPORT-005",
+            "분석 리포트 완료 데이터 누락",
+            "error.ai-report.completion-data-invalid"
     );
 
     private final HttpStatus status;
