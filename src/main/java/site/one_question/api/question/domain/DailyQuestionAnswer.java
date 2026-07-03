@@ -15,7 +15,7 @@ import site.one_question.api.member.domain.Member;
 @Table(name = "daily_question_answer")
 public class DailyQuestionAnswer extends BaseEntity {
 
-    private static final int MAX_CONTENT_LENGTH = 5000;
+    public static final int MAX_CONTENT_LENGTH = 5000;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
