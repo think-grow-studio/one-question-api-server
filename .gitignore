@@ -53,3 +53,5 @@ AuthKey_*
 
 # macOS
 .DS_Store
+### Serena MCP (local agent memories)
+.serena/
