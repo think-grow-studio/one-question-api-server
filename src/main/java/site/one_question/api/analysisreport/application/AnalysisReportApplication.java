@@ -58,7 +58,7 @@ public class AnalysisReportApplication {
         if (existingJob.isPresent()) {
             BackgroundJob backgroundJob = existingJob.get();
             backgroundJob.validateSameRequestHash(requestHash);
-            AnalysisReport analysisReport = analysisReportService.findByBackgroundJobOrThrow(backgroundJob);
+            AnalysisReport analysisReport = analysisReportService.findByBackgroundJob(backgroundJob);
             return CreateAnalysisReportResponse.from(backgroundJob, analysisReport);
         }
 

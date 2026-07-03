@@ -25,12 +25,6 @@ public enum AnalysisReportExceptionSpec implements ExceptionSpec {
             "AI-REPORT-003",
             "분석 리포트 소스 답변 소유권 오류",
             "error.ai-report.source-answer-not-owned"
-    ),
-    REPORT_NOT_FOUND_FOR_JOB(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            "AI-REPORT-004",
-            "백그라운드 작업에 대응하는 분석 리포트 없음",
-            "error.ai-report.not-found-for-job"
     );
 
     private final HttpStatus status;

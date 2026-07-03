@@ -3,7 +3,6 @@ package site.one_question.api.analysisreport.domain;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import site.one_question.api.backgroundjob.domain.BackgroundJob;
-import site.one_question.api.analysisreport.domain.exception.AnalysisReportNotFoundForJobException;
 
 @Service
 @RequiredArgsConstructor
@@ -15,8 +14,9 @@ public class AnalysisReportService {
         return analysisReportRepository.save(analysisReport);
     }
 
-    public AnalysisReport findByBackgroundJobOrThrow(BackgroundJob backgroundJob) {
+    public AnalysisReport findByBackgroundJob(BackgroundJob backgroundJob) {
         return analysisReportRepository.findByBackgroundJob(backgroundJob)
-                .orElseThrow(() -> new AnalysisReportNotFoundForJobException(backgroundJob.getId()));
+                .orElseThrow(() -> new IllegalStateException(
+                        "analysis report missing for background job: " + backgroundJob.getId()));
     }
 }
