@@ -58,6 +58,8 @@ site.one_question
 │   ├── question/                 # 개인 데일리 질문: 질문 서빙, 사이클, 답변, 좋아요, 히스토리
 │   ├── publicquestion/           # 공개 데일리 질문: 하루 1개 공용 질문, 익명 답변·좋아요
 │   ├── answerpost/               # 답변 공개(피드) 게시, 피드 조회, 좋아요
+│   ├── analysisreport/           # AI 분석 리포트 생성 요청, 리포트 소스 스냅샷
+│   ├── backgroundjob/            # SQS 발행 대기용 백그라운드 작업
 │   ├── notification/             # FCM 토큰 등록, 질문 리마인드 설정, 리마인드 스케줄러
 │   ├── app_version/              # 앱 최소/최신 버전, 서버 라이브 여부 (강제 업데이트 판단용)
 │   └── health/                   # 헬스체크
@@ -83,6 +85,8 @@ site.one_question
 - **PublicDailyQuestion / PublicDailyQuestionAnswer** — 전체 공용 "오늘의 질문"과 익명 답변.
   익명 닉네임(`AnonymousNickname`), 좋아요, 스케줄러(`PublicDailyQuestionProvisionScheduler`)가 매일 프로비저닝
 - **AnswerPost** — 개인 답변을 공개 피드에 게시한 것. 좋아요(`AnswerPostLike`) 지원
+- **BackgroundJob / AnalysisReport / AnalysisReportSource** — AI 분석 리포트 비동기 처리 요청.
+  API 요청 시 본인의 개인 답변 10~15개를 검증하고 `PENDING` 작업, 리포트, 소스 스냅샷을 생성
 - **FcmToken / QuestionReminderSetting** — 기기별 푸시 토큰과 회원별 리마인드 시간 설정.
   `QuestionRemindScheduler`가 설정 시간에 맞춰 FCM 발송 (ShedLock으로 단일 실행 보장)
 - **RefreshToken** — 리프레시 토큰 저장·회전(rotation) 검증

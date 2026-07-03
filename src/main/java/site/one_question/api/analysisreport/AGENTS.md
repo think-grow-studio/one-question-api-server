@@ -1,0 +1,19 @@
+# analysisreport 도메인 — AI 분석 리포트
+
+이 컨텍스트를 수정할 때는 루트 `README.md`의 레이어 규칙을 따른다.
+
+## 불변식
+
+- 리포트 생성 요청은 **본인의 개인 DailyQuestionAnswer 10~15개**만 소스로 받을 수 있다.
+- 지원하는 리포트 타입은 `THINKING_PATTERN`(사고 패턴 분석), `WARM_REFLECTION`(따듯한 회고 편지)이다.
+- 소스 답변 ID의 개수/중복 검증은 `AnalysisReportSourceAnswerIds`가 담당한다. 중복이 있으면 리포트와 백그라운드 작업을 만들지 않는다. 요청의 ID 순서는 의미가 없다.
+- 요청 ID와 조회 결과의 개수 대조(누락·비소유 탐지)는 application이 수행한다. `AnalysisReportSourceService`는 답변 소유권을 직접 검증(`isOwnedBy`)한 뒤 소스 스냅샷을 생성한다. `seq_no`는 질문 날짜(`question_date`) 내림차순으로 부여한다 — 1번이 가장 최신.
+- 리포트 생성 API는 한 트랜잭션에서 `background_job(PENDING)`, `analysis_report`, `analysis_report_source`를 함께 생성한다.
+- `analysis_report_source`는 요청 시점의 질문/답변 내용을 스냅샷으로 저장한다. 이후 답변이 수정돼도 이미 생성된 리포트 소스는 바꾸지 않는다.
+- 클라이언트는 생성 요청마다 `Idempotency-Key` 헤더를 보낸다. 같은 생성 의도를 재시도할 때만 같은 키를 재사용한다.
+- 멱등성 범위는 `(memberId, jobType, idempotencyKey)`이다. 같은 사용자가 같은 작업 타입을 여러 번 생성하려면 매번 새 멱등키를 사용한다.
+- 같은 멱등키와 같은 요청 payload는 기존 `background_job`/`analysis_report` 응답으로 수렴한다.
+- 같은 멱등키로 다른 요청 payload를 보내면 `BACKGROUND-JOB-003`으로 거절한다.
+- `background_job.request_hash`는 멱등키 재사용 시 payload 동일성 검증용이며, dedupe 기준이 아니다.
+- `background_job.job_data`에는 작업 입력(`memberId`, `reportType`, `dailyQuestionAnswerIds`)만 JSON 문자열로 저장하며, 생성 시점에 확정된 후 갱신하지 않는다. `analysisReportId`는 job_data에 넣지 않는다 — SQS 발행자가 발행 시점에 `background_job_id`(1:1 유니크)로 리포트를 역조회해 메시지에 포함한다.
+- `analysis_report.result`, `provider`, `model`, `llm_options`는 AI 실행 완료 시 채워진다. 실행 전에는 NULL이며, "아직 미실행" 상태의 진실은 `background_job.status`가 담당한다.
