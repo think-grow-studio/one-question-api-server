@@ -116,15 +116,12 @@ class CreateAnalysisReportIntegrateTest extends IntegrateTest {
             assertThat(asLong(jobData.get("memberId")))
                     .as("job_data에 회원 ID가 포함되어야 함")
                     .isEqualTo(member.getId());
-            assertThat(jobData)
-                    .as("job_data는 작업 입력만 담고 리포트 ID는 포함하지 않아야 함 (발행자가 job ID로 역조회)")
-                    .doesNotContainKey("analysisReportId");
             assertThat(jobData.get("reportType"))
                     .as("job_data에 리포트 타입이 포함되어야 함")
                     .isEqualTo("THINKING_PATTERN");
-            assertThat(asLongList(jobData.get("dailyQuestionAnswerIds")))
-                    .as("job_data에 요청한 답변 ID 목록이 포함되어야 함")
-                    .containsExactlyElementsOf(answerIds);
+            assertThat(jobData)
+                    .as("job_data는 memberId/reportType만 담는다 — 리포트 ID는 발행자가 역조회, 소스 목록은 analysis_report_source가 원천")
+                    .containsOnlyKeys("memberId", "reportType");
 
             assertThat(report.getReportType())
                     .as("리포트 타입이 저장되어야 함")
@@ -419,11 +416,5 @@ class CreateAnalysisReportIntegrateTest extends IntegrateTest {
 
     private long asLong(Object value) {
         return ((Number) value).longValue();
-    }
-
-    private List<Long> asLongList(Object value) {
-        return ((List<?>) value).stream()
-                .map(this::asLong)
-                .toList();
     }
 }

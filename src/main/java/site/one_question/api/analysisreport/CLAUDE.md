@@ -15,7 +15,7 @@
 - 같은 멱등키와 같은 요청 payload는 기존 `background_job`/`analysis_report` 응답으로 수렴한다.
 - 같은 멱등키로 다른 요청 payload를 보내면 `BACKGROUND-JOB-003`으로 거절한다.
 - `background_job.request_hash`는 멱등키 재사용 시 payload 동일성 검증용이며, dedupe 기준이 아니다.
-- `background_job.job_data`에는 작업 입력(`memberId`, `reportType`, `dailyQuestionAnswerIds`)만 JSON 문자열로 저장하며, 생성 시점에 확정된 후 갱신하지 않는다. `analysisReportId`는 job_data에 넣지 않는다 — SQS 발행자가 발행 시점에 `background_job_id`(1:1 유니크)로 리포트를 역조회해 메시지에 포함한다.
+- `background_job.job_data`에는 `memberId`, `reportType`만 JSON 문자열로 저장하며, 생성 시점에 확정된 후 갱신하지 않는다. `analysisReportId`는 SQS 발행자가 발행 시점에 `background_job_id`(1:1 유니크)로 역조회해 메시지에 포함하고, 소스 답변 목록은 `analysis_report_source`가 원천이므로 job_data에 중복 저장하지 않는다.
 - `analysis_report.status`(PENDING/COMPLETED/FAILED)가 리포트 라이프사이클을 소유한다. 전이는 엔티티 메서드(`complete`/`fail`)로만 하며, PENDING에서만 전이할 수 있다.
 - `result`, `provider`, `model`, `llm_options`는 `complete()`가 COMPLETED 전이와 함께 원자적으로 채운다. COMPLETED가 아니면 항상 NULL이다.
 - `background_job.status`는 큐 발행/처리 관점의 운영 상태이고, 클라이언트향 리포트 상태는 `analysis_report.status`를 본다. 워커는 처리 결과를 두 상태 모두에 반영해야 한다.

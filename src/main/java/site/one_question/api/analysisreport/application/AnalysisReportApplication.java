@@ -71,7 +71,7 @@ public class AnalysisReportApplication {
         BackgroundJob backgroundJob = backgroundJobService.save(BackgroundJob.create(
                 BackgroundJobType.ANALYSIS_REPORT,
                 member,
-                createJobData(memberId, reportType, sourceIds),
+                createJobData(memberId, reportType),
                 getTraceId(),
                 idempotencyKey,
                 requestHash
@@ -84,15 +84,10 @@ public class AnalysisReportApplication {
         return CreateAnalysisReportResponse.from(backgroundJob, analysisReport);
     }
 
-    private String createJobData(
-            Long memberId,
-            AnalysisReportType reportType,
-            AnalysisReportSourceAnswerIds sourceAnswerIds
-    ) {
+    private String createJobData(Long memberId, AnalysisReportType reportType) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("memberId", memberId);
         payload.put("reportType", reportType.name());
-        payload.put("dailyQuestionAnswerIds", sourceAnswerIds.values());
         return toJson(payload);
     }
 
