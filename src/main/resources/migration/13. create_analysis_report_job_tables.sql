@@ -6,14 +6,16 @@ CREATE TABLE background_job (
     job_type        VARCHAR2(100)             NOT NULL,
     member_id       NUMBER                    NOT NULL,
     job_data        CLOB                      NOT NULL,
-    trace_id        VARCHAR2(100)             NOT NULL,
+    correlation_id  VARCHAR2(100)             NOT NULL,
     idempotency_key VARCHAR2(100)             NOT NULL,
     request_hash    VARCHAR2(64)              NOT NULL,
     status          VARCHAR2(30)              NOT NULL,
-    requested_at    TIMESTAMP WITH TIME ZONE  NOT NULL,
+    scheduled_at    TIMESTAMP WITH TIME ZONE  NOT NULL,
     started_at      TIMESTAMP WITH TIME ZONE,
     finished_at     TIMESTAMP WITH TIME ZONE,
     next_retry_at   TIMESTAMP WITH TIME ZONE,
+    publish_claim_id    VARCHAR2(36),
+    publish_claim_until TIMESTAMP WITH TIME ZONE,
     retry_count     NUMBER DEFAULT 0          NOT NULL,
     error_code      VARCHAR2(50),
     error_reason    VARCHAR2(255),
@@ -25,9 +27,8 @@ CREATE TABLE background_job (
     CONSTRAINT uk_background_job_idempotency UNIQUE (member_id, job_type, idempotency_key)
 );
 
-CREATE INDEX idx_background_job_status_requested ON background_job (status, requested_at);
-CREATE INDEX idx_background_job_next_retry ON background_job (next_retry_at);
-CREATE INDEX idx_background_job_member_requested ON background_job (member_id, requested_at DESC);
+CREATE INDEX idx_background_job_status_scheduled ON background_job (status, scheduled_at);
+CREATE INDEX idx_background_job_publish_claim ON background_job (status, publish_claim_until);
 
 -- ============================================
 -- analysis_report : AI 분석 리포트

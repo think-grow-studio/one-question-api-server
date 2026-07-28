@@ -51,8 +51,12 @@ public class BackgroundJob extends BaseEntity {
     @Column(name = "job_data", nullable = false, columnDefinition = "CLOB")
     private String jobData;
 
-    @Column(name = "trace_id", nullable = false, length = 100)
-    private String traceId;
+    /**
+     * 이 작업을 만든 원 요청과 로그를 연결하기 위한 correlation id.
+     * 요청 문맥이 있으면 그 요청 id, 없으면(배치/시스템 생성) caller가 새로 생성해 넣는다.
+     */
+    @Column(name = "correlation_id", nullable = false, length = 100)
+    private String correlationId;
 
     @Column(name = "idempotency_key", nullable = false, length = 100)
     private String idempotencyKey;
@@ -64,8 +68,22 @@ public class BackgroundJob extends BaseEntity {
     @Column(nullable = false, length = 30)
     private BackgroundJobStatus status;
 
-    @Column(name = "requested_at", nullable = false)
-    private Instant requestedAt;
+    /**
+     * 현재 메시지 발행 시도의 소유권 식별자.
+     * lease 만료 후 과거 발행자가 새 발행자의 상태를 덮어쓰지 못하게 CAS 조건에 사용한다.
+     */
+    @Column(name = "publish_claim_id", length = 36)
+    private String publishClaimId;
+
+    /**
+     * 메시지 발행 선점의 만료 시각.
+     * 이 시각이 지나면 중단된 PUBLISHING 작업을 재시도 대상으로 복구한다.
+     */
+    @Column(name = "publish_claim_until")
+    private Instant publishClaimUntil;
+
+    @Column(name = "scheduled_at", nullable = false)
+    private Instant scheduledAt;
 
     @Column(name = "started_at")
     private Instant startedAt;
@@ -89,7 +107,7 @@ public class BackgroundJob extends BaseEntity {
             BackgroundJobType jobType,
             Member member,
             String jobData,
-            String traceId,
+            String correlationId,
             IdempotencyKey idempotencyKey,
             RequestHash requestHash
     ) {
@@ -98,10 +116,12 @@ public class BackgroundJob extends BaseEntity {
                 jobType,
                 member,
                 jobData,
-                traceId,
+                correlationId,
                 idempotencyKey.value(),
                 requestHash.value(),
                 BackgroundJobStatus.PENDING,
+                null,
+                null,
                 Instant.now(),
                 null,
                 null,

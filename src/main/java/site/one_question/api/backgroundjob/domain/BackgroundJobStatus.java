@@ -2,7 +2,8 @@ package site.one_question.api.backgroundjob.domain;
 
 public enum BackgroundJobStatus {
     PENDING,
-    ENQUEUED,
+    PUBLISHING,
+    QUEUED,
     PROCESSING,
     SUCCEEDED,
     FAILED
