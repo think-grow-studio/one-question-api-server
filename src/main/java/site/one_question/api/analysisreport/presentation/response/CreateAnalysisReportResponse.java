@@ -34,7 +34,7 @@ public record CreateAnalysisReportResponse(
                 report.getId(),
                 report.getReportType(),
                 job.getStatus().name(),
-                job.getRequestedAt()
+                job.getCreatedAt()
         );
     }
 }

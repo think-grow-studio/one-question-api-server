@@ -72,7 +72,7 @@ public class AnalysisReportApplication {
                 BackgroundJobType.ANALYSIS_REPORT,
                 member,
                 createJobData(memberId, reportType),
-                getTraceId(),
+                resolveCorrelationId(),
                 idempotencyKey,
                 requestHash
         ));
@@ -97,6 +97,7 @@ public class AnalysisReportApplication {
     ) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("reportType", reportType.name());
+        // TODO: 답변 ID 순서는 의미가 없으므로 정렬해 정규화한 뒤 해시를 생성해야 한다. / sourceIds에서 getOrderByAsc와 같은 메서드를 만들어서 반환하는 것 고려해보기
         payload.put("dailyQuestionAnswerIds", sourceAnswerIds.values());
         return RequestHash.sha256(toJson(payload));
     }
@@ -109,8 +110,9 @@ public class AnalysisReportApplication {
         }
     }
 
-    private String getTraceId() {
-        String traceId = MDC.get(MdcKey.REQUEST_ID);
-        return traceId != null ? traceId : UUID.randomUUID().toString();
+    private String resolveCorrelationId() {
+        // 원 요청 문맥이 있으면 그 요청 id, 없으면(비-HTTP 생성) 새 correlation id를 만든다.
+        String requestId = MDC.get(MdcKey.REQUEST_ID);
+        return requestId != null ? requestId : UUID.randomUUID().toString();
     }
 }

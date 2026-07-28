@@ -19,4 +19,10 @@ public class AnalysisReportService {
                 .orElseThrow(() -> new IllegalStateException(
                         "analysis report missing for background job: " + backgroundJob.getId()));
     }
+
+    public AnalysisReport findByBackgroundJobId(Long backgroundJobId) {
+        return analysisReportRepository.findByBackgroundJobId(backgroundJobId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "analysis report missing for background job: " + backgroundJobId));
+    }
 }
