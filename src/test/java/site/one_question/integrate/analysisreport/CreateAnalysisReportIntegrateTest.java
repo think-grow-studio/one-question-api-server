@@ -99,7 +99,7 @@ class CreateAnalysisReportIntegrateTest extends IntegrateTest {
             assertThat(job.getStatus())
                     .as("초기 작업 상태는 PENDING이어야 함")
                     .isEqualTo(BackgroundJobStatus.PENDING);
-            assertThat(job.getTraceId())
+            assertThat(job.getCorrelationId())
                     .as("추적 ID가 저장되어야 함")
                     .isNotBlank();
             assertThat(job.getIdempotencyKey())

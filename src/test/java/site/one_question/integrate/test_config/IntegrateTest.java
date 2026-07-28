@@ -17,6 +17,7 @@ import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.GoogleTokenVerifier;
 import site.one_question.api.analysisreport.domain.AnalysisReportRepository;
+import site.one_question.api.analysisreport.domain.AnalysisReportJobQueueGateway;
 import site.one_question.api.analysisreport.domain.AnalysisReportSourceRepository;
 import site.one_question.api.answerpost.domain.AnswerPostLikeRepository;
 import site.one_question.api.answerpost.domain.AnswerPostRepository;
@@ -172,6 +173,9 @@ public abstract class IntegrateTest {
     @Autowired
     protected FirebaseTokenVerifier firebaseTokenVerifier;
 
+    @Autowired
+    protected AnalysisReportJobQueueGateway analysisReportJobQueueGateway;
+
     // API URL 상수
     protected static final String API_V1 = "/api/v1";
     protected static final String AUTH_API = API_V1 + "/auth";
@@ -186,7 +190,8 @@ public abstract class IntegrateTest {
 
     @BeforeEach
     void resetMocks() {
-        Mockito.reset(googleTokenVerifier, appleTokenVerifier, firebaseTokenVerifier);
+        Mockito.reset(googleTokenVerifier, appleTokenVerifier, firebaseTokenVerifier,
+                analysisReportJobQueueGateway);
     }
 
     @BeforeEach
