@@ -13,6 +13,7 @@
 | 인증 | JWT (jjwt) + OAuth (Google, Apple, Firebase 익명) |
 | 푸시 알림 | Firebase Admin SDK (FCM) |
 | 스케줄러 | Spring Scheduler + ShedLock (다중 인스턴스 중복 실행 방지) |
+| 메시징 | AWS SQS (AI 분석 리포트 백그라운드 작업 발행) |
 | 문서화 | springdoc-openapi (Swagger UI) |
 | 모니터링 | Actuator + Prometheus (관리 포트 8081, 내부 전용) |
 | 로깅 | Logback + MDC, 에러는 Discord Webhook Appender로 알림 |
@@ -59,7 +60,7 @@ site.one_question
 │   ├── publicquestion/           # 공개 데일리 질문: 하루 1개 공용 질문, 익명 답변·좋아요
 │   ├── answerpost/               # 답변 공개(피드) 게시, 피드 조회, 좋아요
 │   ├── analysisreport/           # AI 분석 리포트 생성 요청, 리포트 소스 스냅샷
-│   ├── backgroundjob/            # SQS 발행 대기용 백그라운드 작업
+│   ├── backgroundjob/            # 외부 큐 발행 작업, 공통 Publisher Scheduler와 claim 복구
 │   ├── notification/             # FCM 토큰 등록, 질문 리마인드 설정, 리마인드 스케줄러
 │   ├── app_version/              # 앱 최소/최신 버전, 서버 라이브 여부 (강제 업데이트 판단용)
 │   └── health/                   # 헬스체크
@@ -86,10 +87,28 @@ site.one_question
   익명 닉네임(`AnonymousNickname`), 좋아요, 스케줄러(`PublicDailyQuestionProvisionScheduler`)가 매일 프로비저닝
 - **AnswerPost** — 개인 답변을 공개 피드에 게시한 것. 좋아요(`AnswerPostLike`) 지원
 - **BackgroundJob / AnalysisReport / AnalysisReportSource** — AI 분석 리포트 비동기 처리 요청.
-  API 요청 시 본인의 개인 답변 10~15개를 검증하고 `PENDING` 작업, 리포트, 소스 스냅샷을 생성
+  API 요청 시 본인의 개인 답변 10~15개를 검증하고 `PENDING` 작업, 리포트, 소스 스냅샷을 생성.
+  공통 5초 Publisher Scheduler가 작업을 CAS claim한 뒤 타입별 Publisher로 외부 큐에 발행
 - **FcmToken / QuestionReminderSetting** — 기기별 푸시 토큰과 회원별 리마인드 시간 설정.
   `QuestionRemindScheduler`가 설정 시간에 맞춰 FCM 발송 (ShedLock으로 단일 실행 보장)
 - **RefreshToken** — 리프레시 토큰 저장·회전(rotation) 검증
+
+### BackgroundJob Worker 수신 계약
+
+SQS 발행은 DB 트랜잭션 밖에서 실행되므로 메시지가 보이는 시점에 DB 작업은 아직
+`PUBLISHING`일 수 있다. Worker는 메시지의 `jobId`로 DB 상태를 다시 확인하고 다음
+계약을 지킨다.
+
+- `PENDING` 또는 `PUBLISHING`: 조기 수신이다. 업무 처리를 시작하지 않고 메시지를
+  acknowledge/delete하지 않는다. visibility timeout 이후 재전달되게 둔다.
+- `QUEUED`: `QUEUED → PROCESSING` CAS에 성공한 Worker만 업무 처리를 시작한다.
+- `PROCESSING`, `SUCCEEDED`, `FAILED`: DB에 이미 처리 소유권 또는 종결 결정이
+  durable하게 기록된 중복 수신이므로 업무를 반복하지 않고 acknowledge/delete할 수 있다.
+- `QUEUED → PROCESSING`을 선점한 Worker도 처리 결과를 DB에 durable하게 반영한 뒤에만
+  acknowledge/delete한다. 결과를 확정하지 못한 재시도 가능 오류에서는 삭제하지 않는다.
+
+즉 Worker는 단순히 메시지를 받았다는 이유로 삭제하지 않으며, durable한 종결 또는
+이미 처리 중이라는 DB 결정을 확인한 뒤에만 삭제한다.
 
 ## 공통 컨벤션
 
@@ -128,5 +147,6 @@ Swagger UI: `http://localhost:8080/swagger-ui.html`
 
 - `src/test/java/site/one_question/CLAUDE.md` — 테스트 작성 패턴·규칙
 - `JPA_INTERNAL_BEHAVIOR.md` — JPA 동작 관련 정리
+- `OPTIMISTIC_LOCK_DDD.md` — 낙관적 락과 DDD: 동시 상태 전이 설계 정리 (analysisreport 워커 설계 시 참고)
 - `DEADLOCK_REPORT.md`, `docs/` — 운영 장애 포스트모템 모음
 - `PR_GUIDE.md` — PR 작성 가이드
