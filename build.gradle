@@ -47,6 +47,10 @@ dependencies {
 	// Firebase Admin SDK
 	implementation 'com.google.firebase:firebase-admin:9.4.3'
 
+	// AWS SDK v2 - SQS (백그라운드 작업 발행)
+	implementation platform('software.amazon.awssdk:bom:2.29.52')
+	implementation 'software.amazon.awssdk:sqs'
+
 	// ShedLock - 분산 스케줄러 중복 실행 방지
 	implementation 'net.javacrumbs.shedlock:shedlock-spring:7.7.0'
 	implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:7.7.0'

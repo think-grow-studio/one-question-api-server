@@ -1,0 +1,118 @@
+package site.one_question.api.backgroundjob.application;
+
+import java.time.Instant;
+import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
+import site.one_question.api.backgroundjob.domain.BackgroundJobPublisher;
+import site.one_question.api.backgroundjob.domain.BackgroundJobPublisherRegistry;
+import site.one_question.api.backgroundjob.domain.BackgroundJobService;
+import site.one_question.api.backgroundjob.domain.ExpiredPublishClaim;
+import site.one_question.api.backgroundjob.domain.PendingPublishTarget;
+import site.one_question.api.backgroundjob.domain.PublishFailureTransition;
+import site.one_question.api.backgroundjob.domain.PublishRetryPolicy;
+
+@Slf4j
+@Service
+public class BackgroundJobPublishApplication {
+
+    private static final int PUBLISH_BATCH_SIZE = 50;
+
+    private final BackgroundJobPublisherRegistry publisherRegistry;
+    private final BackgroundJobService backgroundJobService;
+    private final BackgroundJobPublishProcessor processor;
+    private final PublishRetryPolicy retryPolicy;
+    private final TransactionTemplate txTemplate;
+
+    public BackgroundJobPublishApplication(
+            BackgroundJobPublisherRegistry publisherRegistry,
+            BackgroundJobService backgroundJobService,
+            BackgroundJobPublishProcessor processor,
+            PublishRetryPolicy retryPolicy,
+            PlatformTransactionManager transactionManager
+    ) {
+        this.publisherRegistry = publisherRegistry;
+        this.backgroundJobService = backgroundJobService;
+        this.processor = processor;
+        this.retryPolicy = retryPolicy;
+        this.txTemplate = new TransactionTemplate(transactionManager);
+        this.txTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    }
+
+    public void publishPendingJobs() {
+        Instant now = Instant.now();
+        recoverExpiredClaims(now);
+        publishPendingJobs(now);
+    }
+
+    private void recoverExpiredClaims(Instant recoveryNow) {
+        List<ExpiredPublishClaim> expiredClaims =
+                backgroundJobService.findExpiredPublishClaims(recoveryNow, PUBLISH_BATCH_SIZE);
+        for (ExpiredPublishClaim expiredClaim : expiredClaims) {
+            try {
+                recoverExpiredClaim(expiredClaim, recoveryNow);
+            } catch (Exception e) {
+                log.error("만료된 BackgroundJob 발행 claim 복구 실패: jobId={}",
+                        expiredClaim.id(), e);
+            }
+        }
+    }
+
+    private void recoverExpiredClaim(
+            ExpiredPublishClaim expiredClaim,
+            Instant recoveryNow
+    ) {
+        Exception cause = new IllegalStateException(
+                "BackgroundJob 발행 claim이 만료되었습니다: jobId=" + expiredClaim.id());
+        PublishFailureTransition transition =
+                retryPolicy.onFailure(expiredClaim.retryCount(), recoveryNow, cause.getMessage());
+
+      int updated = txTemplate.execute(status ->
+          backgroundJobService.recoverExpiredPublish(
+              expiredClaim.id(),
+              expiredClaim.claimId(),
+              recoveryNow,
+              transition.nextStatus(),
+              transition.retryCount(),
+              transition.nextRetryAt(),
+              transition.finishedAt(),
+              transition.errorCode(),
+              transition.errorReason(),
+              recoveryNow));
+      if (updated == 1 && transition.exhausted()) {
+            BackgroundJobPublisher publisher = publisherRegistry.get(expiredClaim.jobType());
+            notifyExhausted(publisher, expiredClaim.id(), cause);
+        }
+    }
+
+    private void publishPendingJobs(Instant now) {
+        List<PendingPublishTarget> targets =
+                backgroundJobService.findPendingPublishTargets(now, PUBLISH_BATCH_SIZE);
+        for (PendingPublishTarget target : targets) {
+            BackgroundJobPublisher publisher = publisherRegistry.get(target.jobType());
+            try {
+                PublishAttemptResult result = processor.process(target.id(), publisher);
+                if (result.isExhausted()) {
+                    notifyExhausted(publisher, target.id(), result.cause());
+                }
+            } catch (Exception e) {
+                log.error("BackgroundJob 발행 처리 실패: jobId={}", target.id(), e);
+            }
+        }
+    }
+
+    private void notifyExhausted(
+            BackgroundJobPublisher publisher,
+            Long jobId,
+            Exception cause
+    ) {
+        try {
+            publisher.onPublishExhausted(jobId, cause);
+        } catch (Exception callbackException) {
+            log.error("BackgroundJob 발행 실패 후처리 실패: jobId={}", jobId, callbackException);
+        }
+    }
+}
