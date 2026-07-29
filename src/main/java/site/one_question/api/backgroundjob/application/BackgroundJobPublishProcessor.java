@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -15,6 +16,7 @@ import site.one_question.api.backgroundjob.domain.ClaimedBackgroundJob;
 import site.one_question.api.backgroundjob.domain.PublishFailureTransition;
 import site.one_question.api.backgroundjob.domain.PublishRetryPolicy;
 
+@Slf4j
 @Component
 public class BackgroundJobPublishProcessor {
 
@@ -92,8 +94,11 @@ public class BackgroundJobPublishProcessor {
         if (updated != 1) {
             return PublishAttemptResult.skipped();
         }
-        return transition.exhausted()
-                ? PublishAttemptResult.exhausted(cause)
-                : PublishAttemptResult.retryScheduled();
+        if (transition.exhausted()) {
+            return PublishAttemptResult.exhausted(cause);
+        }
+        log.warn("BackgroundJob 발행 실패, 재시도 예약: jobId={}, retryCount={}, nextRetryAt={}",
+                job.id(), transition.retryCount(), transition.nextRetryAt(), cause);
+        return PublishAttemptResult.retryScheduled();
     }
 }

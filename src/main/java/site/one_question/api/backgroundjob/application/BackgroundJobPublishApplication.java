@@ -51,6 +51,10 @@ public class BackgroundJobPublishApplication {
     private void recoverExpiredClaims(Instant recoveryNow) {
         List<ExpiredPublishClaim> expiredClaims =
                 backgroundJobService.findExpiredPublishClaims(recoveryNow, PUBLISH_BATCH_SIZE);
+        if (expiredClaims.isEmpty()) {
+            return;
+        }
+        log.warn("만료된 BackgroundJob 발행 claim {}건 발견, 복구를 시도합니다", expiredClaims.size());
         for (ExpiredPublishClaim expiredClaim : expiredClaims) {
             try {
                 recoverExpiredClaim(expiredClaim, recoveryNow);
@@ -82,26 +86,52 @@ public class BackgroundJobPublishApplication {
               transition.errorCode(),
               transition.errorReason(),
               recoveryNow));
-      if (updated == 1 && transition.exhausted()) {
+      if (updated != 1) {
+            log.debug("만료된 claim 복구 스킵(이미 다른 프로세스가 처리함): jobId={}", expiredClaim.id());
+            return;
+        }
+        if (transition.exhausted()) {
+            log.warn("만료된 claim 복구 후 재시도 소진으로 BackgroundJob 실패 처리: jobId={}", expiredClaim.id());
             BackgroundJobPublisher publisher = publisherRegistry.get(expiredClaim.jobType());
             notifyExhausted(publisher, expiredClaim.id(), cause);
+        } else {
+            log.info("만료된 claim 복구 후 재시도 예약: jobId={}, retryCount={}, nextRetryAt={}",
+                    expiredClaim.id(), transition.retryCount(), transition.nextRetryAt());
         }
     }
 
     private void publishPendingJobs(Instant now) {
         List<PendingPublishTarget> targets =
                 backgroundJobService.findPendingPublishTargets(now, PUBLISH_BATCH_SIZE);
+        if (targets.isEmpty()) {
+            return;
+        }
+        log.info("발행 대상 BackgroundJob {}건 조회됨", targets.size());
+        int queued = 0;
+        int retryScheduled = 0;
+        int exhausted = 0;
+        int skipped = 0;
         for (PendingPublishTarget target : targets) {
             BackgroundJobPublisher publisher = publisherRegistry.get(target.jobType());
             try {
                 PublishAttemptResult result = processor.process(target.id(), publisher);
-                if (result.isExhausted()) {
-                    notifyExhausted(publisher, target.id(), result.cause());
+                switch (result.kind()) {
+                    case QUEUED -> queued++;
+                    case RETRY_SCHEDULED -> retryScheduled++;
+                    case SKIPPED -> skipped++;
+                    case EXHAUSTED -> {
+                        exhausted++;
+                        log.warn("BackgroundJob 발행 재시도 소진, FAILED 처리: jobId={}",
+                                target.id(), result.cause());
+                        notifyExhausted(publisher, target.id(), result.cause());
+                    }
                 }
             } catch (Exception e) {
                 log.error("BackgroundJob 발행 처리 실패: jobId={}", target.id(), e);
             }
         }
+        log.info("BackgroundJob 발행 배치 완료: 전체={}, 성공={}, 재시도예약={}, 소진={}, 스킵={}",
+                targets.size(), queued, retryScheduled, exhausted, skipped);
     }
 
     private void notifyExhausted(
