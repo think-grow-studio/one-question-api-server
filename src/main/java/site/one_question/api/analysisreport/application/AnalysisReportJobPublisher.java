@@ -53,6 +53,12 @@ public class AnalysisReportJobPublisher implements BackgroundJobPublisher {
     public void onPublishExhausted(Long jobId, Exception cause) {
         requiresNew.executeWithoutResult(status -> {
             Long reportId = backgroundJobService.findById(jobId).getReferenceId();
+            if (reportId == null) {
+                // ANALYSIS_REPORT job 은 항상 대상 리포트를 가리킨다. NULL 은 데이터 오염이므로
+                // 어느 job 인지 알 수 있는 메시지로 실패시킨다.
+                throw new IllegalStateException(
+                        "ANALYSIS_REPORT job has no reference_id: " + jobId);
+            }
             analysisReportService.findById(reportId).fail();
         });
     }

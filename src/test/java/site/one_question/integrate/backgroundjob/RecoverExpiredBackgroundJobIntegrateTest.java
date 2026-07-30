@@ -70,16 +70,51 @@ class RecoverExpiredBackgroundJobIntegrateTest extends IntegrateTest {
     }
 
     @Test
-    @DisplayName("최종 실패 callback이 실패해도 Job의 FAILED 상태는 유지된다")
-    void callback_failure_does_not_rollback_failed_job() {
+    @DisplayName("reference_id가 없는 데이터 오염 job도 FAILED 상태는 유지된다")
+    void callback_failure_on_missing_reference_does_not_rollback_failed_job() {
+        // reference_id 가 NULL 인 ANALYSIS_REPORT job 은 불변식 위반이다.
+        // 그래도 콜백 예외가 job 의 FAILED 를 롤백하지 않아야 한다.
         BackgroundJob orphanJob = testBackgroundJobUtils.createSave(member);
         recordPreviousFailures(orphanJob, 4);
         claimAsExpired(orphanJob, "expired-orphan");
 
         publishApplication.publishPendingJobs();
 
-        assertThat(backgroundJobRepository.findById(orphanJob.getId()).orElseThrow().getStatus())
+        BackgroundJob failed = backgroundJobRepository.findById(orphanJob.getId()).orElseThrow();
+        assertThat(failed.getStatus())
+                .as("콜백 실패는 별도 트랜잭션이므로 job의 FAILED를 되돌리지 않아야 함")
                 .isEqualTo(BackgroundJobStatus.FAILED);
+        assertThat(failed.getFinishedAt())
+                .as("재시도 소진 경로를 실제로 거쳤어야 함")
+                .isNotNull();
+        assertThat(failed.getRetryCount())
+                .as("재시도 소진 경로를 실제로 거쳤어야 함")
+                .isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("reference_id가 없는 리포트를 가리켜도(dangling) Job의 FAILED 상태는 유지된다")
+    void callback_failure_on_dangling_reference_does_not_rollback_failed_job() {
+        // reference_id 는 FK 가 없는 폴리모픽 참조라 대상이 사라질 수 있다.
+        // FK 를 없애면서 감수한 대가이므로 이 경로가 job 상태를 오염시키지 않는지 확인한다.
+        long deletedReportId = 999_999L;
+        BackgroundJob danglingJob = testBackgroundJobUtils.createSave_With_Reference(
+                member, deletedReportId);
+        recordPreviousFailures(danglingJob, 4);
+        claimAsExpired(danglingJob, "expired-dangling");
+
+        publishApplication.publishPendingJobs();
+
+        BackgroundJob failed = backgroundJobRepository.findById(danglingJob.getId()).orElseThrow();
+        assertThat(failed.getStatus())
+                .as("존재하지 않는 리포트를 가리켜도 job은 FAILED로 종결되어야 함")
+                .isEqualTo(BackgroundJobStatus.FAILED);
+        assertThat(failed.getFinishedAt())
+                .as("재시도 소진 경로를 실제로 거쳤어야 함")
+                .isNotNull();
+        assertThat(failed.getRetryCount())
+                .as("재시도 소진 경로를 실제로 거쳤어야 함")
+                .isEqualTo(5);
     }
 
     @Test
