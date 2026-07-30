@@ -28,10 +28,16 @@ import site.one_question.common.domain.BaseEntity;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(
         name = "background_job",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_background_job_idempotency",
-                columnNames = {"member_id", "job_type", "idempotency_key"}
-        )
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_background_job_idempotency",
+                        columnNames = {"member_id", "job_type", "idempotency_key"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_background_job_reference",
+                        columnNames = {"job_type", "reference_id"}
+                )
+        }
 )
 public class BackgroundJob extends BaseEntity {
 
@@ -46,6 +52,15 @@ public class BackgroundJob extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
+
+    /**
+     * 이 커맨드가 대상으로 하는 도메인 애그리거트의 id.
+     * 대상 타입은 {@code job_type} 이 결정하는 폴리모픽 참조이므로 FK 를 걸지 않는다.
+     * 대상 애그리거트가 없는 job 타입(배치·집계 등)은 NULL 이다.
+     * 생성 시점에 확정되는 불변 값이며 이후 갱신하지 않는다.
+     */
+    @Column(name = "reference_id")
+    private Long referenceId;
 
     /**
      * 이 커맨드의 파라미터 JSON. 도메인 행에 존재하지 않는 값만 담는다.
@@ -112,6 +127,7 @@ public class BackgroundJob extends BaseEntity {
     public static BackgroundJob create(
             BackgroundJobType jobType,
             Member member,
+            Long referenceId,
             String payload,
             String correlationId,
             IdempotencyKey idempotencyKey,
@@ -121,6 +137,7 @@ public class BackgroundJob extends BaseEntity {
                 null,
                 jobType,
                 member,
+                referenceId,
                 payload,
                 correlationId,
                 idempotencyKey.value(),

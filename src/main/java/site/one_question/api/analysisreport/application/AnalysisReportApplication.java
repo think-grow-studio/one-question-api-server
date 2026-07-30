@@ -71,6 +71,7 @@ public class AnalysisReportApplication {
         BackgroundJob backgroundJob = backgroundJobService.save(BackgroundJob.create(
                 BackgroundJobType.ANALYSIS_REPORT,
                 member,
+                null,
                 createPayload(memberId, reportType),
                 resolveCorrelationId(),
                 idempotencyKey,
