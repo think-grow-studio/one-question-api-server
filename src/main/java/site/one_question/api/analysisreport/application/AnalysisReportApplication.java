@@ -76,12 +76,9 @@ public class AnalysisReportApplication {
             throw new AnalysisReportSourceAnswerNotOwnedException(memberId);
         }
 
-        // report 를 먼저 만들어 id 를 확보한다. IDENTITY 전략이므로 save() 시점에 flush 되어
-        // 같은 트랜잭션 안에서 즉시 id 를 읽을 수 있다.
-        AnalysisReport analysisReport = analysisReportService.save(
-                AnalysisReport.createPending(member, reportType));
+        AnalysisReport analysisReport = analysisReportService.createPending(member, reportType);
 
-        BackgroundJob backgroundJob = backgroundJobService.save(BackgroundJob.create(
+        BackgroundJob backgroundJob = backgroundJobService.createPending(
                 BackgroundJobType.ANALYSIS_REPORT,
                 member,
                 analysisReport.getId(),
@@ -89,7 +86,7 @@ public class AnalysisReportApplication {
                 resolveCorrelationId(),
                 idempotencyKey,
                 requestHash
-        ));
+        );
 
         analysisReportSourceService.createAll(analysisReport, memberId, sourceAnswers);
 

@@ -2,6 +2,7 @@ package site.one_question.api.analysisreport.domain;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import site.one_question.api.member.domain.Member;
 
 @Service
 @RequiredArgsConstructor
@@ -9,8 +10,9 @@ public class AnalysisReportService {
 
     private final AnalysisReportRepository analysisReportRepository;
 
-    public AnalysisReport save(AnalysisReport analysisReport) {
-        return analysisReportRepository.save(analysisReport);
+    /** PENDING 리포트를 만들어 저장한다. 반환 시점에 id 가 확정된다(IDENTITY 전략). */
+    public AnalysisReport createPending(Member member, AnalysisReportType reportType) {
+        return analysisReportRepository.save(AnalysisReport.createPending(member, reportType));
     }
 
     public AnalysisReport findById(Long id) {

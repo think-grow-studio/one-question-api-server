@@ -6,6 +6,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import site.one_question.api.member.domain.Member;
 
 @Service
 @RequiredArgsConstructor
@@ -13,8 +14,25 @@ public class BackgroundJobService {
 
     private final BackgroundJobRepository backgroundJobRepository;
 
-    public BackgroundJob save(BackgroundJob backgroundJob) {
-        return backgroundJobRepository.save(backgroundJob);
+    /** PENDING 작업을 만들어 저장한다. */
+    public BackgroundJob createPending(
+            BackgroundJobType jobType,
+            Member member,
+            Long referenceId,
+            String payload,
+            String correlationId,
+            IdempotencyKey idempotencyKey,
+            RequestHash requestHash
+    ) {
+        return backgroundJobRepository.save(BackgroundJob.create(
+                jobType,
+                member,
+                referenceId,
+                payload,
+                correlationId,
+                idempotencyKey,
+                requestHash
+        ));
     }
 
     public BackgroundJob findById(Long jobId) {
