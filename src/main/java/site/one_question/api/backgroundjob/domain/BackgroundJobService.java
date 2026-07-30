@@ -19,7 +19,7 @@ public class BackgroundJobService {
             BackgroundJobType jobType,
             Member member,
             Long referenceId,
-            String payload,
+            JobPayload payload,
             String correlationId,
             IdempotencyKey idempotencyKey,
             RequestHash requestHash

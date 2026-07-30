@@ -128,7 +128,7 @@ public class BackgroundJob extends BaseEntity {
             BackgroundJobType jobType,
             Member member,
             Long referenceId,
-            String payload,
+            JobPayload payload,
             String correlationId,
             IdempotencyKey idempotencyKey,
             RequestHash requestHash
@@ -138,7 +138,7 @@ public class BackgroundJob extends BaseEntity {
                 jobType,
                 member,
                 referenceId,
-                payload,
+                payload.value(),
                 correlationId,
                 idempotencyKey.value(),
                 requestHash.value(),

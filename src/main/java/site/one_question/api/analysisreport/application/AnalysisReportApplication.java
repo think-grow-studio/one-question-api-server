@@ -22,6 +22,7 @@ import site.one_question.api.backgroundjob.domain.BackgroundJob;
 import site.one_question.api.backgroundjob.domain.BackgroundJobService;
 import site.one_question.api.backgroundjob.domain.BackgroundJobType;
 import site.one_question.api.backgroundjob.domain.IdempotencyKey;
+import site.one_question.api.backgroundjob.domain.JobPayload;
 import site.one_question.api.backgroundjob.domain.RequestHash;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberService;
@@ -33,13 +34,6 @@ import site.one_question.common.MdcKey;
 @Transactional
 @RequiredArgsConstructor
 public class AnalysisReportApplication {
-
-    /**
-     * ANALYSIS_REPORT 커맨드는 도메인 행 밖의 파라미터가 없다.
-     * memberId 는 {@code background_job.member_id}, reportId 는 {@code reference_id},
-     * reportType 은 {@code analysis_report.report_type} 이 원천이므로 중복 저장하지 않는다.
-     */
-    private static final String EMPTY_PAYLOAD = "{}";
 
     private final MemberService memberService;
     private final DailyQuestionAnswerService dailyQuestionAnswerService;
@@ -82,7 +76,9 @@ public class AnalysisReportApplication {
                 BackgroundJobType.ANALYSIS_REPORT,
                 member,
                 analysisReport.getId(),
-                EMPTY_PAYLOAD,
+                // 커맨드 파라미터가 없다 — memberId 는 member_id, reportId 는 reference_id,
+                // reportType 은 analysis_report.report_type 이 원천이다.
+                JobPayload.empty(),
                 resolveCorrelationId(),
                 idempotencyKey,
                 requestHash
