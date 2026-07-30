@@ -31,7 +31,7 @@ class RecoverExpiredBackgroundJobIntegrateTest extends IntegrateTest {
     @BeforeEach
     void setUp() {
         member = testMemberUtils.createSave();
-        job = testBackgroundJobUtils.createSave_With_JobData(
+        job = testBackgroundJobUtils.createSave_With_Payload(
                 member,
                 "{\"memberId\":" + member.getId()
                         + ",\"reportType\":\"THINKING_PATTERN\"}");
@@ -75,7 +75,7 @@ class RecoverExpiredBackgroundJobIntegrateTest extends IntegrateTest {
     @Test
     @DisplayName("최종 실패 callback이 실패해도 Job의 FAILED 상태는 유지된다")
     void callback_failure_does_not_rollback_failed_job() {
-        BackgroundJob orphanJob = testBackgroundJobUtils.createSave_With_JobData(
+        BackgroundJob orphanJob = testBackgroundJobUtils.createSave_With_Payload(
                 member,
                 "{\"memberId\":" + member.getId()
                         + ",\"reportType\":\"THINKING_PATTERN\"}");
@@ -91,12 +91,12 @@ class RecoverExpiredBackgroundJobIntegrateTest extends IntegrateTest {
     @Test
     @DisplayName("한 작업의 발행 실패는 다음 작업의 발행을 막지 않는다")
     void one_job_failure_does_not_stop_next_job() {
-        BackgroundJob failing = testBackgroundJobUtils.createSave_With_JobData(
+        BackgroundJob failing = testBackgroundJobUtils.createSave_With_Payload(
                 member,
                 "{\"memberId\":" + member.getId()
                         + ",\"reportType\":\"THINKING_PATTERN\"}");
         testAnalysisReportUtils.createSave(failing, member);
-        BackgroundJob valid = testBackgroundJobUtils.createSave_With_JobData(
+        BackgroundJob valid = testBackgroundJobUtils.createSave_With_Payload(
                 member,
                 "{\"memberId\":" + member.getId()
                         + ",\"reportType\":\"THINKING_PATTERN\"}");

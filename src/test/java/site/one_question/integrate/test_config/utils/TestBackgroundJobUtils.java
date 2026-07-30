@@ -24,17 +24,17 @@ public class TestBackgroundJobUtils {
     }
 
     public BackgroundJob createSave(Member member) {
-        return createSave_With_JobData(member, "{}");
+        return createSave_With_Payload(member, "{}");
     }
 
-    public BackgroundJob createSave_With_JobData(Member member, String jobData) {
+    public BackgroundJob createSave_With_Payload(Member member, String payload) {
         BackgroundJob job = BackgroundJob.create(
                 BackgroundJobType.ANALYSIS_REPORT,
                 member,
-                jobData,
+                payload,
                 UUID.randomUUID().toString(),
                 new IdempotencyKey(UUID.randomUUID().toString()),
-                RequestHash.sha256(jobData)
+                RequestHash.sha256(payload)
         );
         return repository.save(job);
     }

@@ -36,7 +36,7 @@ class PublishAnalysisReportJobIntegrateTest extends IntegrateTest {
     @BeforeEach
     void setup() {
         member = testMemberUtils.createSave();
-        job = testBackgroundJobUtils.createSave_With_JobData(
+        job = testBackgroundJobUtils.createSave_With_Payload(
                 member, "{\"memberId\":" + member.getId() + ",\"reportType\":\"THINKING_PATTERN\"}");
         report = testAnalysisReportUtils.createSave(job, member);
     }

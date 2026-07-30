@@ -47,9 +47,15 @@ public class BackgroundJob extends BaseEntity {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
+    /**
+     * 이 커맨드의 파라미터 JSON. 도메인 행에 존재하지 않는 값만 담는다.
+     * 담을 파라미터가 없으면 빈 객체 {@code "{}"}를 저장한다 — NULL 을 쓰지 않는 이유는
+     * 소비자(Python 워커 포함)에 null 분기가 영구히 생기는 것을 막기 위함이다.
+     * 생성 시점에 확정되는 불변 값이며 이후 갱신하지 않는다.
+     */
     @Lob
-    @Column(name = "job_data", nullable = false, columnDefinition = "CLOB")
-    private String jobData;
+    @Column(name = "payload", nullable = false, columnDefinition = "CLOB")
+    private String payload;
 
     /**
      * 이 작업을 만든 원 요청과 로그를 연결하기 위한 correlation id.
@@ -106,7 +112,7 @@ public class BackgroundJob extends BaseEntity {
     public static BackgroundJob create(
             BackgroundJobType jobType,
             Member member,
-            String jobData,
+            String payload,
             String correlationId,
             IdempotencyKey idempotencyKey,
             RequestHash requestHash
@@ -115,7 +121,7 @@ public class BackgroundJob extends BaseEntity {
                 null,
                 jobType,
                 member,
-                jobData,
+                payload,
                 correlationId,
                 idempotencyKey.value(),
                 requestHash.value(),

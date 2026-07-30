@@ -112,15 +112,15 @@ class CreateAnalysisReportIntegrateTest extends IntegrateTest {
                     .as("요청 payload hash가 저장되어야 함")
                     .hasSize(64);
 
-            Map<String, Object> jobData = objectMapper.readValue(job.getJobData(), new TypeReference<>() {});
-            assertThat(asLong(jobData.get("memberId")))
-                    .as("job_data에 회원 ID가 포함되어야 함")
+            Map<String, Object> payload = objectMapper.readValue(job.getPayload(), new TypeReference<>() {});
+            assertThat(asLong(payload.get("memberId")))
+                    .as("payload에 회원 ID가 포함되어야 함")
                     .isEqualTo(member.getId());
-            assertThat(jobData.get("reportType"))
-                    .as("job_data에 리포트 타입이 포함되어야 함")
+            assertThat(payload.get("reportType"))
+                    .as("payload에 리포트 타입이 포함되어야 함")
                     .isEqualTo("THINKING_PATTERN");
-            assertThat(jobData)
-                    .as("job_data는 memberId/reportType만 담는다 — 리포트 ID는 발행자가 역조회, 소스 목록은 analysis_report_source가 원천")
+            assertThat(payload)
+                    .as("payload는 memberId/reportType만 담는다 — 리포트 ID는 발행자가 역조회, 소스 목록은 analysis_report_source가 원천")
                     .containsOnlyKeys("memberId", "reportType");
 
             assertThat(report.getReportType())
