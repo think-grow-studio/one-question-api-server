@@ -9,7 +9,6 @@ import site.one_question.api.backgroundjob.domain.BackgroundJob;
 import site.one_question.api.backgroundjob.domain.BackgroundJobRepository;
 import site.one_question.api.backgroundjob.domain.BackgroundJobType;
 import site.one_question.api.backgroundjob.domain.IdempotencyKey;
-import site.one_question.api.backgroundjob.domain.JobPayload;
 import site.one_question.api.backgroundjob.domain.RequestHash;
 import site.one_question.api.member.domain.Member;
 
@@ -33,7 +32,7 @@ public class TestBackgroundJobUtils {
                 BackgroundJobType.ANALYSIS_REPORT,
                 member,
                 referenceId,
-                JobPayload.empty(),
+                BackgroundJob.EMPTY_PAYLOAD,
                 UUID.randomUUID().toString(),
                 new IdempotencyKey(UUID.randomUUID().toString()),
                 RequestHash.sha256("{}")

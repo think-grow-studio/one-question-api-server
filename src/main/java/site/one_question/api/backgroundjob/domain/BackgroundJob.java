@@ -41,6 +41,12 @@ import site.one_question.common.domain.BaseEntity;
 )
 public class BackgroundJob extends BaseEntity {
 
+    /**
+     * 도메인 행 밖의 커맨드 파라미터가 없는 job 타입이 쓰는 payload.
+     * NULL 을 쓰지 않는 이유는 소비자(Python 워커 포함)에 null 분기가 영구히 생기는 것을 막기 위함이다.
+     */
+    public static final String EMPTY_PAYLOAD = "{}";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -128,7 +134,7 @@ public class BackgroundJob extends BaseEntity {
             BackgroundJobType jobType,
             Member member,
             Long referenceId,
-            JobPayload payload,
+            String payload,
             String correlationId,
             IdempotencyKey idempotencyKey,
             RequestHash requestHash
@@ -138,7 +144,7 @@ public class BackgroundJob extends BaseEntity {
                 jobType,
                 member,
                 referenceId,
-                payload.value(),
+                payload,
                 correlationId,
                 idempotencyKey.value(),
                 requestHash.value(),

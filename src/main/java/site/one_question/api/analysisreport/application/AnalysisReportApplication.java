@@ -22,7 +22,6 @@ import site.one_question.api.backgroundjob.domain.BackgroundJob;
 import site.one_question.api.backgroundjob.domain.BackgroundJobService;
 import site.one_question.api.backgroundjob.domain.BackgroundJobType;
 import site.one_question.api.backgroundjob.domain.IdempotencyKey;
-import site.one_question.api.backgroundjob.domain.JobPayload;
 import site.one_question.api.backgroundjob.domain.RequestHash;
 import site.one_question.api.member.domain.Member;
 import site.one_question.api.member.domain.MemberService;
@@ -78,7 +77,7 @@ public class AnalysisReportApplication {
                 analysisReport.getId(),
                 // 커맨드 파라미터가 없다 — memberId 는 member_id, reportId 는 reference_id,
                 // reportType 은 analysis_report.report_type 이 원천이다.
-                JobPayload.empty(),
+                BackgroundJob.EMPTY_PAYLOAD,
                 resolveCorrelationId(),
                 idempotencyKey,
                 requestHash
