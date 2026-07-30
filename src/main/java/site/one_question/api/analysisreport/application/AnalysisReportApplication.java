@@ -71,8 +71,8 @@ public class AnalysisReportApplication {
         }
 
         List<DailyQuestionAnswer> sourceAnswers = dailyQuestionAnswerService.findOwnedByMemberWithQuestion(
-                memberId, sourceIds.values());
-        if (sourceAnswers.size() != sourceIds.values().size()) {
+                memberId, sourceIds.ascendingValues());
+        if (sourceAnswers.size() != sourceIds.size()) {
             throw new AnalysisReportSourceAnswerNotOwnedException(memberId);
         }
 
@@ -102,9 +102,8 @@ public class AnalysisReportApplication {
     ) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("reportType", reportType.name());
-        // values() 는 AnalysisReportSourceAnswerIds 가 오름차순으로 정규화해 보관하므로
-        // 요청 순서가 달라도 같은 해시가 나온다.
-        payload.put("dailyQuestionAnswerIds", sourceAnswerIds.values());
+        // 오름차순으로 정규화된 값이므로 요청 순서가 달라도 같은 해시가 나온다.
+        payload.put("dailyQuestionAnswerIds", sourceAnswerIds.ascendingValues());
         return RequestHash.sha256(toJson(payload));
     }
 
