@@ -6,7 +6,11 @@
 
 - `BackgroundJob`은 외부 비동기 큐(SQS 등)로 발행될 작업의 영속 상태를 나타낸다.
 - 새 작업은 `PENDING` 상태로 생성한다.
-- `job_data`는 발행자가 읽을 JSON 문자열이며, 작업 타입별 application 레이어에서 payload 구조를 결정한다. 생성 시점에 확정되는 불변 값이다 — 이후 갱신하지 않는다.
+- `payload`는 발행자·워커가 읽을 JSON 문자열이며 **도메인 행에 존재하지 않는 커맨드 파라미터만** 담는다. 담을 것이 없으면 빈 객체 `{}`를 저장한다 — NULL 금지. 소비자(특히 Python 워커)에 null 분기가 영구히 생기는 것을 막기 위함이다. 생성 시점에 확정되는 불변 값이다.
+- `reference_id`는 이 커맨드가 대상으로 하는 도메인 애그리거트의 id다. 대상 타입은 `job_type`이 결정하는 폴리모픽 참조이므로 FK를 걸지 않는다. 대상 애그리거트가 없는 job 타입(배치·집계)은 NULL이다. 생성 후 갱신하지 않는다. 커맨드가 대상을 가리키고, 대상은 자기를 만든 커맨드를 모른다.
+- `uk_background_job_reference`가 대상 애그리거트 1건당 job 1건을 강제한다. Oracle 실제 인덱스는 `(CASE WHEN reference_id IS NULL THEN NULL ELSE job_type END, reference_id)` 함수 기반이라 `reference_id IS NULL` 행을 인덱스에서 제외한다(Oracle은 부분 NULL 복합 유니크에서 중복을 거부하므로 필요한 관용구). 엔티티에는 평범한 `(job_type, reference_id)` `@UniqueConstraint`로 선언돼 있어 H2 테스트가 제약을 덮는다. 형태가 달라도 부팅이 깨지지 않는 이유는 **`ddl-auto=validate`가 테이블/컬럼/타입만 검증하고 제약·인덱스는 보지 않기 때문**이다. PostgreSQL로 이전하면 `... (job_type, reference_id) WHERE reference_id IS NOT NULL`로 단순화한다.
+- `reference_type` 컬럼은 두지 않는다. 현재 `job_type`이 대상 타입을 100% 결정한다. **추가해야 하는 신호는 하나의 `job_type`이 두 종류 이상의 엔티티를 가리켜야 할 때**다(예: `SEND_PUSH`가 상황에 따라 `daily_question_answer` 또는 `answer_post`를 가리켜야 하는 경우). 서로 다른 job_type이 같은 엔티티 타입을 가리키는 것은 트리거가 아니다 — `job_type IN (...)`으로 조회된다. 추가 시 `CHECK ((reference_type IS NULL) = (reference_id IS NULL))`이 필요하고, 유니크를 `(reference_type, reference_id)`로 옮기면 job_type이 다른 재분석 job이 차단되므로 재검토해야 한다.
+- `member_id`는 NOT NULL FK로 유지한다. 주인 없는 시스템 job이 필요해지면 nullable로 만들지 말고 **시스템 계정 행**을 만든다(`AuthSocialProvider`에 `SYSTEM` 추가 + 시드 1행 + `isHuman()` 헬퍼로 회원 집계 제외 로직 일원화). nullable로 만들면 `uk_background_job_idempotency`가 PostgreSQL/MySQL에서 조용히 무력화된다 — DB는 NULL끼리 같다고 보지 않으므로 `(NULL, 'X', 'key')` 두 행이 모두 저장된다. 참고: `AuthSocialProvider.AI_PERSONA`는 운영 DB에 사용된 적이 없어 선례가 아니다. 즉 시스템 계정을 도입하면 "사람 아닌 member 행을 집계에서 제외하는 규율"을 처음부터 세우는 것이다.
 - 멱등성 범위는 작업 생성 컨텍스트별로 정한다. AI 분석 리포트는 `(member_id, job_type, idempotency_key)`를 유니크하게 사용한다.
 - `idempotency_key`는 클라이언트가 생성 요청마다 제공한다. 서버에서 임의 UUID로 대체하지 않으며, 형식 검증과 정규화는 `IdempotencyKey` 값 객체가 담당한다.
 - `request_hash`는 같은 멱등키 재사용 시 요청 payload 동일성을 검증하기 위한 값이다. 형식 검증과 SHA-256 생성은 `RequestHash` 값 객체가 담당하며, 중복 작업 판정 기준으로 단독 사용하지 않는다.
