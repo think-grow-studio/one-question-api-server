@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
+import site.one_question.api.analysisreport.domain.AnalysisReport;
 import site.one_question.api.member.domain.Member;
 import site.one_question.integrate.test_config.IntegrateTest;
 
@@ -17,13 +18,13 @@ class BackgroundJobReferenceUniqueIntegrateTest extends IntegrateTest {
     void save_job_with_duplicated_reference_then_violates_unique_constraint() {
         // given
         Member member = testMemberUtils.createSave();
-        Long referenceId = 4242L;
-        testBackgroundJobUtils.createSave_With_Reference(member, referenceId);
+        AnalysisReport report = testAnalysisReportUtils.createSave(member);
+        testBackgroundJobUtils.createSave_With_Reference(member, report.getId());
 
         // when & then
         assertThatThrownBy(() ->
-                testBackgroundJobUtils.createSave_With_Reference(member, referenceId))
-                .as("대상 애그리거트 1건당 job 1건이어야 함")
+                testBackgroundJobUtils.createSave_With_Reference(member, report.getId()))
+                .as("리포트 1건당 job 1건이어야 함")
                 .isInstanceOf(DataIntegrityViolationException.class);
 
         assertThat(backgroundJobRepository.findAll())

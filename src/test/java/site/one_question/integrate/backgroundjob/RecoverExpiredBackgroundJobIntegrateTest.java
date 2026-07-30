@@ -31,8 +31,8 @@ class RecoverExpiredBackgroundJobIntegrateTest extends IntegrateTest {
     @BeforeEach
     void setUp() {
         member = testMemberUtils.createSave();
-        job = testBackgroundJobUtils.createSave(member);
-        report = testAnalysisReportUtils.createSave(job, member);
+        report = testAnalysisReportUtils.createSave(member);
+        job = testBackgroundJobUtils.createSave_With_Reference(member, report.getId());
     }
 
     @Test
@@ -85,10 +85,12 @@ class RecoverExpiredBackgroundJobIntegrateTest extends IntegrateTest {
     @Test
     @DisplayName("한 작업의 발행 실패는 다음 작업의 발행을 막지 않는다")
     void one_job_failure_does_not_stop_next_job() {
-        BackgroundJob failing = testBackgroundJobUtils.createSave(member);
-        testAnalysisReportUtils.createSave(failing, member);
-        BackgroundJob valid = testBackgroundJobUtils.createSave(member);
-        testAnalysisReportUtils.createSave(valid, member);
+        AnalysisReport failingReport = testAnalysisReportUtils.createSave(member);
+        BackgroundJob failing = testBackgroundJobUtils.createSave_With_Reference(
+                member, failingReport.getId());
+        AnalysisReport validReport = testAnalysisReportUtils.createSave(member);
+        BackgroundJob valid = testBackgroundJobUtils.createSave_With_Reference(
+                member, validReport.getId());
 
         // failing 잡의 SQS 전송만 실패시킨다 (메시지의 jobId로 특정)
         willThrow(new RuntimeException("sqs unavailable"))

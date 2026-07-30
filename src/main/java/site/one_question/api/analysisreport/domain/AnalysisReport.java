@@ -11,11 +11,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import site.one_question.api.analysisreport.domain.exception.AnalysisReportCompletionDataInvalidException;
 import site.one_question.api.analysisreport.domain.exception.AnalysisReportNotPendingException;
-import site.one_question.api.backgroundjob.domain.BackgroundJob;
 import site.one_question.api.member.domain.Member;
 import site.one_question.common.domain.BaseEntity;
 import lombok.AccessLevel;
@@ -33,10 +31,6 @@ public class AnalysisReport extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "background_job_id", nullable = false, unique = true)
-    private BackgroundJob backgroundJob;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
@@ -65,13 +59,11 @@ public class AnalysisReport extends BaseEntity {
     private String llmOptions;
 
     public static AnalysisReport createPending(
-            BackgroundJob backgroundJob,
             Member member,
             AnalysisReportType reportType
     ) {
         return new AnalysisReport(
                 null,
-                backgroundJob,
                 member,
                 reportType,
                 AnalysisReportStatus.PENDING,

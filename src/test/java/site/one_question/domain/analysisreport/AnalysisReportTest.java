@@ -15,7 +15,7 @@ import site.one_question.api.analysisreport.domain.exception.AnalysisReportNotPe
 class AnalysisReportTest {
 
     private AnalysisReport createPendingReport() {
-        return AnalysisReport.createPending(null, null, AnalysisReportType.THINKING_PATTERN);
+        return AnalysisReport.createPending(null, AnalysisReportType.THINKING_PATTERN);
     }
 
     @Test

@@ -5,11 +5,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -112,16 +110,12 @@ class CreateAnalysisReportIntegrateTest extends IntegrateTest {
                     .as("요청 payload hash가 저장되어야 함")
                     .hasSize(64);
 
-            Map<String, Object> payload = objectMapper.readValue(job.getPayload(), new TypeReference<>() {});
-            assertThat(asLong(payload.get("memberId")))
-                    .as("payload에 회원 ID가 포함되어야 함")
-                    .isEqualTo(member.getId());
-            assertThat(payload.get("reportType"))
-                    .as("payload에 리포트 타입이 포함되어야 함")
-                    .isEqualTo("THINKING_PATTERN");
-            assertThat(payload)
-                    .as("payload는 memberId/reportType만 담는다 — 리포트 ID는 발행자가 역조회, 소스 목록은 analysis_report_source가 원천")
-                    .containsOnlyKeys("memberId", "reportType");
+            assertThat(job.getPayload())
+                    .as("ANALYSIS_REPORT는 도메인 행 밖의 커맨드 파라미터가 없으므로 payload는 빈 객체여야 함")
+                    .isEqualTo("{}");
+            assertThat(job.getReferenceId())
+                    .as("job은 reference_id로 대상 리포트를 가리켜야 함")
+                    .isEqualTo(report.getId());
 
             assertThat(report.getReportType())
                     .as("리포트 타입이 저장되어야 함")
@@ -412,9 +406,5 @@ class CreateAnalysisReportIntegrateTest extends IntegrateTest {
                             dailyQuestion, owner, "분석 답변 " + index);
                 })
                 .toList();
-    }
-
-    private long asLong(Object value) {
-        return ((Number) value).longValue();
     }
 }

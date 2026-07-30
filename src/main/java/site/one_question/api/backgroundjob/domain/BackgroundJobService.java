@@ -17,6 +17,12 @@ public class BackgroundJobService {
         return backgroundJobRepository.save(backgroundJob);
     }
 
+    public BackgroundJob findById(Long jobId) {
+        return backgroundJobRepository.findById(jobId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "background job not found: " + jobId));
+    }
+
     public Optional<BackgroundJob> findByIdempotencyKey(
             Long memberId,
             BackgroundJobType jobType,

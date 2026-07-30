@@ -36,8 +36,8 @@ class PublishAnalysisReportJobIntegrateTest extends IntegrateTest {
     @BeforeEach
     void setup() {
         member = testMemberUtils.createSave();
-        job = testBackgroundJobUtils.createSave(member);
-        report = testAnalysisReportUtils.createSave(job, member);
+        report = testAnalysisReportUtils.createSave(member);
+        job = testBackgroundJobUtils.createSave_With_Reference(member, report.getId());
     }
 
     @Nested

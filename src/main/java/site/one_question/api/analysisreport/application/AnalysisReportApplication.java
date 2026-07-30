@@ -34,6 +34,13 @@ import site.one_question.common.MdcKey;
 @RequiredArgsConstructor
 public class AnalysisReportApplication {
 
+    /**
+     * ANALYSIS_REPORT 커맨드는 도메인 행 밖의 파라미터가 없다.
+     * memberId 는 {@code background_job.member_id}, reportId 는 {@code reference_id},
+     * reportType 은 {@code analysis_report.report_type} 이 원천이므로 중복 저장하지 않는다.
+     */
+    private static final String EMPTY_PAYLOAD = "{}";
+
     private final MemberService memberService;
     private final DailyQuestionAnswerService dailyQuestionAnswerService;
     private final BackgroundJobService backgroundJobService;
@@ -58,7 +65,8 @@ public class AnalysisReportApplication {
         if (existingJob.isPresent()) {
             BackgroundJob backgroundJob = existingJob.get();
             backgroundJob.validateSameRequestHash(requestHash);
-            AnalysisReport analysisReport = analysisReportService.findByBackgroundJob(backgroundJob);
+            AnalysisReport analysisReport =
+                    analysisReportService.findById(backgroundJob.getReferenceId());
             return CreateAnalysisReportResponse.from(backgroundJob, analysisReport);
         }
 
@@ -68,28 +76,24 @@ public class AnalysisReportApplication {
             throw new AnalysisReportSourceAnswerNotOwnedException(memberId);
         }
 
+        // report 를 먼저 만들어 id 를 확보한다. IDENTITY 전략이므로 save() 시점에 flush 되어
+        // 같은 트랜잭션 안에서 즉시 id 를 읽을 수 있다.
+        AnalysisReport analysisReport = analysisReportService.save(
+                AnalysisReport.createPending(member, reportType));
+
         BackgroundJob backgroundJob = backgroundJobService.save(BackgroundJob.create(
                 BackgroundJobType.ANALYSIS_REPORT,
                 member,
-                null,
-                createPayload(memberId, reportType),
+                analysisReport.getId(),
+                EMPTY_PAYLOAD,
                 resolveCorrelationId(),
                 idempotencyKey,
                 requestHash
         ));
-        AnalysisReport analysisReport = analysisReportService.save(
-                AnalysisReport.createPending(backgroundJob, member, reportType));
 
         analysisReportSourceService.createAll(analysisReport, memberId, sourceAnswers);
 
         return CreateAnalysisReportResponse.from(backgroundJob, analysisReport);
-    }
-
-    private String createPayload(Long memberId, AnalysisReportType reportType) {
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("memberId", memberId);
-        payload.put("reportType", reportType.name());
-        return toJson(payload);
     }
 
     private RequestHash createRequestHash(
