@@ -146,7 +146,16 @@ Swagger UI: `http://localhost:8080/swagger-ui.html`
 ## 추가 문서
 
 - `src/test/java/site/one_question/CLAUDE.md` — 테스트 작성 패턴·규칙
-- `JPA_INTERNAL_BEHAVIOR.md` — JPA 동작 관련 정리
-- `docs/optimistic-lock-and-ddd.md` — 낙관적 락과 DDD: 동시 상태 전이 설계 정리 (analysisreport 워커 설계 시 참고)
-- `DEADLOCK_REPORT.md`, `docs/` — 운영 장애 포스트모템 모음
 - `PR_GUIDE.md` — PR 작성 가이드
+
+기술 정리와 운영 포스트모템은 `docs/` 아래에 모은다.
+
+- `docs/jpa-internal-behavior.md` — JPA 내부 동작 정리
+- `docs/jpa-bulk-modifying-and-persistence-context.md` — bulk `@Modifying` JPQL과 영속성 컨텍스트
+- `docs/optimistic-lock-and-ddd.md` — 낙관적 락과 DDD: 동시 상태 전이 설계 정리 (analysisreport 워커 설계 시 참고)
+- `docs/version-cas-compare.md` — 낙관적 락(version) vs 상태 CAS 비교
+- `docs/docker-network-iptables.md` — Docker 컨테이너 네트워크와 iptables
+- `docs/ora-12860-deadlock-postmortem.md` — ORA-12860 데드락 장애 분석
+- `docs/json-compression-postmortem.md` — HTTP JSON 압축 적용 기록
+- `docs/nginx-bind-mount-inode-postmortem.md` — nginx conf bind mount inode 고정 문제
+- `docs/superpowers/` — 기능별 설계 스펙·구현 계획
