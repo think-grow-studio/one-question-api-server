@@ -66,7 +66,7 @@ public class AnalysisReportApplication {
             BackgroundJob backgroundJob = existingJob.get();
             backgroundJob.validateSameRequestHash(requestHash);
             AnalysisReport analysisReport =
-                    analysisReportService.findById(backgroundJob.getReferenceId());
+                    analysisReportService.findById(backgroundJob.requireReferenceId());
             return CreateAnalysisReportResponse.from(backgroundJob, analysisReport);
         }
 

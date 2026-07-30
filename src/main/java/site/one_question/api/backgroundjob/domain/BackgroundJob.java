@@ -155,6 +155,19 @@ public class BackgroundJob extends BaseEntity {
         );
     }
 
+    /**
+     * 대상 애그리거트가 필수인 job 타입에서 {@code reference_id} 를 읽는다.
+     * 컬럼은 nullable 이고 job 타입별로 필수 여부가 다르므로 DB 가 강제해주지 않는다.
+     * NULL 이면 데이터 오염이므로 어느 타입의 어느 job 인지 알 수 있는 예외로 실패시킨다.
+     */
+    public Long requireReferenceId() {
+        if (referenceId == null) {
+            throw new IllegalStateException(
+                    jobType + " job has no reference_id: " + id);
+        }
+        return referenceId;
+    }
+
     public void validateSameRequestHash(RequestHash requestHash) {
         if (!this.requestHash.equals(requestHash.value())) {
             throw new BackgroundJobRequestHashConflictException(
