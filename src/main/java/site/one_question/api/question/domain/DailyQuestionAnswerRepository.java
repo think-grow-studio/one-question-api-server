@@ -10,9 +10,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface DailyQuestionAnswerRepository extends JpaRepository<DailyQuestionAnswer, Long> {
 
-    boolean existsByDailyQuestionId(DailyQuestion dailyQuestion);
+    boolean existsByDailyQuestion(DailyQuestion dailyQuestion);
 
-    Optional<DailyQuestionAnswer> findByDailyQuestionId(DailyQuestion dailyQuestion);
+    Optional<DailyQuestionAnswer> findByDailyQuestion(DailyQuestion dailyQuestion);
 
     @Query("""
             SELECT answer FROM DailyQuestionAnswer answer

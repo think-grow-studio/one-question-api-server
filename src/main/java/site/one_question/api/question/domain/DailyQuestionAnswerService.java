@@ -13,7 +13,7 @@ public class DailyQuestionAnswerService {
     private final DailyQuestionAnswerRepository answerRepository;
 
     public boolean hasAnswer(DailyQuestion dailyQuestion) {
-        return answerRepository.existsByDailyQuestionId(dailyQuestion);
+        return answerRepository.existsByDailyQuestion(dailyQuestion);
     }
 
     public DailyQuestionAnswer save(DailyQuestionAnswer answer) {
