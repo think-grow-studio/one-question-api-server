@@ -9,7 +9,7 @@ public record IdempotencyKey(String value) {
     public IdempotencyKey {
         String normalized = value == null ? null : value.trim();
         if (normalized == null || normalized.isBlank() || normalized.length() > MAX_LENGTH) {
-            throw new BackgroundJobIdempotencyKeyInvalidException();
+            throw new BackgroundJobIdempotencyKeyInvalidException(value);
         }
         value = normalized;
     }
