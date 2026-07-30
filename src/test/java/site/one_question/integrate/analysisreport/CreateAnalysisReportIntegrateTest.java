@@ -197,6 +197,48 @@ class CreateAnalysisReportIntegrateTest extends IntegrateTest {
                     .as("같은 멱등키 재시도는 AnalysisReportSource를 추가 생성하지 않아야 함")
                     .hasSize(10);
         }
+
+        @Test
+        @DisplayName("같은 멱등키로 답변 ID 순서만 바꿔 재시도해도 기존 job과 report를 반환한다")
+        void create_analysis_report_with_same_idempotency_key_and_reordered_ids_then_returns_existing_report()
+                throws Exception {
+            // given
+            List<DailyQuestionAnswer> answers = createAnswers(member, cycle, 10);
+            List<Long> answerIds = answers.stream()
+                    .map(DailyQuestionAnswer::getId)
+                    .toList();
+
+            mockMvc.perform(post(ANALYSIS_REPORTS_API)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.IDEMPOTENCY_KEY, idempotencyKey)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(
+                                    new CreateAnalysisReportRequest(
+                                            AnalysisReportType.THINKING_PATTERN, answerIds))))
+                    .andExpect(status().isAccepted());
+
+            BackgroundJob job = backgroundJobRepository.findAll().getFirst();
+            AnalysisReport report = analysisReportRepository.findAll().getFirst();
+
+            // when & then — 같은 집합, 순서만 뒤집어 재시도
+            mockMvc.perform(post(ANALYSIS_REPORTS_API)
+                            .header(HttpHeaders.AUTHORIZATION, token)
+                            .header(HttpHeaderConstant.IDEMPOTENCY_KEY, idempotencyKey)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(
+                                    new CreateAnalysisReportRequest(
+                                            AnalysisReportType.THINKING_PATTERN, answerIds.reversed()))))
+                    .andExpect(status().isAccepted())
+                    .andExpect(jsonPath("$.jobId").value(job.getId().intValue()))
+                    .andExpect(jsonPath("$.analysisReportId").value(report.getId().intValue()));
+
+            assertThat(backgroundJobRepository.findAll())
+                    .as("ID 순서는 의미가 없으므로 순서만 다른 재시도는 새 작업을 만들지 않아야 함")
+                    .hasSize(1);
+            assertThat(analysisReportSourceRepository.findAll())
+                    .as("순서만 다른 재시도는 소스도 추가 생성하지 않아야 함")
+                    .hasSize(10);
+        }
     }
 
     @Nested
