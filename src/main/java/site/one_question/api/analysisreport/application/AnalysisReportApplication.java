@@ -102,7 +102,8 @@ public class AnalysisReportApplication {
     ) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("reportType", reportType.name());
-        // TODO: 답변 ID 순서는 의미가 없으므로 정렬해 정규화한 뒤 해시를 생성해야 한다. / sourceIds에서 getOrderByAsc와 같은 메서드를 만들어서 반환하는 것 고려해보기
+        // values() 는 AnalysisReportSourceAnswerIds 가 오름차순으로 정규화해 보관하므로
+        // 요청 순서가 달라도 같은 해시가 나온다.
         payload.put("dailyQuestionAnswerIds", sourceAnswerIds.values());
         return RequestHash.sha256(toJson(payload));
     }

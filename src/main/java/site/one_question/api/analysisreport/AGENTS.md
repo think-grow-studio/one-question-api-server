@@ -6,7 +6,8 @@
 
 - 리포트 생성 요청은 **본인의 개인 DailyQuestionAnswer 10~15개**만 소스로 받을 수 있다.
 - 지원하는 리포트 타입은 `THINKING_PATTERN`(사고 패턴 분석), `WARM_REFLECTION`(따듯한 회고 편지)이다.
-- 소스 답변 ID의 개수/중복 검증은 `AnalysisReportSourceAnswerIds`가 담당한다. 중복이 있으면 리포트와 백그라운드 작업을 만들지 않는다. 요청의 ID 순서는 의미가 없다.
+- 소스 답변 ID의 개수/중복 검증은 `AnalysisReportSourceAnswerIds`가 담당한다. 중복이 있으면 리포트와 백그라운드 작업을 만들지 않는다.
+- **요청의 ID 순서는 의미가 없다** — `AnalysisReportSourceAnswerIds`가 생성 시점에 오름차순으로 정규화해 보관하므로 `values()`를 어디서 쓰든 순서 독립이다. 별도 정렬 메서드를 두지 않는 이유는 opt-in이면 호출자가 빠뜨릴 수 있고, 순서 무의미성은 호출자 책임이 아니라 타입의 성질이기 때문이다. 이 정규화가 없으면 같은 멱등키로 순서만 다른 목록을 재시도할 때 `request_hash`가 갈려 409로 거절된다.
 - 요청 ID와 조회 결과의 개수 대조(누락·비소유 탐지)는 application이 수행한다. `AnalysisReportSourceService`는 답변 소유권을 직접 검증(`isOwnedBy`)한 뒤 소스 스냅샷을 생성한다. `seq_no`는 질문 날짜(`question_date`) 내림차순으로 부여한다 — 1번이 가장 최신.
 - 리포트 생성 API는 한 트랜잭션에서 `analysis_report(PENDING)` → `background_job(PENDING)` → `analysis_report_source` 순으로 생성한다. 리포트를 먼저 만들어 id를 확보하고(IDENTITY라 `save()` 시점에 flush됨) 그 id를 `background_job.reference_id`에 넣는다. **리포트는 자기를 만든 job을 모른다** — `analysis_report`에 `background_job_id`가 없다.
 - `analysis_report_source`는 요청 시점의 질문/답변 내용을 스냅샷으로 저장한다. 이후 답변이 수정돼도 이미 생성된 리포트 소스는 바꾸지 않는다.
