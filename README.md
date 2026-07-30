@@ -147,6 +147,6 @@ Swagger UI: `http://localhost:8080/swagger-ui.html`
 
 - `src/test/java/site/one_question/CLAUDE.md` — 테스트 작성 패턴·규칙
 - `JPA_INTERNAL_BEHAVIOR.md` — JPA 동작 관련 정리
-- `OPTIMISTIC_LOCK_DDD.md` — 낙관적 락과 DDD: 동시 상태 전이 설계 정리 (analysisreport 워커 설계 시 참고)
+- `docs/optimistic-lock-and-ddd.md` — 낙관적 락과 DDD: 동시 상태 전이 설계 정리 (analysisreport 워커 설계 시 참고)
 - `DEADLOCK_REPORT.md`, `docs/` — 운영 장애 포스트모템 모음
 - `PR_GUIDE.md` — PR 작성 가이드

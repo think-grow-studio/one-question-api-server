@@ -435,4 +435,4 @@ API와 Worker 인스턴스를 분리한다. Publisher 활성화 설정과 Worker
 - 루트 `README.md`: 공통 BackgroundJob Publisher Scheduler 설명
 - `api/backgroundjob/AGENTS.md`, `CLAUDE.md`: 공통 발행 책임과 재시도 정책
 - `api/analysisreport/AGENTS.md`, `CLAUDE.md`: 전용 Scheduler 대신 Publisher 구현체 사용
-- `OPTIMISTIC_LOCK_DDD.md`: Publisher도 status/claim 기반 CAS를 사용하도록 결정 갱신
+- `docs/optimistic-lock-and-ddd.md`: Publisher도 status/claim 기반 CAS를 사용하도록 결정 갱신
