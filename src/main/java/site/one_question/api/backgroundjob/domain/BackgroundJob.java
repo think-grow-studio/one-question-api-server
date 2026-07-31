@@ -109,6 +109,21 @@ public class BackgroundJob extends BaseEntity {
     @Column(name = "publish_claim_until")
     private Instant publishClaimUntil;
 
+    /**
+     * 현재 처리(Worker) 시도의 소유권 식별자.
+     * 발행 lease({@code publish_claim_id})와 별개다 — 발행은 이 서버가, 처리는 Worker 가 선점한다.
+     * lease 만료 후 과거 처리자가 새 처리자의 상태를 덮어쓰지 못하게 CAS 조건에 사용한다.
+     */
+    @Column(name = "process_claim_id", length = 36)
+    private String processClaimId;
+
+    /**
+     * 처리 선점의 만료 시각.
+     * 이 시각이 지나면 중단된 PROCESSING 작업을 복구 대상으로 본다.
+     */
+    @Column(name = "process_claim_until")
+    private Instant processClaimUntil;
+
     @Column(name = "scheduled_at", nullable = false)
     private Instant scheduledAt;
 
@@ -149,12 +164,14 @@ public class BackgroundJob extends BaseEntity {
                 idempotencyKey.value(),
                 requestHash.value(),
                 BackgroundJobStatus.PENDING,
-                null,
-                null,
-                Instant.now(),
-                null,
-                null,
-                null,
+                null,               // publishClaimId
+                null,               // publishClaimUntil
+                null,               // processClaimId
+                null,               // processClaimUntil
+                Instant.now(),      // scheduledAt
+                null,               // startedAt
+                null,               // finishedAt
+                null,               // nextRetryAt
                 0,
                 null,
                 null

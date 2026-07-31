@@ -17,6 +17,8 @@ CREATE TABLE background_job (
     next_retry_at   TIMESTAMP WITH TIME ZONE,
     publish_claim_id    VARCHAR2(36),
     publish_claim_until TIMESTAMP WITH TIME ZONE,
+    process_claim_id    VARCHAR2(36),
+    process_claim_until TIMESTAMP WITH TIME ZONE,
     retry_count     NUMBER DEFAULT 0          NOT NULL,
     error_code      VARCHAR2(50),
     error_reason    VARCHAR2(255),
@@ -45,6 +47,7 @@ CREATE UNIQUE INDEX uk_background_job_reference ON background_job
 
 CREATE INDEX idx_background_job_status_scheduled ON background_job (status, scheduled_at);
 CREATE INDEX idx_background_job_publish_claim ON background_job (status, publish_claim_until);
+CREATE INDEX idx_background_job_process_claim ON background_job (status, process_claim_until);
 
 -- ============================================
 -- analysis_report : AI 분석 리포트
