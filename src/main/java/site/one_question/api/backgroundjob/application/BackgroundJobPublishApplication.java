@@ -72,7 +72,7 @@ public class BackgroundJobPublishApplication {
         Exception cause = new IllegalStateException(
                 "BackgroundJob 발행 claim이 만료되었습니다: jobId=" + expiredClaim.id());
         PublishFailureTransition transition =
-                retryPolicy.onFailure(expiredClaim.retryCount(), recoveryNow, cause.getMessage());
+                retryPolicy.onFailure(expiredClaim.publishAttemptCount(), recoveryNow, cause.getMessage());
 
       int updated = txTemplate.execute(status ->
           backgroundJobService.recoverExpiredPublish(
@@ -80,8 +80,7 @@ public class BackgroundJobPublishApplication {
               expiredClaim.claimId(),
               recoveryNow,
               transition.nextStatus(),
-              transition.retryCount(),
-              transition.nextRetryAt(),
+              transition.publishScheduledAt(),
               transition.finishedAt(),
               transition.errorCode(),
               transition.errorReason(),
@@ -95,8 +94,8 @@ public class BackgroundJobPublishApplication {
             BackgroundJobPublisher publisher = publisherRegistry.get(expiredClaim.jobType());
             notifyExhausted(publisher, expiredClaim.id(), cause);
         } else {
-            log.info("만료된 claim 복구 후 재시도 예약: jobId={}, retryCount={}, nextRetryAt={}",
-                    expiredClaim.id(), transition.retryCount(), transition.nextRetryAt());
+            log.info("만료된 claim 복구 후 재시도 예약: jobId={}, publishAttemptCount={}, publishScheduledAt={}",
+                    expiredClaim.id(), expiredClaim.publishAttemptCount(), transition.publishScheduledAt());
         }
     }
 

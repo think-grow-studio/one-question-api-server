@@ -50,6 +50,25 @@ class BackgroundJobPublishProcessorIntegrateTest extends IntegrateTest {
     }
 
     @Test
+    @DisplayName("첫 시도에 발행 성공해도 발행 시도 횟수는 1이 된다")
+    void first_attempt_success_still_counts_as_one_attempt() {
+        // 시도 횟수는 실패가 아니라 선점(claim) 시점에 증가한다.
+        // 그래서 "성공한 작업은 0" 이 아니라 "시도한 횟수 그대로"가 남는다.
+        assertThat(job.getPublishAttemptCount())
+                .as("생성 직후에는 아직 시도한 적이 없어야 함")
+                .isZero();
+
+        processor.process(job.getId(), publisher(claimed -> {
+        }));
+
+        BackgroundJob queued = backgroundJobRepository.findById(job.getId()).orElseThrow();
+        assertThat(queued.getStatus()).isEqualTo(BackgroundJobStatus.QUEUED);
+        assertThat(queued.getPublishAttemptCount())
+                .as("첫 시도 포함 1부터 세므로 성공해도 1이어야 함")
+                .isEqualTo(1);
+    }
+
+    @Test
     @DisplayName("발행 실패는 PENDING으로 복귀하고 1분 뒤 재시도한다")
     void transient_failure_schedules_retry() {
         Instant before = Instant.now();
@@ -62,8 +81,8 @@ class BackgroundJobPublishProcessorIntegrateTest extends IntegrateTest {
         assertThat(outcome.kind()).isEqualTo(PublishAttemptResult.Kind.RETRY_SCHEDULED);
         BackgroundJob pending = backgroundJobRepository.findById(job.getId()).orElseThrow();
         assertThat(pending.getStatus()).isEqualTo(BackgroundJobStatus.PENDING);
-        assertThat(pending.getRetryCount()).isEqualTo(1);
-        assertThat(pending.getNextRetryAt())
+        assertThat(pending.getPublishAttemptCount()).isEqualTo(1);
+        assertThat(pending.getPublishScheduledAt())
                 .isBetween(before.plusSeconds(50), before.plusSeconds(70));
         assertThat(pending.getPublishClaimId()).isNull();
     }

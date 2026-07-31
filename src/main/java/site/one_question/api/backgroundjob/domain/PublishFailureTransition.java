@@ -10,8 +10,7 @@ import java.time.Instant;
  */
 public record PublishFailureTransition(
         BackgroundJobStatus nextStatus,
-        int retryCount,
-        Instant nextRetryAt,
+        Instant publishScheduledAt,
         Instant finishedAt,
         String errorCode,
         String errorReason,

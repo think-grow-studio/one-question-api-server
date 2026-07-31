@@ -48,12 +48,12 @@ public class TestBackgroundJobUtils {
     public BackgroundJob recordPreviousPublishFailures(
             BackgroundJob job,
             int count,
-            Instant nextRetryAt
+            Instant publishScheduledAt
     ) {
-        ReflectionTestUtils.setField(job, "retryCount", count);
+        ReflectionTestUtils.setField(job, "publishAttemptCount", count);
         ReflectionTestUtils.setField(job, "errorCode", "PUBLISH_FAILED");
         ReflectionTestUtils.setField(job, "errorReason", "previous");
-        ReflectionTestUtils.setField(job, "nextRetryAt", nextRetryAt);
+        ReflectionTestUtils.setField(job, "publishScheduledAt", publishScheduledAt);
         return repository.saveAndFlush(job);
     }
 }

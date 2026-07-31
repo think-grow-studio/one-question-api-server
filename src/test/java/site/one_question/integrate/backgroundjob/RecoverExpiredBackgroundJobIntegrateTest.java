@@ -44,8 +44,8 @@ class RecoverExpiredBackgroundJobIntegrateTest extends IntegrateTest {
 
         BackgroundJob recovered = backgroundJobRepository.findById(job.getId()).orElseThrow();
         assertThat(recovered.getStatus()).isEqualTo(BackgroundJobStatus.PENDING);
-        assertThat(recovered.getRetryCount()).isEqualTo(1);
-        assertThat(recovered.getNextRetryAt()).isAfter(Instant.now());
+        assertThat(recovered.getPublishAttemptCount()).isEqualTo(1);
+        assertThat(recovered.getPublishScheduledAt()).isAfter(Instant.now());
         assertThat(recovered.getPublishClaimId()).isNull();
         assertThat(recovered.getPublishClaimUntil()).isNull();
         assertThat(analysisReportRepository.findById(report.getId()).orElseThrow().getStatus())
@@ -63,7 +63,7 @@ class RecoverExpiredBackgroundJobIntegrateTest extends IntegrateTest {
 
         BackgroundJob failed = backgroundJobRepository.findById(job.getId()).orElseThrow();
         assertThat(failed.getStatus()).isEqualTo(BackgroundJobStatus.FAILED);
-        assertThat(failed.getRetryCount()).isEqualTo(5);
+        assertThat(failed.getPublishAttemptCount()).isEqualTo(5);
         assertThat(failed.getFinishedAt()).isNotNull();
         assertThat(analysisReportRepository.findById(report.getId()).orElseThrow().getStatus())
                 .isEqualTo(AnalysisReportStatus.FAILED);
@@ -87,7 +87,7 @@ class RecoverExpiredBackgroundJobIntegrateTest extends IntegrateTest {
         assertThat(failed.getFinishedAt())
                 .as("재시도 소진 경로를 실제로 거쳤어야 함")
                 .isNotNull();
-        assertThat(failed.getRetryCount())
+        assertThat(failed.getPublishAttemptCount())
                 .as("재시도 소진 경로를 실제로 거쳤어야 함")
                 .isEqualTo(5);
     }
@@ -112,7 +112,7 @@ class RecoverExpiredBackgroundJobIntegrateTest extends IntegrateTest {
         assertThat(failed.getFinishedAt())
                 .as("재시도 소진 경로를 실제로 거쳤어야 함")
                 .isNotNull();
-        assertThat(failed.getRetryCount())
+        assertThat(failed.getPublishAttemptCount())
                 .as("재시도 소진 경로를 실제로 거쳤어야 함")
                 .isEqualTo(5);
     }

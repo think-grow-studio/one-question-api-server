@@ -112,10 +112,10 @@ class PublishAnalysisReportJobIntegrateTest extends IntegrateTest {
             assertThat(failed.getStatus())
                     .as("재시도 여지가 있으면 PENDING을 유지해야 함")
                     .isEqualTo(BackgroundJobStatus.PENDING);
-            assertThat(failed.getRetryCount())
+            assertThat(failed.getPublishAttemptCount())
                     .as("재시도 횟수가 증가해야 함")
                     .isEqualTo(1);
-            assertThat(failed.getNextRetryAt())
+            assertThat(failed.getPublishScheduledAt())
                     .as("다음 재시도 시각이 미래로 예약되어야 함")
                     .isAfter(Instant.now());
             assertThat(failed.getErrorCode())

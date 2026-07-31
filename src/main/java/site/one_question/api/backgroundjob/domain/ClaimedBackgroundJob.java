@@ -7,7 +7,7 @@ public record ClaimedBackgroundJob(
         String payload,
         String correlationId,
         String claimId,
-        int retryCount
+        int publishAttemptCount
 ) {
     public static ClaimedBackgroundJob from(BackgroundJob job) {
         return new ClaimedBackgroundJob(
@@ -17,7 +17,7 @@ public record ClaimedBackgroundJob(
                 job.getPayload(),
                 job.getCorrelationId(),
                 job.getPublishClaimId(),
-                job.getRetryCount()
+                job.getPublishAttemptCount()
         );
     }
 }

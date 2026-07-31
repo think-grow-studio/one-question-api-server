@@ -11,15 +11,18 @@ CREATE TABLE background_job (
     idempotency_key VARCHAR2(100)             NOT NULL,
     request_hash    VARCHAR2(64)              NOT NULL,
     status          VARCHAR2(30)              NOT NULL,
-    scheduled_at    TIMESTAMP WITH TIME ZONE  NOT NULL,
-    started_at      TIMESTAMP WITH TIME ZONE,
+    -- 발행 단계 (Spring 전용)
+    publish_scheduled_at  TIMESTAMP WITH TIME ZONE  NOT NULL,
+    publish_claim_id      VARCHAR2(36),
+    publish_claim_until   TIMESTAMP WITH TIME ZONE,
+    publish_attempt_count NUMBER DEFAULT 0          NOT NULL,
+    -- 처리 단계 (워커 전용)
+    process_claim_id      VARCHAR2(36),
+    process_claim_until   TIMESTAMP WITH TIME ZONE,
+    process_attempt_count NUMBER DEFAULT 0          NOT NULL,
+    process_started_at    TIMESTAMP WITH TIME ZONE,
+    -- 생명주기 (끝낸 쪽이 기록)
     finished_at     TIMESTAMP WITH TIME ZONE,
-    next_retry_at   TIMESTAMP WITH TIME ZONE,
-    publish_claim_id    VARCHAR2(36),
-    publish_claim_until TIMESTAMP WITH TIME ZONE,
-    process_claim_id    VARCHAR2(36),
-    process_claim_until TIMESTAMP WITH TIME ZONE,
-    retry_count     NUMBER DEFAULT 0          NOT NULL,
     error_code      VARCHAR2(50),
     error_reason    VARCHAR2(255),
     created_at      TIMESTAMP WITH TIME ZONE,
@@ -45,7 +48,7 @@ COMMENT ON COLUMN background_job.reference_id IS
 CREATE UNIQUE INDEX uk_background_job_reference ON background_job
     (CASE WHEN reference_id IS NULL THEN NULL ELSE job_type END, reference_id);
 
-CREATE INDEX idx_background_job_status_scheduled ON background_job (status, scheduled_at);
+CREATE INDEX idx_background_job_status_scheduled ON background_job (status, publish_scheduled_at);
 CREATE INDEX idx_background_job_publish_claim ON background_job (status, publish_claim_until);
 CREATE INDEX idx_background_job_process_claim ON background_job (status, process_claim_until);
 

@@ -33,24 +33,24 @@ public class PublishRetryPolicy {
     }
 
     /**
-     * @param currentRetryCount 이번 실패 이전까지 누적된 재시도 횟수
-     * @param now               상태 전이 기준 시각
-     * @param errorReason       실패 원인 메시지 (255자로 잘라 저장)
+     * @param currentAttemptCount 이번 시도의 번호(1부터). 선점 CAS 에서 이미 증가된 값이므로
+     *                            여기서 다시 더하지 않는다.
+     * @param now                 상태 전이 기준 시각
+     * @param errorReason         실패 원인 메시지 (255자로 잘라 저장)
      */
-    public PublishFailureTransition onFailure(int currentRetryCount, Instant now, String errorReason) {
-        int attempt = currentRetryCount + 1;
-        boolean exhausted = attempt >= maxAttempts;
+    public PublishFailureTransition onFailure(int currentAttemptCount, Instant now, String errorReason) {
+        boolean exhausted = currentAttemptCount >= maxAttempts;
         BackgroundJobStatus nextStatus = exhausted
                 ? BackgroundJobStatus.FAILED
                 : BackgroundJobStatus.PENDING;
-        Instant nextRetryAt = exhausted
+        // 소진 시엔 null 을 돌려 예약 시각을 그대로 둔다(FAILED 는 어차피 발행 대상이 아니다).
+        Instant publishScheduledAt = exhausted
                 ? null
-                : now.plus(baseRetryDelay.multipliedBy(1L << currentRetryCount));
+                : now.plus(baseRetryDelay.multipliedBy(1L << (currentAttemptCount - 1)));
         Instant finishedAt = exhausted ? now : null;
         return new PublishFailureTransition(
                 nextStatus,
-                attempt,
-                nextRetryAt,
+                publishScheduledAt,
                 finishedAt,
                 PUBLISH_FAILED_ERROR_CODE,
                 truncate(errorReason),

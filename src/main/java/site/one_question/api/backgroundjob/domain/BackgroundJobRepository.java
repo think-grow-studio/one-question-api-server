@@ -22,8 +22,8 @@ public interface BackgroundJobRepository extends JpaRepository<BackgroundJob, Lo
                 job.id, job.jobType)
             FROM BackgroundJob job
             WHERE job.status = site.one_question.api.backgroundjob.domain.BackgroundJobStatus.PENDING
-              AND COALESCE(job.nextRetryAt, job.scheduledAt) <= :now
-            ORDER BY job.scheduledAt ASC
+              AND job.publishScheduledAt <= :now
+            ORDER BY job.publishScheduledAt ASC
             """)
     List<PendingPublishTarget> findAllPendingPublishTargets(
             @Param("now") Instant now,
@@ -32,7 +32,7 @@ public interface BackgroundJobRepository extends JpaRepository<BackgroundJob, Lo
 
     @Query("""
             SELECT new site.one_question.api.backgroundjob.domain.ExpiredPublishClaim(
-                job.id, job.jobType, job.publishClaimId, job.retryCount)
+                job.id, job.jobType, job.publishClaimId, job.publishAttemptCount)
             FROM BackgroundJob job
             WHERE job.status = site.one_question.api.backgroundjob.domain.BackgroundJobStatus.PUBLISHING
               AND job.publishClaimUntil <= :recoveryNow
@@ -49,10 +49,11 @@ public interface BackgroundJobRepository extends JpaRepository<BackgroundJob, Lo
             SET job.status = site.one_question.api.backgroundjob.domain.BackgroundJobStatus.PUBLISHING,
                 job.publishClaimId = :claimId,
                 job.publishClaimUntil = :claimUntil,
+                job.publishAttemptCount = job.publishAttemptCount + 1,
                 job.updatedAt = :now
             WHERE job.id = :id
               AND job.status = site.one_question.api.backgroundjob.domain.BackgroundJobStatus.PENDING
-              AND COALESCE(job.nextRetryAt, job.scheduledAt) <= :now
+              AND job.publishScheduledAt <= :now
             """)
     int claimForPublishing(
             @Param("id") Long id,
@@ -82,8 +83,7 @@ public interface BackgroundJobRepository extends JpaRepository<BackgroundJob, Lo
     @Query("""
             UPDATE BackgroundJob job
             SET job.status = :nextStatus,
-                job.retryCount = :retryCount,
-                job.nextRetryAt = :nextRetryAt,
+                job.publishScheduledAt = COALESCE(:publishScheduledAt, job.publishScheduledAt),
                 job.finishedAt = :finishedAt,
                 job.errorCode = :errorCode,
                 job.errorReason = :errorReason,
@@ -98,8 +98,7 @@ public interface BackgroundJobRepository extends JpaRepository<BackgroundJob, Lo
             @Param("id") Long id,
             @Param("claimId") String claimId,
             @Param("nextStatus") BackgroundJobStatus nextStatus,
-            @Param("retryCount") int retryCount,
-            @Param("nextRetryAt") Instant nextRetryAt,
+            @Param("publishScheduledAt") Instant publishScheduledAt,
             @Param("finishedAt") Instant finishedAt,
             @Param("errorCode") String errorCode,
             @Param("errorReason") String errorReason,
@@ -110,8 +109,7 @@ public interface BackgroundJobRepository extends JpaRepository<BackgroundJob, Lo
     @Query("""
             UPDATE BackgroundJob job
             SET job.status = :nextStatus,
-                job.retryCount = :retryCount,
-                job.nextRetryAt = :nextRetryAt,
+                job.publishScheduledAt = COALESCE(:publishScheduledAt, job.publishScheduledAt),
                 job.finishedAt = :finishedAt,
                 job.errorCode = :errorCode,
                 job.errorReason = :errorReason,
@@ -128,8 +126,7 @@ public interface BackgroundJobRepository extends JpaRepository<BackgroundJob, Lo
             @Param("observedClaimId") String observedClaimId,
             @Param("recoveryNow") Instant recoveryNow,
             @Param("nextStatus") BackgroundJobStatus nextStatus,
-            @Param("retryCount") int retryCount,
-            @Param("nextRetryAt") Instant nextRetryAt,
+            @Param("publishScheduledAt") Instant publishScheduledAt,
             @Param("finishedAt") Instant finishedAt,
             @Param("errorCode") String errorCode,
             @Param("errorReason") String errorReason,

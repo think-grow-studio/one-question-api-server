@@ -78,15 +78,14 @@ public class BackgroundJobPublishProcessor {
     ) {
         Instant now = Instant.now();
         PublishFailureTransition transition =
-                retryPolicy.onFailure(job.retryCount(), now, cause.getMessage());
+                retryPolicy.onFailure(job.publishAttemptCount(), now, cause.getMessage());
 
         int updated = txTemplate.execute(status ->
                 backgroundJobService.recordPublishFailure(
                         job.id(),
                         job.claimId(),
                         transition.nextStatus(),
-                        transition.retryCount(),
-                        transition.nextRetryAt(),
+                        transition.publishScheduledAt(),
                         transition.finishedAt(),
                         transition.errorCode(),
                         transition.errorReason(),
@@ -97,8 +96,8 @@ public class BackgroundJobPublishProcessor {
         if (transition.exhausted()) {
             return PublishAttemptResult.exhausted(cause);
         }
-        log.warn("BackgroundJob 발행 실패, 재시도 예약: jobId={}, retryCount={}, nextRetryAt={}",
-                job.id(), transition.retryCount(), transition.nextRetryAt(), cause);
+        log.warn("BackgroundJob 발행 실패, 재시도 예약: jobId={}, publishAttemptCount={}, publishScheduledAt={}",
+                job.id(), job.publishAttemptCount(), transition.publishScheduledAt(), cause);
         return PublishAttemptResult.retryScheduled();
     }
 }

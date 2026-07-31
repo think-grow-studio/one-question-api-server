@@ -95,6 +95,17 @@ public class BackgroundJob extends BaseEntity {
     @Column(nullable = false, length = 30)
     private BackgroundJobStatus status;
 
+    // ---------- 발행 단계 (Spring 전용) ----------
+
+    /**
+     * 다음 발행 예정 시각. 발행 실패 시 백오프만큼 미뤄 이 컬럼을 갱신한다 —
+     * 별도 재시도 시각 컬럼을 두지 않는다(첫 발행과 재발행이 같은 개념이므로).
+     * 그래서 발행 대상 조회가 {@code status=PENDING AND publish_scheduled_at <= now} 하나로 끝난다.
+     * 클라이언트향 "요청 시각"은 {@code created_at} 이 담는다.
+     */
+    @Column(name = "publish_scheduled_at", nullable = false)
+    private Instant publishScheduledAt;
+
     /**
      * 현재 메시지 발행 시도의 소유권 식별자.
      * lease 만료 후 과거 발행자가 새 발행자의 상태를 덮어쓰지 못하게 CAS 조건에 사용한다.
@@ -110,38 +121,55 @@ public class BackgroundJob extends BaseEntity {
     private Instant publishClaimUntil;
 
     /**
-     * 현재 처리(Worker) 시도의 소유권 식별자.
-     * 발행 lease({@code publish_claim_id})와 별개다 — 발행은 이 서버가, 처리는 Worker 가 선점한다.
-     * lease 만료 후 과거 처리자가 새 처리자의 상태를 덮어쓰지 못하게 CAS 조건에 사용한다.
+     * 발행 시도 횟수(첫 시도 포함, 1부터). 0 은 아직 시도하지 않았다는 뜻이다.
+     * 선점 CAS 에서 증가하므로 첫 시도에 성공한 작업도 1 이 된다.
+     */
+    @Column(name = "publish_attempt_count", nullable = false)
+    private int publishAttemptCount;
+
+    // ---------- 처리 단계 (워커 전용) ----------
+
+    /**
+     * 현재 처리 시도의 소유권 식별자. {@code publish_claim_id} 의 처리 단계 대응물이다.
+     * 워커만 읽고 쓴다 — 이 서버는 컬럼만 매핑하고 갱신하지 않는다.
      */
     @Column(name = "process_claim_id", length = 36)
     private String processClaimId;
 
     /**
-     * 처리 선점의 만료 시각.
-     * 이 시각이 지나면 중단된 PROCESSING 작업을 복구 대상으로 본다.
+     * 처리 선점의 만료 시각. 지나면 중단된 PROCESSING 을 다른 워커가 재선점한다.
+     * 비교는 DB 시계 기준이라 앱 시계 동기화에 의존하지 않는다.
      */
     @Column(name = "process_claim_until")
     private Instant processClaimUntil;
 
-    @Column(name = "scheduled_at", nullable = false)
-    private Instant scheduledAt;
+    /**
+     * 처리 시도 횟수. 워커가 SQS {@code ApproximateReceiveCount} 를 그대로 기록한다.
+     * 기록 전용 — terminal 판정은 SQS 값으로 하며 이 컬럼을 조건으로 쓰지 않는다.
+     */
+    @Column(name = "process_attempt_count", nullable = false)
+    private int processAttemptCount;
 
-    @Column(name = "started_at")
-    private Instant startedAt;
+    /**
+     * 처리 시작 시각(관측용). 소유권 판단에는 쓰지 않는다 — {@code process_claim_id} 가 담당한다.
+     */
+    @Column(name = "process_started_at")
+    private Instant processStartedAt;
 
+    // ---------- 생명주기 (끝낸 쪽이 기록) ----------
+
+    /**
+     * 종료 시각. 발행 terminal 실패와 처리 종료 양쪽에서 찍히는 생명주기 컬럼이라
+     * 단계 접두사를 붙이지 않는다.
+     */
     @Column(name = "finished_at")
     private Instant finishedAt;
 
-    @Column(name = "next_retry_at")
-    private Instant nextRetryAt;
-
-    @Column(name = "retry_count", nullable = false)
-    private int retryCount;
-
+    /** terminal 실패에만 기록한다. 성공 전이 시에는 남기지 않는다. */
     @Column(name = "error_code", length = 50)
     private String errorCode;
 
+    /** terminal 실패에만 기록한다. */
     @Column(name = "error_reason", length = 255)
     private String errorReason;
 
@@ -164,17 +192,17 @@ public class BackgroundJob extends BaseEntity {
                 idempotencyKey.value(),
                 requestHash.value(),
                 BackgroundJobStatus.PENDING,
+                Instant.now(),      // publishScheduledAt
                 null,               // publishClaimId
                 null,               // publishClaimUntil
+                0,                  // publishAttemptCount
                 null,               // processClaimId
                 null,               // processClaimUntil
-                Instant.now(),      // scheduledAt
-                null,               // startedAt
+                0,                  // processAttemptCount
+                null,               // processStartedAt
                 null,               // finishedAt
-                null,               // nextRetryAt
-                0,
-                null,
-                null
+                null,               // errorCode
+                null                // errorReason
         );
     }
 

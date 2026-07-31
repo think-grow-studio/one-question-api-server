@@ -4,6 +4,6 @@ public record ExpiredPublishClaim(
         Long id,
         BackgroundJobType jobType,
         String claimId,
-        int retryCount
+        int publishAttemptCount
 ) {
 }
