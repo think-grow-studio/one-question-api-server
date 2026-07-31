@@ -14,10 +14,14 @@
 - 멱등성 범위는 작업 생성 컨텍스트별로 정한다. AI 분석 리포트는 `(member_id, job_type, idempotency_key)`를 유니크하게 사용한다.
 - `idempotency_key`는 클라이언트가 생성 요청마다 제공한다. 서버에서 임의 UUID로 대체하지 않으며, 형식 검증과 정규화는 `IdempotencyKey` 값 객체가 담당한다.
 - `request_hash`는 같은 멱등키 재사용 시 요청 payload 동일성을 검증하기 위한 값이다. 형식 검증과 SHA-256 생성은 `RequestHash` 값 객체가 담당하며, 중복 작업 판정 기준으로 단독 사용하지 않는다.
-- 발행 상태는 `PENDING → PUBLISHING → QUEUED`로 전이한다. 신규 선점 CAS는 `id + PENDING + 재시도 시각 도래`, 완료·실패 CAS는 `id + PUBLISHING + publish_claim_id`, 만료 복구 CAS는 여기에 claim 만료 시각까지 확인한다. 모든 bulk CAS는 `updated_at`을 직접 갱신한다.
+- 발행 상태는 `PENDING → PUBLISHING → QUEUED`로 전이한다. 신규 선점 CAS는 `id + PENDING + publish_scheduled_at 도래`, 완료·실패 CAS는 `id + PUBLISHING + publish_claim_id`, 만료 복구 CAS는 여기에 claim 만료 시각까지 확인한다. 모든 bulk CAS는 `updated_at`을 직접 갱신한다.
 - `publish_claim_id`는 발행 시도마다 생성하는 UUID fencing token이다. `publish_claim_until`은 중단된 `PUBLISHING` 작업을 복구할 수 있는 lease 만료 시각이다.
-- 발행자는 `status=PENDING`이고 실효 발행 시각 `COALESCE(next_retry_at, scheduled_at)`이 도래한 작업만 `scheduled_at` 순으로 집는다. `scheduled_at`은 최초 발행 예정 시각(생성 시 현재 시각, 지연 발행 잡은 미래)이고, 재시도 시엔 `next_retry_at`이 백오프로 이를 덮는다. 클라이언트향 "요청 시각"은 `created_at`이 담는다. 만료된 `PUBLISHING`도 현재 claim ID와 만료 시각을 재확인하는 CAS로 복구한다.
-- 발행 성공 시 `QUEUED`. 실패 시 retry_count 증가 + 지수 백오프(1·2·4·8분) 재예약, 5회 소진 시 FAILED(`error_code=PUBLISH_FAILED`). `error_reason`은 255자로 잘라 저장한다.
+- **컬럼 접두사가 소유 단계를 뜻한다.** `publish_*`는 발행 단계(이 서버만 씀), `process_*`는 처리 단계(워커만 씀), 접두사 없는 것(`status`·`finished_at`·`error_code`·`error_reason`)은 생명주기 전체로 **그 작업을 끝낸 쪽이 기록**하며 일생에 한 번만 값이 생긴다. 단계별로 쪼개지 않는 이유는 쪼개면 한쪽이 항상 NULL이기 때문이다.
+- 발행자는 `status=PENDING AND publish_scheduled_at <= now`인 작업만 `publish_scheduled_at` 순으로 집는다. **재시도 시각 컬럼을 따로 두지 않는다** — 발행 실패 시 `publish_scheduled_at`을 백오프만큼 미뤄 갱신하므로 첫 발행과 재발행이 같은 조건 하나로 조회된다. 클라이언트향 "요청 시각"은 `created_at`이 담는다. 만료된 `PUBLISHING`도 현재 claim ID와 만료 시각을 재확인하는 CAS로 복구한다.
+- `publish_attempt_count`는 **선점 CAS 시점에** 증가한다(첫 시도 포함, 1부터). 실패 시가 아니라 시도 시에 세므로 첫 시도에 성공한 작업도 1이다. `0`은 아직 시도한 적이 없다는 뜻이다. `PublishRetryPolicy`는 이미 증가된 값을 받아 소진 판정만 하며 다시 더하지 않는다.
+- 발행 성공 시 `QUEUED`. 실패 시 지수 백오프(1·2·4·8분)로 `publish_scheduled_at` 재예약, 5회 소진 시 FAILED(`error_code=PUBLISH_FAILED`). `error_reason`은 255자로 잘라 저장한다. **소진 시에는 `publish_scheduled_at`을 옮기지 않는다** — FAILED는 어차피 발행 대상이 아니므로, JPQL에서 `COALESCE(:publishScheduledAt, job.publishScheduledAt)`로 "null이면 유지"한다.
+- `process_claim_id`/`process_claim_until`/`process_attempt_count`/`process_started_at`은 **워커 소유다.** 이 서버는 컬럼만 매핑하고 읽지도 쓰지도 않는다. `process_attempt_count`는 워커가 SQS `ApproximateReceiveCount`를 그대로 기록하는 관측용이며 terminal 판정 조건으로 쓰지 않는다. `process_started_at`도 관측용이고 소유권 판단은 `process_claim_id`가 담당한다.
+- **실패 조사 규칙**: `status=FAILED`일 때 `process_started_at IS NULL`이면 발행 단계에서, NOT NULL이면 처리 단계에서 죽은 것이다. `error_code`/`error_reason`은 terminal 실패에만 기록한다.
 - 공통 `BackgroundJobPublishScheduler`는 기본 5초 주기이며 `app.background-job.publisher.enabled=true`인 프로필에서만 활성화한다.
 - 외부 큐 발행은 DB 트랜잭션 밖에서 수행한다. `BackgroundJobPublishProcessor`는 선점·완료·실패 상태 변경만 각각 짧은 `REQUIRES_NEW` 트랜잭션으로 처리하고 그 사이 SQS 호출은 트랜잭션 밖에서 실행한다. 따라서 발행 진입점은 트랜잭션 밖에서 호출해야 하며, 스케줄러 진입점이 이를 보장한다. SQS 발행 직후 최종 상태 기록 전에 장애가 나면 메시지가 중복될 수 있으므로 Worker는 `jobId`로 멱등 처리한다.
 - SQS 메시지는 Publisher가 `PUBLISHING → QUEUED`를 커밋하기 전에 Worker에게 보일 수 있다. Worker가 `PENDING` 또는 `PUBLISHING`을 읽으면 조기 수신으로 판단해 업무를 시작하지 않고 acknowledge/delete하지 않으며, visibility timeout 후 재전달되게 둔다.
