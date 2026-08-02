@@ -133,6 +133,10 @@ SQS 발행은 DB 트랜잭션 밖에서 실행되므로 메시지가 보이는 �
   - 롤백: VM의 `/home/ubuntu/.env`에서 `IMAGE_TAG`를 이전 값으로 바꾸고 `docker compose -f <파일> up -d`
   - ⚠️ 두 빌드 워크플로는 `workflow_run`으로 트리거되는데, 이 이벤트의 `GITHUB_SHA`는 **기본 브랜치의 마지막 커밋**이다. 따라서 `metadata-action`의 `type=sha`를 쓰면 실제 빌드한 커밋이 아닌 값이 태그로 붙는다. `github.event.workflow_run.head_sha`에서 직접 계산할 것
 - **Oracle wallet**: 이미지에 굽지 않는다. wallet 폴더를 `tar.gz` + base64 한 값을 `ORACLE_WALLET_BASE64` 환경변수로 넘기면 `docker-entrypoint.sh`가 컨테이너 기동 시 `/app/src/main/resources/` 아래로 풀어서 쓴다 (빌드 타임에 풀면 시크릿 마운트를 쓰더라도 복원 결과물이 이미지 레이어에 남는다). **푸는 경로는 `ORACLE_DB_URL`의 `TNS_ADMIN=./src/main/resources/<wallet>` 과 맞물려 있어, 한쪽만 바꾸면 기동에 실패한다**
+- **Graceful shutdown**: `application.properties`의 종료 예산과 compose의 `stop_grace_period`는 **한 세트로 읽어야 한다.** 웹 드레이닝 25s + 스케줄러 대기 20s = 최대 45s이므로 `stop_grace_period`(60s)가 그보다 짧으면 Docker가 먼저 SIGKILL을 보내 드레이닝이 잘린다. 한쪽만 조정하지 말 것
+  - `server.shutdown=graceful`은 Boot 3.4 기본값이지만 위 계산의 전제라 명시해 뒀다
+  - `spring.task.scheduling.shutdown.await-termination`은 기본값이 `false`라 반드시 켜야 한다. BackgroundJob 발행 배치가 SQS 호출 도중 끊기면 그 작업은 `PUBLISHING`으로 남아 publish claim이 만료될 때까지 아무도 집어가지 못한다
+  - 컨테이너의 PID 1은 `docker-entrypoint.sh`가 아니라 **java여야 한다** (스크립트가 `exec "$@"`로 자신을 교체). PID 1이 셸이면 SIGTERM이 JVM에 전달되지 않아 위 설정이 전부 무의미해진다
 - **nginx**: `nginx/prod.conf`, `nginx/dev.conf`. conf는 디렉토리 단위 bind mount (inode 고정 이슈 회피 — `docs/nginx-bind-mount-inode-postmortem.md`)
 - **Actuator**: 8081 포트 분리, `prometheus`·`health`만 노출, 별도 SecurityFilterChain
 - **DB 스키마 변경**: `src/main/resources/migration/`의 SQL을 수동 적용 (prod는 validate만 수행)

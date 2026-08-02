@@ -4,6 +4,9 @@ services:
     image: ghcr.io/think-grow-studio/one-question-api-server:${IMAGE_TAG:-latest}
     container_name: one-question-api
     restart: unless-stopped
+    # graceful shutdown 예산(웹 25s + 스케줄러 20s)보다 길어야 한다.
+    # Docker 기본값 10s 로는 드레이닝이 끝나기 전에 SIGKILL 이 날아간다.
+    stop_grace_period: 60s
     mem_limit: 1200m
     ports:
       # nginx가 없는 VM이라 main VM의 nginx가 private IP로 직접 붙을 수 있도록 호스트에 노출
