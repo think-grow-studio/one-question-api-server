@@ -129,6 +129,9 @@ SQS 발행은 DB 트랜잭션 밖에서 실행되므로 메시지가 보이는 �
 | `prod` | Oracle ADB (main wallet), `ddl-auto=validate` | 운영. 시크릿은 전부 환경변수 |
 
 - **배포 파이프라인**: `.github/workflows/` — Gradle 빌드 → Docker 이미지 빌드 → GHCR push → VM에 compose 배포 (`docker-compose.prod.yml` / `docker-compose.dev.yml`)
+- **이미지 태그**: 배포는 `latest`가 아니라 커밋 단위 불변 태그(`sha-xxxxxxx`)로 고정한다. 빌드가 태그를 `image-url.txt`로 내려보내고, 배포 워크플로가 이를 `IMAGE_TAG`로 VM의 `/home/ubuntu/.env`에 기록한다. **prod는 MAIN VM이 쓴 태그를 SUB VM이 job output으로 그대로 물려받는다** — `latest`를 쓰면 MAIN 배포 후 새 빌드가 올라올 때 SUB만 다른 버전을 pull 해서, nginx가 두 VM에 라운드로빈 하는 동안 버전이 섞인 채 서비스된다. 배포 워크플로는 태그가 `sha-`로 시작하지 않으면 중단한다
+  - 롤백: VM의 `/home/ubuntu/.env`에서 `IMAGE_TAG`를 이전 값으로 바꾸고 `docker compose -f <파일> up -d`
+  - ⚠️ 두 빌드 워크플로는 `workflow_run`으로 트리거되는데, 이 이벤트의 `GITHUB_SHA`는 **기본 브랜치의 마지막 커밋**이다. 따라서 `metadata-action`의 `type=sha`를 쓰면 실제 빌드한 커밋이 아닌 값이 태그로 붙는다. `github.event.workflow_run.head_sha`에서 직접 계산할 것
 - **Oracle wallet**: 이미지에 굽지 않는다. wallet 폴더를 `tar.gz` + base64 한 값을 `ORACLE_WALLET_BASE64` 환경변수로 넘기면 `docker-entrypoint.sh`가 컨테이너 기동 시 `/app/src/main/resources/` 아래로 풀어서 쓴다 (빌드 타임에 풀면 시크릿 마운트를 쓰더라도 복원 결과물이 이미지 레이어에 남는다). **푸는 경로는 `ORACLE_DB_URL`의 `TNS_ADMIN=./src/main/resources/<wallet>` 과 맞물려 있어, 한쪽만 바꾸면 기동에 실패한다**
 - **nginx**: `nginx/prod.conf`, `nginx/dev.conf`. conf는 디렉토리 단위 bind mount (inode 고정 이슈 회피 — `docs/nginx-bind-mount-inode-postmortem.md`)
 - **Actuator**: 8081 포트 분리, `prometheus`·`health`만 노출, 별도 SecurityFilterChain

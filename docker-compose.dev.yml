@@ -1,6 +1,7 @@
 services:
   app:
-    image: ghcr.io/think-grow-studio/develop-one-question-api:latest
+    # 배포 워크플로가 커밋 단위 불변 태그(sha-xxxxxxx)를 /home/ubuntu/.env 에 기록한다.
+    image: ghcr.io/think-grow-studio/develop-one-question-api:${IMAGE_TAG:-latest}
     container_name: one-question-api
     restart: unless-stopped
     mem_limit: 700m

@@ -28,8 +28,16 @@ jobs:
       - name: Setup Variables
         id: setup
         run: |
+          set -e
           IMAGE_URL=$(cat image-url.txt)
+          IMAGE_TAG=${IMAGE_URL##*:}
+          # latest 로 배포되면 롤백도 버전 확인도 불가능해지므로 커밋 태그가 아니면 중단한다
+          case "$IMAGE_TAG" in
+            sha-*) ;;
+            *) echo "::error::불변 태그가 아닙니다 (image-url.txt = $IMAGE_URL). 배포를 중단합니다."; exit 1 ;;
+          esac
           echo "image_url=$IMAGE_URL" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "Using image: $IMAGE_URL"
 
       - name: Upload docker-compose.yml and nginx conf to DEV VM
@@ -94,6 +102,16 @@ jobs:
               export AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"
               export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
               export ANALYSIS_REPORT_QUEUE_URL="${{ secrets.ANALYSIS_REPORT_QUEUE_URL }}"
+
+              # 커밋 단위 불변 태그로 고정한다. compose 는 프로젝트 디렉토리의 .env 를 자동으로
+              # 읽으므로, VM 에서 수동으로 up 해도 배포된 버전 그대로 뜬다.
+              export IMAGE_TAG="${{ steps.setup.outputs.image_tag }}"
+              ENV_FILE=/home/ubuntu/.env
+              touch "$ENV_FILE"
+              grep -v '^IMAGE_TAG=' "$ENV_FILE" > "$ENV_FILE.tmp" || true
+              echo "IMAGE_TAG=$IMAGE_TAG" >> "$ENV_FILE.tmp"
+              mv "$ENV_FILE.tmp" "$ENV_FILE"
+              echo "🏷️ [DEV VM] Deploying tag: $IMAGE_TAG"
 
               echo "📦 [DEV VM] Pulling images..."
               docker compose -f $COMPOSE_FILE pull
