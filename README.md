@@ -129,6 +129,7 @@ SQS 발행은 DB 트랜잭션 밖에서 실행되므로 메시지가 보이는 �
 | `prod` | Oracle ADB (main wallet), `ddl-auto=validate` | 운영. 시크릿은 전부 환경변수 |
 
 - **배포 파이프라인**: `.github/workflows/` — Gradle 빌드 → Docker 이미지 빌드 → GHCR push → VM에 compose 배포 (`docker-compose.prod.yml` / `docker-compose.dev.yml`)
+- **Oracle wallet**: 이미지에 굽지 않는다. wallet 폴더를 `tar.gz` + base64 한 값을 `ORACLE_WALLET_BASE64` 환경변수로 넘기면 `docker-entrypoint.sh`가 컨테이너 기동 시 `/app/src/main/resources/` 아래로 풀어서 쓴다 (빌드 타임에 풀면 시크릿 마운트를 쓰더라도 복원 결과물이 이미지 레이어에 남는다). **푸는 경로는 `ORACLE_DB_URL`의 `TNS_ADMIN=./src/main/resources/<wallet>` 과 맞물려 있어, 한쪽만 바꾸면 기동에 실패한다**
 - **nginx**: `nginx/prod.conf`, `nginx/dev.conf`. conf는 디렉토리 단위 bind mount (inode 고정 이슈 회피 — `docs/nginx-bind-mount-inode-postmortem.md`)
 - **Actuator**: 8081 포트 분리, `prometheus`·`health`만 노출, 별도 SecurityFilterChain
 - **DB 스키마 변경**: `src/main/resources/migration/`의 SQL을 수동 적용 (prod는 validate만 수행)

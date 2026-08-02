@@ -75,6 +75,7 @@ jobs:
               export ORACLE_DB_USERNAME="${{ secrets.DEV_ORACLE_DB_USERNAME }}"
               export ORACLE_DB_PASSWORD="${{ secrets.DEV_ORACLE_DB_PASSWORD }}"
               export ORACLE_DB_DIALECT="${{ secrets.ORACLE_DB_DIALECT }}"
+              export ORACLE_WALLET_BASE64="${{ secrets.ORACLE_DEV_WALLET_COMPRESSED_BASE64 }}"
               export JWT_SECRET_KEY="${{ secrets.DEV_JWT_SECRET_KEY }}"
               export JWT_ACCESS_EXPIRE_TIME="${{ secrets.JWT_ACCESS_EXPIRE_TIME }}"
               export JWT_REFRESH_EXPIRE_TIME="${{ secrets.JWT_REFRESH_EXPIRE_TIME }}"
