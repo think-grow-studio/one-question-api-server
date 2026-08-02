@@ -47,7 +47,7 @@ public class JwtValidationFilter extends OncePerRequestFilter {
       return;
     }
     try {
-      jwtService.validate(token);
+      jwtService.validateAccessToken(token);
       setAuthentication(token);
       filterChain.doFilter(request, response);
     } catch (ExpiredJwtException e) {

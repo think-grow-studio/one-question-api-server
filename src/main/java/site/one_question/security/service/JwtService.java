@@ -70,8 +70,21 @@ public class JwtService {
         parseToken(token);
     }
 
+    public void validateAccessToken(String token) {
+        validateTokenType(token, ACCESS_TYPE);
+    }
+
+    public boolean isValidAccessToken(String token) {
+        try {
+            validateAccessToken(token);
+            return true;
+        } catch (JwtException e) {
+            return false;
+        }
+    }
+
     public boolean isRefreshToken(String token) {
-        return REFRESH_TYPE.equals(parseToken(token).get(TYPE, String.class));
+        return hasTokenType(token, REFRESH_TYPE);
     }
 
     public Long extractMemberId(String token) {
@@ -93,6 +106,16 @@ public class JwtService {
 
     public OneQuestionPrincipal extractPrincipal(String token) {
         return new OneQuestionPrincipal(extractMemberId(token),extractEmail(token), extractPermission(token));
+    }
+
+    private void validateTokenType(String token, String expectedType) {
+        if (!hasTokenType(token, expectedType)) {
+            throw new JwtException("Unexpected JWT type");
+        }
+    }
+
+    private boolean hasTokenType(String token, String expectedType) {
+        return expectedType.equals(parseToken(token).get(TYPE));
     }
 
     private Claims parseToken(String token) {
