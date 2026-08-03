@@ -101,7 +101,7 @@ jobs:
               export AWS_REGION="${{ secrets.AWS_REGION }}"
               export AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"
               export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-              export ANALYSIS_REPORT_QUEUE_URL="${{ secrets.ANALYSIS_REPORT_QUEUE_URL }}"
+              export ANALYSIS_REPORT_QUEUE_URL="${{ secrets.DEV_ANALYSIS_REPORT_QUEUE_URL }}"
 
               # 커밋 단위 불변 태그로 고정한다. compose 는 프로젝트 디렉토리의 .env 를 자동으로
               # 읽으므로, VM 에서 수동으로 up 해도 배포된 버전 그대로 뜬다.
