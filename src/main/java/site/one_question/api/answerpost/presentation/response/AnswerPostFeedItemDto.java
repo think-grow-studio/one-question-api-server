@@ -39,8 +39,8 @@ public record AnswerPostFeedItemDto(
                 post.getPostedAt(), ZoneId.of(timezone));
         return new AnswerPostFeedItemDto(
                 post.getId(),
-                post.getQuestionAnswer().getDailyQuestionId().getQuestion().getContent(),
-                post.getQuestionAnswer().getDailyQuestionId().getQuestion().getDescription(),
+                post.getQuestionAnswer().getDailyQuestion().getQuestion().getContent(),
+                post.getQuestionAnswer().getDailyQuestion().getQuestion().getDescription(),
                 post.getQuestionAnswer().getContent(),
                 post.getAnonymousNickname(),
                 postedAt,

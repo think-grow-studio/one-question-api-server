@@ -18,7 +18,7 @@ public interface AnswerPostRepository extends JpaRepository<AnswerPost, Long> {
 
     @Query("SELECT ap FROM AnswerPost ap " +
            "JOIN FETCH ap.questionAnswer qa " +
-           "JOIN FETCH qa.dailyQuestionId dq " +
+           "JOIN FETCH qa.dailyQuestion dq " +
            "JOIN FETCH dq.question q " +
            "WHERE ap.status = 'PUBLISHED' AND ap.postedAt < :cursor " +
            "ORDER BY ap.postedAt DESC")

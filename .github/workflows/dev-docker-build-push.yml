@@ -40,6 +40,13 @@ jobs:
           fi
           echo "name=${IMAGE}" >> $GITHUB_OUTPUT
 
+      # workflow_run 이벤트에서는 GITHUB_SHA 가 "기본 브랜치의 마지막 커밋"이라
+      # metadata-action 의 type=sha 를 쓰면 develop 로 빌드한 이미지에 main 의 sha 가 붙는다.
+      # 트리거한 워크플로의 head_sha 에서 직접 계산한다.
+      - name: Resolve image tag from the built commit
+        id: tag
+        run: echo "sha_short=$(echo ${{ github.event.workflow_run.head_sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v4
@@ -48,7 +55,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,format=short
+            type=raw,value=sha-${{ steps.tag.outputs.sha_short }}
             type=raw,value=latest
 
       - name: Set up QEMU
@@ -74,11 +81,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          secrets: |
-            wallet_base64=${{ secrets.ORACLE_DEV_WALLET_COMPRESSED_BASE64 }}
 
+      # latest 가 아니라 불변 태그를 내려보낸다 (롤백·추적 가능).
       - name: Save image URL for downstream workflows
-        run: echo "${{ steps.image.outputs.name }}:latest" > image-url.txt
+        run: echo "${{ steps.image.outputs.name }}:sha-${{ steps.tag.outputs.sha_short }}" > image-url.txt
 
       - name: Upload image URL artifact
         uses: actions/upload-artifact@v4
@@ -86,10 +92,6 @@ jobs:
           name: dev-image-url
           path: image-url.txt
           retention-days: 1
-
-      - name: Get short commit SHA
-        id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Send Discord Docker Job Status
         if: always()
@@ -103,8 +105,8 @@ jobs:
             Docker build & push job status for **${{ github.repository }}**.
 
             **Branch:** `${{ github.event.workflow_run.head_branch }}`
-            **Image:** `${{ steps.image.outputs.name }}`
-            **Commit:** [`${{ steps.vars.outputs.sha_short }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }})
+            **Image:** `${{ steps.image.outputs.name }}:sha-${{ steps.tag.outputs.sha_short }}`
+            **Commit:** [`${{ steps.tag.outputs.sha_short }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.workflow_run.head_sha }})
 
             ${{ job.status == 'success' && format('**Tags Applied:**\n```{0}```', steps.meta.outputs.tags) || '**Failure detected!** Please check the workflow logs.' }}
           url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

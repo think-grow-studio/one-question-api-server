@@ -46,10 +46,12 @@ out/
 # Apple Sign In private key
 *.p8
 AuthKey_*
-
+*.dbml
 # Base64-encoded secret blobs
 *_base64.txt
 *.b64.txt
 
 # macOS
 .DS_Store
+### Serena MCP (local agent memories)
+.serena/

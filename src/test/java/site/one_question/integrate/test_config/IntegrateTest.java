@@ -16,8 +16,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.GoogleTokenVerifier;
+import site.one_question.api.analysisreport.domain.AnalysisReportRepository;
+import site.one_question.api.analysisreport.domain.AnalysisReportJobQueueGateway;
+import site.one_question.api.analysisreport.domain.AnalysisReportSourceRepository;
 import site.one_question.api.answerpost.domain.AnswerPostLikeRepository;
 import site.one_question.api.answerpost.domain.AnswerPostRepository;
+import site.one_question.api.backgroundjob.domain.BackgroundJobRepository;
 import site.one_question.api.notification.domain.FcmTokenRepository;
 import site.one_question.api.notification.domain.QuestionReminderSettingRepository;
 import site.one_question.api.question.domain.QuestionLikeRepository;
@@ -30,6 +34,9 @@ import site.one_question.api.question.domain.QuestionCycleRepository;
 import site.one_question.api.question.domain.QuestionRepository;
 import site.one_question.integrate.test_config.utils.TestAnswerPostLikeUtils;
 import site.one_question.integrate.test_config.utils.TestAnswerPostUtils;
+import site.one_question.integrate.test_config.utils.TestAnalysisReportSourceUtils;
+import site.one_question.integrate.test_config.utils.TestAnalysisReportUtils;
+import site.one_question.integrate.test_config.utils.TestBackgroundJobUtils;
 import site.one_question.integrate.test_config.utils.TestQuestionLikeUtils;
 import site.one_question.integrate.test_config.utils.TestAuthUtils;
 import site.one_question.integrate.test_config.utils.TestDailyQuestionAnswerUtils;
@@ -86,6 +93,15 @@ public abstract class IntegrateTest {
     protected QuestionLikeRepository questionLikeRepository;
 
     @Autowired
+    protected BackgroundJobRepository backgroundJobRepository;
+
+    @Autowired
+    protected AnalysisReportRepository analysisReportRepository;
+
+    @Autowired
+    protected AnalysisReportSourceRepository analysisReportSourceRepository;
+
+    @Autowired
     protected QuestionReminderSettingRepository questionReminderSettingRepository;
 
     @Autowired
@@ -123,6 +139,15 @@ public abstract class IntegrateTest {
     protected TestQuestionLikeUtils testQuestionLikeUtils;
 
     @Autowired
+    protected TestBackgroundJobUtils testBackgroundJobUtils;
+
+    @Autowired
+    protected TestAnalysisReportUtils testAnalysisReportUtils;
+
+    @Autowired
+    protected TestAnalysisReportSourceUtils testAnalysisReportSourceUtils;
+
+    @Autowired
     protected TestFcmTokenUtils testFcmTokenUtils;
 
     @Autowired
@@ -148,12 +173,16 @@ public abstract class IntegrateTest {
     @Autowired
     protected FirebaseTokenVerifier firebaseTokenVerifier;
 
+    @Autowired
+    protected AnalysisReportJobQueueGateway analysisReportJobQueueGateway;
+
     // API URL 상수
     protected static final String API_V1 = "/api/v1";
     protected static final String AUTH_API = API_V1 + "/auth";
     protected static final String MEMBERS_API = API_V1 + "/members";
     protected static final String QUESTIONS_API = API_V1 + "/questions";
     protected static final String ANSWER_POSTS_API = API_V1 + "/answer-posts";
+    protected static final String ANALYSIS_REPORTS_API = API_V1 + "/analysis-reports";
     protected static final String PUBLIC_QUESTIONS_API = API_V1 + "/public-questions";
     protected static final String NOTIFICATION_API = API_V1 + "/members/me/notifications";
     protected static final String FCM_TOKEN_API = NOTIFICATION_API + "/fcm-token";
@@ -161,7 +190,8 @@ public abstract class IntegrateTest {
 
     @BeforeEach
     void resetMocks() {
-        Mockito.reset(googleTokenVerifier, appleTokenVerifier, firebaseTokenVerifier);
+        Mockito.reset(googleTokenVerifier, appleTokenVerifier, firebaseTokenVerifier,
+                analysisReportJobQueueGateway);
     }
 
     @BeforeEach

@@ -29,7 +29,7 @@ public class AdminJwtCookieFilter extends OncePerRequestFilter {
 
         String token = extractTokenFromCookie(request);
 
-        if (token != null && jwtService.isValid(token)) {
+        if (token != null && jwtService.isValidAccessToken(token)) {
             String email = jwtService.extractEmail(token);
             if (adminEmail.equals(email)) {
                 OneQuestionPrincipal principal = new OneQuestionPrincipal(0L, email, MemberPermission.FREE);

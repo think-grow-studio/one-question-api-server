@@ -17,7 +17,7 @@ public interface AdminDailyQuestionAnswerRepository extends JpaRepository<DailyQ
     @Query("""
             SELECT dqa FROM DailyQuestionAnswer dqa
             JOIN FETCH dqa.member m
-            JOIN FETCH dqa.dailyQuestionId dq
+            JOIN FETCH dqa.dailyQuestion dq
             JOIN FETCH dq.question q
             WHERE m.id != 1
             ORDER BY dqa.answeredAt DESC

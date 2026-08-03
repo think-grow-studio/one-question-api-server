@@ -26,13 +26,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import site.one_question.common.MdcKey;
 
 @Slf4j
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    private static final String TRACE_ID_KEY = "traceId";
     private final MessageResolver messageResolver;
 
     @ExceptionHandler(BaseException.class)
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         String clientMessage = messageResolver.resolve(e.getClientMessageKey(), e.getMessageArgs());
 
         ExceptionResponse response = ExceptionResponse.of(
-                getTraceId(),
+                getRequestId(),
                 status.value(),
                 e.getSpec().getCode(),
                 clientMessage);
@@ -68,7 +68,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("[{}] {}", VALIDATION_FAILED.getCode(), errorDetails);
         String message = messageResolver.resolve(VALIDATION_FAILED.getClientMessageKey());
         ExceptionResponse response = ExceptionResponse.of(
-                getTraceId(),
+                getRequestId(),
                 VALIDATION_FAILED.getStatus().value(),
                 VALIDATION_FAILED.getCode(),
                 message);
@@ -82,7 +82,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         logConstraintViolation(e);
         String message = messageResolver.resolve(CONSTRAINT_VIOLATE.getClientMessageKey());
         ExceptionResponse response = ExceptionResponse.of(
-                getTraceId(),
+                getRequestId(),
                 CONSTRAINT_VIOLATE.getStatus().value(),
                 CONSTRAINT_VIOLATE.getCode(),
                 message);
@@ -107,7 +107,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         String message = messageResolver.resolve(TYPE_MISMATCH.getClientMessageKey());
         ExceptionResponse response = ExceptionResponse.of(
-                getTraceId(),
+                getRequestId(),
                 TYPE_MISMATCH.getStatus().value(),
                 TYPE_MISMATCH.getCode(),
                 message);
@@ -137,7 +137,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         String message = messageResolver.resolve(VALIDATION_FAILED.getClientMessageKey());
         ExceptionResponse response = ExceptionResponse.of(
-                getTraceId(),
+                getRequestId(),
                 VALIDATION_FAILED.getStatus().value(),
                 VALIDATION_FAILED.getCode(),
                 message);
@@ -164,15 +164,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         String message = messageResolver.resolve(INTERNAL_ERROR.getClientMessageKey());
         ExceptionResponse response = ExceptionResponse.of(
-                getTraceId(),
+                getRequestId(),
                 INTERNAL_ERROR.getStatus().value(),
                 INTERNAL_ERROR.getCode(),
                 message);
         return ResponseEntity.internalServerError().body(response);
     }
 
-    private String getTraceId() {
-        String traceId = MDC.get(TRACE_ID_KEY);
-        return traceId != null ? traceId : "N/A";
+    private String getRequestId() {
+        // 에러 응답의 requestId = 요청 correlation id(MDC requestId).
+        // background_job.correlation_id도 같은 MDC requestId에서 나오므로 에러 응답 ↔ 잡이 이어진다.
+        String requestId = MDC.get(MdcKey.REQUEST_ID);
+        return requestId != null ? requestId : "N/A";
     }
 }

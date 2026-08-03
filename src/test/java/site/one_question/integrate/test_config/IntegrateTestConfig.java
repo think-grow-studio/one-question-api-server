@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.messaging.FirebaseMessaging;
+import site.one_question.api.analysisreport.domain.AnalysisReportJobQueueGateway;
 import site.one_question.api.auth.infrastructure.oauth.AppleTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.FirebaseTokenVerifier;
 import site.one_question.api.auth.infrastructure.oauth.GoogleTokenVerifier;
@@ -41,6 +42,12 @@ public class IntegrateTestConfig {
     @Primary
     public FirebaseAuth mockFirebaseAuth() {
         return Mockito.mock(FirebaseAuth.class);
+    }
+
+    @Bean
+    @Primary
+    public AnalysisReportJobQueueGateway mockAnalysisReportJobQueueGateway() {
+        return Mockito.mock(AnalysisReportJobQueueGateway.class);
     }
 
     @Bean

@@ -1,6 +1,7 @@
 package site.one_question.api.question.domain;
 
-import java.util.Optional;
+import java.util.Collection;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import site.one_question.api.question.domain.exception.AnswerNotFoundException;
@@ -12,7 +13,7 @@ public class DailyQuestionAnswerService {
     private final DailyQuestionAnswerRepository answerRepository;
 
     public boolean hasAnswer(DailyQuestion dailyQuestion) {
-        return answerRepository.existsByDailyQuestionId(dailyQuestion);
+        return answerRepository.existsByDailyQuestion(dailyQuestion);
     }
 
     public DailyQuestionAnswer save(DailyQuestionAnswer answer) {
@@ -22,6 +23,10 @@ public class DailyQuestionAnswerService {
     public DailyQuestionAnswer findById(Long id) {
         return answerRepository.findById(id)
             .orElseThrow(() -> new AnswerNotFoundException(id));
+    }
+
+    public List<DailyQuestionAnswer> findOwnedByMemberWithQuestion(Long memberId, Collection<Long> answerIds) {
+        return answerRepository.findAllOwnedByMemberWithQuestion(memberId, answerIds);
     }
 
     public void deleteByMemberId(Long memberId) {
