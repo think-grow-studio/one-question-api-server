@@ -55,14 +55,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: (TEMP) Inspect wallet secret shape
-        env:
-          WALLET_B64: ${{ secrets.ORACLE_MAIN_WALLET_COMPRESSED_BASE64 }}
-        run: |
-          echo "char length: ${#WALLET_B64}"
-          echo -n "$WALLET_B64" | grep -c '' || true
-          echo "is empty: $([ -z "$WALLET_B64" ] && echo yes || echo no)"
-
       - name: Build and push Docker image
         id: docker_build
         uses: docker/build-push-action@v4
