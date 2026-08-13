@@ -27,3 +27,4 @@
 - 워커의 분석 입력 원천은 `analysis_report_source` 스냅샷이다 — `background_job.reference_id`로 얻은 리포트 id로 `seq_no` 순 조회하며, answer/question/member 원본 테이블은 조인하지 않는다.
 - `AnalysisReportJobPublisher.onPublishExhausted`는 `jobId`만 받고 job의 `reference_id`로 리포트를 찾는다. 만료 claim 복구 경로(`ExpiredPublishClaim`)가 같은 콜백을 쓰므로 `ClaimedBackgroundJob`을 넘길 수 없다 — 그 경로는 이 프로세스가 선점한 적이 없다. 재시도 소진은 5회 실패 후에만 도달하는 드문 경로라 조회 한 번을 감수한다.
 - 작업이 정상 발행되면 `background_job.status=QUEUED`가 된다. 발행 재시도 소진으로 FAILED가 되면 리포트도 별도 짧은 트랜잭션에서 `fail()`로 전이한다.
+- 리포트 목록 조회는 본인의 리포트를 상태와 무관하게(PENDING/COMPLETED/FAILED) id 내림차순으로 반환한다. `cursor`는 마지막으로 받은 리포트 id이고, `size`는 기본 10·최대 50이다. 목록 응답에는 긴 생성 결과(`result`)와 모델 메타데이터를 포함하지 않는다.

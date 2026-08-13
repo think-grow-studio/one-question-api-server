@@ -59,7 +59,7 @@ site.one_question
 │   ├── question/                 # 개인 데일리 질문: 질문 서빙, 사이클, 답변, 좋아요, 히스토리
 │   ├── publicquestion/           # 공개 데일리 질문: 하루 1개 공용 질문, 익명 답변·좋아요
 │   ├── answerpost/               # 답변 공개(피드) 게시, 피드 조회, 좋아요
-│   ├── analysisreport/           # AI 분석 리포트 생성 요청, 리포트 소스 스냅샷
+│   ├── analysisreport/           # AI 분석 리포트 생성 요청·목록 조회, 리포트 소스 스냅샷
 │   ├── backgroundjob/            # 외부 큐 발행 작업, 공통 Publisher Scheduler와 claim 복구
 │   ├── notification/             # FCM 토큰 등록, 질문 리마인드 설정, 리마인드 스케줄러
 │   ├── app_version/              # 앱 최소/최신 버전, 서버 라이브 여부 (강제 업데이트 판단용)

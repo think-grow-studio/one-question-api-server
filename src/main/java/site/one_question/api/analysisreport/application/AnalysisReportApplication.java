@@ -17,7 +17,9 @@ import site.one_question.api.analysisreport.domain.AnalysisReportSourceService;
 import site.one_question.api.analysisreport.domain.exception.AnalysisReportSourceAnswerNotOwnedException;
 import site.one_question.api.analysisreport.domain.AnalysisReportType;
 import site.one_question.api.analysisreport.presentation.request.CreateAnalysisReportRequest;
+import site.one_question.api.analysisreport.presentation.response.AnalysisReportItemDto;
 import site.one_question.api.analysisreport.presentation.response.CreateAnalysisReportResponse;
+import site.one_question.api.analysisreport.presentation.response.GetAnalysisReportsResponse;
 import site.one_question.api.backgroundjob.domain.BackgroundJob;
 import site.one_question.api.backgroundjob.domain.BackgroundJobService;
 import site.one_question.api.backgroundjob.domain.BackgroundJobType;
@@ -86,6 +88,23 @@ public class AnalysisReportApplication {
         analysisReportSourceService.createAll(analysisReport, memberId, sourceAnswers);
 
         return CreateAnalysisReportResponse.from(backgroundJob, analysisReport);
+    }
+
+    @Transactional(readOnly = true)
+    public GetAnalysisReportsResponse getAll(Long memberId, Long cursor, int size) {
+        memberService.findById(memberId);
+
+        List<AnalysisReport> reports = analysisReportService.findMemberReports(
+                memberId, cursor, size + 1);
+        boolean hasNext = reports.size() > size;
+        List<AnalysisReport> page = hasNext ? reports.subList(0, size) : reports;
+
+        List<AnalysisReportItemDto> items = page.stream()
+                .map(AnalysisReportItemDto::from)
+                .toList();
+        Long nextCursor = hasNext ? page.getLast().getId() : null;
+
+        return new GetAnalysisReportsResponse(items, hasNext, nextCursor);
     }
 
     private RequestHash createRequestHash(

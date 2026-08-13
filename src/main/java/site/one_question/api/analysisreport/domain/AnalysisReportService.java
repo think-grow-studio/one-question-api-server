@@ -1,6 +1,8 @@
 package site.one_question.api.analysisreport.domain;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import site.one_question.api.member.domain.Member;
 
@@ -19,5 +21,14 @@ public class AnalysisReportService {
         return analysisReportRepository.findById(id)
                 .orElseThrow(() -> new IllegalStateException(
                         "analysis report not found: " + id));
+    }
+
+    public List<AnalysisReport> findMemberReports(
+            Long memberId,
+            Long lastSeenReportId,
+            int limit
+    ) {
+        return analysisReportRepository.findAllByMemberIdBeforeCursor(
+                memberId, lastSeenReportId, PageRequest.of(0, limit));
     }
 }

@@ -9,13 +9,42 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import site.one_question.api.analysisreport.presentation.request.CreateAnalysisReportRequest;
 import site.one_question.api.analysisreport.presentation.response.CreateAnalysisReportResponse;
+import site.one_question.api.analysisreport.presentation.response.GetAnalysisReportsResponse;
 import site.one_question.common.HttpHeaderConstant;
 
 @Tag(name = "AnalysisReport", description = "AI 분석 리포트 관련 API")
 public interface AnalysisReportApi {
+
+    @Operation(
+            summary = "AI 분석 리포트 목록 조회",
+            description = "본인의 PENDING, COMPLETED, FAILED 리포트를 최신순으로 커서 조회합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "리포트 목록 조회 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = GetAnalysisReportsResponse.class))),
+            @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
+    ResponseEntity<GetAnalysisReportsResponse> getAll(
+            Long memberId,
+            @Parameter(name = "cursor", description = "이전 응답의 nextCursor", in = ParameterIn.QUERY)
+            Long cursor,
+            @Parameter(
+                    name = "size",
+                    description = "페이지 크기 (1~50)",
+                    example = "10",
+                    in = ParameterIn.QUERY,
+                    schema = @Schema(minimum = "1", maximum = "50")
+            )
+            @Min(1) @Max(50)
+            Integer size
+    );
 
     @Operation(
             summary = "AI 분석 리포트 생성 요청",
@@ -52,6 +81,7 @@ public interface AnalysisReportApi {
                             schema = @Schema(implementation = CreateAnalysisReportRequest.class)
                     )
             )
+            @Valid
             CreateAnalysisReportRequest request
     );
 }
