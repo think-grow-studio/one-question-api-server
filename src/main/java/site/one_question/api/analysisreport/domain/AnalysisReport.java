@@ -1,5 +1,6 @@
 package site.one_question.api.analysisreport.domain;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,7 +12,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import site.one_question.api.analysisreport.domain.exception.AnalysisReportCompletionDataInvalidException;
 import site.one_question.api.analysisreport.domain.exception.AnalysisReportNotPendingException;
 import site.one_question.api.member.domain.Member;
@@ -35,6 +40,10 @@ public class AnalysisReport extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
+
+    @OneToMany(mappedBy = "analysisReport", cascade = CascadeType.REMOVE)
+    @OrderBy("seqNo ASC")
+    private List<AnalysisReportSource> sources;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "report_type", nullable = false, length = 100)
@@ -65,6 +74,7 @@ public class AnalysisReport extends BaseEntity {
         return new AnalysisReport(
                 null,
                 member,
+                new ArrayList<>(),
                 reportType,
                 AnalysisReportStatus.PENDING,
                 null,

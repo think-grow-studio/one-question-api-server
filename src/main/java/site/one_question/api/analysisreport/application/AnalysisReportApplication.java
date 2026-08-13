@@ -1,16 +1,20 @@
 package site.one_question.api.analysisreport.application;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.one_question.api.analysisreport.domain.AnalysisReport;
+import site.one_question.api.analysisreport.domain.AnalysisReportStatus;
 import site.one_question.api.analysisreport.domain.AnalysisReportService;
 import site.one_question.api.analysisreport.domain.AnalysisReportSourceAnswerIds;
 import site.one_question.api.analysisreport.domain.AnalysisReportSourceService;
@@ -19,6 +23,7 @@ import site.one_question.api.analysisreport.domain.AnalysisReportType;
 import site.one_question.api.analysisreport.presentation.request.CreateAnalysisReportRequest;
 import site.one_question.api.analysisreport.presentation.response.AnalysisReportItemDto;
 import site.one_question.api.analysisreport.presentation.response.CreateAnalysisReportResponse;
+import site.one_question.api.analysisreport.presentation.response.GetAnalysisReportDetailResponse;
 import site.one_question.api.analysisreport.presentation.response.GetAnalysisReportsResponse;
 import site.one_question.api.backgroundjob.domain.BackgroundJob;
 import site.one_question.api.backgroundjob.domain.BackgroundJobService;
@@ -30,11 +35,15 @@ import site.one_question.api.member.domain.MemberService;
 import site.one_question.api.question.domain.DailyQuestionAnswer;
 import site.one_question.api.question.domain.DailyQuestionAnswerService;
 import site.one_question.common.MdcKey;
+import site.one_question.exception.MessageResolver;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class AnalysisReportApplication {
+
+    private static final String INVALID_RESULT_MESSAGE_KEY = "ai-report.result.invalid";
 
     private final MemberService memberService;
     private final DailyQuestionAnswerService dailyQuestionAnswerService;
@@ -42,6 +51,7 @@ public class AnalysisReportApplication {
     private final AnalysisReportService analysisReportService;
     private final AnalysisReportSourceService analysisReportSourceService;
     private final ObjectMapper objectMapper;
+    private final MessageResolver messageResolver;
 
     public CreateAnalysisReportResponse create(
             Long memberId,
@@ -105,6 +115,47 @@ public class AnalysisReportApplication {
         Long nextCursor = hasNext ? page.getLast().getId() : null;
 
         return new GetAnalysisReportsResponse(items, hasNext, nextCursor);
+    }
+
+    @Transactional(readOnly = true)
+    public GetAnalysisReportDetailResponse getDetail(Long memberId, Long analysisReportId) {
+        AnalysisReport report = analysisReportService.findOwnedById(analysisReportId, memberId);
+        return GetAnalysisReportDetailResponse.from(
+                report,
+                resolveResult(report)
+        );
+    }
+
+    private String resolveResult(AnalysisReport report) {
+        if (report.getStatus() != AnalysisReportStatus.COMPLETED) {
+            return null;
+        }
+
+        String result = report.getResult();
+        if (result == null || result.isBlank()) {
+            return resolveInvalidResultMessage(report);
+        }
+
+        try {
+            JsonNode resultJson = objectMapper.readerFor(JsonNode.class)
+                    .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                    .readValue(result);
+            JsonNode contentNode = resultJson == null ? null : resultJson.get("content");
+            if (contentNode == null || !contentNode.isTextual() || contentNode.asText().isBlank()) {
+                return resolveInvalidResultMessage(report);
+            }
+            return contentNode.asText();
+        } catch (JsonProcessingException exception) {
+            log.error("분석 리포트 결과 JSON 파싱 실패 - analysisReportId: {}", report.getId(), exception);
+            return resolveInvalidResultMessage(report);
+        }
+    }
+
+    private String resolveInvalidResultMessage(AnalysisReport report) {
+        return messageResolver.resolveByLocale(
+                INVALID_RESULT_MESSAGE_KEY,
+                report.getMember().getLocale()
+        );
     }
 
     private RequestHash createRequestHash(

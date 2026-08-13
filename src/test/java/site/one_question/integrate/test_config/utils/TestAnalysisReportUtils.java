@@ -23,8 +23,16 @@ public class TestAnalysisReportUtils {
     }
 
     public AnalysisReport createSave_Completed(Member member, AnalysisReportType reportType) {
+        return createSave_Completed(member, reportType, "{\"content\":\"완료된 리포트 본문\"}");
+    }
+
+    public AnalysisReport createSave_Completed(
+            Member member,
+            AnalysisReportType reportType,
+            String result
+    ) {
         AnalysisReport report = AnalysisReport.createPending(member, reportType);
-        report.complete("완료된 리포트 본문", "test-provider", "test-model", "{}");
+        report.complete(result, "test-provider", "test-model", "{}");
         return repository.save(report);
     }
 

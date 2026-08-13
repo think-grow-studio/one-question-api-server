@@ -4,6 +4,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import site.one_question.api.analysisreport.domain.exception.AnalysisReportNotFoundException;
 import site.one_question.api.member.domain.Member;
 
 @Service
@@ -21,6 +22,11 @@ public class AnalysisReportService {
         return analysisReportRepository.findById(id)
                 .orElseThrow(() -> new IllegalStateException(
                         "analysis report not found: " + id));
+    }
+
+    public AnalysisReport findOwnedById(Long id, Long memberId) {
+        return analysisReportRepository.findWithSourcesByIdAndMemberId(id, memberId)
+                .orElseThrow(() -> new AnalysisReportNotFoundException(id));
     }
 
     public List<AnalysisReport> findMemberReports(

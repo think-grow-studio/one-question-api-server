@@ -15,11 +15,28 @@ import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import site.one_question.api.analysisreport.presentation.request.CreateAnalysisReportRequest;
 import site.one_question.api.analysisreport.presentation.response.CreateAnalysisReportResponse;
+import site.one_question.api.analysisreport.presentation.response.GetAnalysisReportDetailResponse;
 import site.one_question.api.analysisreport.presentation.response.GetAnalysisReportsResponse;
 import site.one_question.common.HttpHeaderConstant;
 
 @Tag(name = "AnalysisReport", description = "AI 분석 리포트 관련 API")
 public interface AnalysisReportApi {
+
+    @Operation(
+            summary = "AI 분석 리포트 상세 조회",
+            description = "본인의 분석 리포트 결과와 생성에 사용한 소스 스냅샷을 조회합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "리포트 상세 조회 성공",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = GetAnalysisReportDetailResponse.class))),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "404", description = "리포트를 찾을 수 없음 (AI-REPORT-006)")
+    })
+    ResponseEntity<GetAnalysisReportDetailResponse> getDetail(
+            Long memberId,
+            Long analysisReportId
+    );
 
     @Operation(
             summary = "AI 분석 리포트 목록 조회",

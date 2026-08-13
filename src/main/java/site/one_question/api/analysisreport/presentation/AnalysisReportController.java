@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import site.one_question.api.analysisreport.application.AnalysisReportApplication;
 import site.one_question.api.analysisreport.presentation.request.CreateAnalysisReportRequest;
 import site.one_question.api.analysisreport.presentation.response.CreateAnalysisReportResponse;
+import site.one_question.api.analysisreport.presentation.response.GetAnalysisReportDetailResponse;
 import site.one_question.api.analysisreport.presentation.response.GetAnalysisReportsResponse;
 import site.one_question.api.auth.infrastructure.annotation.PrincipalId;
 import site.one_question.common.HttpHeaderConstant;
@@ -27,6 +29,19 @@ import site.one_question.common.HttpHeaderConstant;
 public class AnalysisReportController implements AnalysisReportApi {
 
     private final AnalysisReportApplication analysisReportApplication;
+
+    @Override
+    @GetMapping("/{analysisReportId}")
+    public ResponseEntity<GetAnalysisReportDetailResponse> getDetail(
+            @PrincipalId Long memberId,
+            @PathVariable Long analysisReportId
+    ) {
+        log.info("[API] AI 분석 리포트 상세 조회 시작 - analysisReportId: {}", analysisReportId);
+        GetAnalysisReportDetailResponse response = analysisReportApplication.getDetail(
+                memberId, analysisReportId);
+        log.info("[API] AI 분석 리포트 상세 조회 종료 - analysisReportId: {}", analysisReportId);
+        return ResponseEntity.ok(response);
+    }
 
     @Override
     @GetMapping

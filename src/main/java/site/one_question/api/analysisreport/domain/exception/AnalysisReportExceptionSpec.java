@@ -37,6 +37,12 @@ public enum AnalysisReportExceptionSpec implements ExceptionSpec {
             "AI-REPORT-005",
             "분석 리포트 완료 데이터 누락",
             "error.ai-report.completion-data-invalid"
+    ),
+    REPORT_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "AI-REPORT-006",
+            "분석 리포트를 찾을 수 없음",
+            "error.ai-report.not-found"
     );
 
     private final HttpStatus status;
