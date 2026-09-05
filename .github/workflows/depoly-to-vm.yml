@@ -194,6 +194,10 @@ jobs:
             deploy_container
             reload_nginx
             health_check
+
+            echo "🧹 [MAIN VM] Pruning unused images (freeing disk space)..."
+            docker image prune -af
+
             echo "🎉 [MAIN VM] Deployment completed successfully!"
 
   # main이 healthy를 확인한 뒤에만 sub를 배포한다 (동시에 둘 다 내려가는 상황 방지).
@@ -341,6 +345,10 @@ jobs:
             # 실행
             deploy_container
             health_check
+
+            echo "🧹 [SUB VM] Pruning unused images (freeing disk space)..."
+            docker image prune -af
+
             echo "🎉 [SUB VM] Deployment completed successfully!"
 
   # 알림 Job

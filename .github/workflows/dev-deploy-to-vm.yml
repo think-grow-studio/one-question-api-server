@@ -189,6 +189,10 @@ jobs:
             deploy_container
             reload_nginx
             health_check
+
+            echo "🧹 [DEV VM] Pruning unused images (freeing disk space)..."
+            docker image prune -af
+
             echo "🎉 [DEV VM] Deployment completed successfully!"
 
   # 알림 Job
