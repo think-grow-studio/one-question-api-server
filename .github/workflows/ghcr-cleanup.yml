@@ -14,14 +14,9 @@ jobs:
       matrix:
         package: [one-question-api-server, develop-one-question-api]
     steps:
-      # 멀티 아키텍처 빌드(buildx)가 남기는, 아무 태그도 없는 매니페스트는 무조건 정리
-      - name: Delete untagged versions
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: ${{ matrix.package }}
-          package-type: container
-          delete-only-untagged-versions: true
-
+      # "untagged" 버전 중에는 buildx가 붙이는 provenance/SBOM attestation 매니페스트가 섞여 있고,
+      # 이는 실제로 태그된 이미지가 subject로 참조하는 자식 매니페스트라 삭제하면 그 태그가 깨진다
+      # (docker pull 시 403/404). attestation 생성을 막았으니(provenance:false, sbom:false) 이 스텝은 제거.
       # 태그가 붙은 이미지(sha-*, latest 등)는 롤백 대비 최근 3개만 남기고 정리
       - name: Delete old tagged versions
         uses: actions/delete-package-versions@v5
