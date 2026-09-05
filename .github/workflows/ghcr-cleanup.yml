@@ -1,0 +1,31 @@
+name: GHCR Cleanup
+
+on:
+  schedule:
+    - cron: "0 18 * * 0" # 매주 일요일 03:00 KST
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        package: [one-question-api-server, develop-one-question-api]
+    steps:
+      # 멀티 아키텍처 빌드(buildx)가 남기는, 아무 태그도 없는 매니페스트는 무조건 정리
+      - name: Delete untagged versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ matrix.package }}
+          package-type: container
+          delete-only-untagged-versions: true
+
+      # 태그가 붙은 이미지(sha-*, latest 등)는 롤백 대비 최근 3개만 남기고 정리
+      - name: Delete old tagged versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ matrix.package }}
+          package-type: container
+          min-versions-to-keep: 3
