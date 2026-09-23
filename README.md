@@ -118,7 +118,7 @@ SQS 발행은 DB 트랜잭션 밖에서 실행되므로 메시지가 보이는 �
   `GlobalExceptionHandler`에서 `ExceptionResponse`로 일괄 변환, 메시지는 i18n(`messages*.properties`)
 - 인증된 사용자 ID는 `@PrincipalId` 커스텀 어노테이션으로 주입
 - 날짜 경계는 클라이언트 타임존 헤더 기반 (`DatePolicy` 참고)
-- 요청 로그는 MDC(requestId, memberId) 기반, ERROR 레벨은 Discord로 전송
+- 요청 로그는 MDC(requestId, clientIp, uri, memberId, userAgent) 기반, ERROR 레벨은 Discord로 전송
 
 ## 프로필과 인프라
 

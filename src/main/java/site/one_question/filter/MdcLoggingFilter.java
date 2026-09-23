@@ -26,6 +26,7 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
             MDC.put(MdcKey.REQUEST_ID, traceId);
             MDC.put(MdcKey.CLIENT_IP, getClientIp(request));
             MDC.put(MdcKey.REQUEST_URI, request.getRequestURI());
+            MDC.put(MdcKey.USER_AGENT, getUserAgent(request));
 
             filterChain.doFilter(request, response);
         } finally {
@@ -39,5 +40,10 @@ public class MdcLoggingFilter extends OncePerRequestFilter {
             return xff.split(",")[0].trim();
         }
         return request.getRemoteAddr();
+    }
+
+    private String getUserAgent(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        return userAgent != null ? userAgent : "N/A";
     }
 }

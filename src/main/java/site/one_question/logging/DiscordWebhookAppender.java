@@ -106,6 +106,7 @@ public class DiscordWebhookAppender extends AppenderBase<ILoggingEvent> {
         addFieldIfPresent(fields, "URI", mdc.get(MdcKey.REQUEST_URI));
         addFieldIfPresent(fields, "IP", mdc.get(MdcKey.CLIENT_IP));
         addFieldIfPresent(fields, "MemberId", mdc.get(MdcKey.MEMBER_ID));
+        addFieldIfPresent(fields, "User-Agent", mdc.get(MdcKey.USER_AGENT));
 
         // stacktrace
         String stackTrace = buildStackTraceBlock(eventObject.getThrowableProxy());

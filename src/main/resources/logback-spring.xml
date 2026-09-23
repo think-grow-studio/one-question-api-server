@@ -3,7 +3,7 @@
     <property name="LOG_ROOT_PATH" value="${user.home}/log-one"/>
     <property name="LOG_FILE_NAME" value="one-question-log"/>
     <property name="LOG_PATTERN"
-              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [req:%X{requestId:-N/A}] [ip:%X{clientIp:-N/A}] [uri:%X{uri:-N/A}] [member:%X{memberId:-N/A}] [%thread] %-5level %logger{36} - %msg%n"/>
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [req:%X{requestId:-N/A}] [ip:%X{clientIp:-N/A}] [uri:%X{uri:-N/A}] [member:%X{memberId:-N/A}] [ua:%X{userAgent:-N/A}] [%thread] %-5level %logger{36} - %msg%n"/>
     <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="one-question"/>
     <springProperty scope="context" name="ACTIVE_PROFILE" source="spring.profiles.active" defaultValue="default"/>
     <springProperty scope="context" name="DISCORD_WEBHOOK_URL" source="logging.discord.webhook-url" defaultValue=""/>
