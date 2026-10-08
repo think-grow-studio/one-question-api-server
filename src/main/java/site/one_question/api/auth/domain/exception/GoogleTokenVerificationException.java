@@ -9,7 +9,8 @@ public class GoogleTokenVerificationException extends AuthException {
     }
 
     public GoogleTokenVerificationException(String reason) {
-        super(AuthExceptionSpec.GOOGLE_VERIFICATION_FAILED, Map.of("reason", reason));
+        super(AuthExceptionSpec.GOOGLE_VERIFICATION_FAILED,
+                reason == null ? Map.of() : Map.of("reason", reason));
     }
 
     public GoogleTokenVerificationException(Throwable cause) {

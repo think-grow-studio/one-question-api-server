@@ -15,15 +15,16 @@ public class GoogleTokenVerifier {
     private final GoogleIdTokenVerifier verifier;
 
     public GoogleIdToken.Payload verify(String idToken) {
+        GoogleIdToken googleIdToken;
         try {
-            GoogleIdToken googleIdToken = verifier.verify(idToken);
-            if (googleIdToken == null) {
-                throw new GoogleTokenVerificationException("Invalid Google ID Token");
-            }
-            return googleIdToken.getPayload();
+            googleIdToken = verifier.verify(idToken);
         } catch (Exception e) {
-            log.error("Google ID Token 검증 실패: {}", e.getMessage());
-            throw new GoogleTokenVerificationException(e.getMessage());
+            log.error("Google ID Token 검증 실패: {}", e.getClass().getSimpleName());
+            throw new GoogleTokenVerificationException(e);
         }
+        if (googleIdToken == null) {
+            throw new GoogleTokenVerificationException("Invalid Google ID Token");
+        }
+        return googleIdToken.getPayload();
     }
 }
