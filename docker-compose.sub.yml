@@ -1,8 +1,12 @@
 services:
   app:
-    image: ghcr.io/think-grow-studio/one-question-api-server:latest
+    # main VM 과 반드시 같은 태그로 뜬다 (배포 워크플로가 같은 값을 내려준다).
+    image: ghcr.io/think-grow-studio/one-question-api-server:${IMAGE_TAG:-latest}
     container_name: one-question-api
     restart: unless-stopped
+    # graceful shutdown 예산(웹 25s + 스케줄러 20s)보다 길어야 한다.
+    # Docker 기본값 10s 로는 드레이닝이 끝나기 전에 SIGKILL 이 날아간다.
+    stop_grace_period: 60s
     mem_limit: 1200m
     ports:
       # nginx가 없는 VM이라 main VM의 nginx가 private IP로 직접 붙을 수 있도록 호스트에 노출
@@ -29,6 +33,7 @@ services:
       ORACLE_DB_USERNAME: ${ORACLE_DB_USERNAME}
       ORACLE_DB_PASSWORD: ${ORACLE_DB_PASSWORD}
       ORACLE_DB_DIALECT: ${ORACLE_DB_DIALECT}
+      ORACLE_WALLET_BASE64: ${ORACLE_WALLET_BASE64}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_ACCESS_EXPIRE_TIME: ${JWT_ACCESS_EXPIRE_TIME}
       JWT_REFRESH_EXPIRE_TIME: ${JWT_REFRESH_EXPIRE_TIME}
@@ -43,3 +48,7 @@ services:
       APPLE_TEAM_ID: ${APPLE_TEAM_ID}
       APPLE_KEY_ID: ${APPLE_KEY_ID}
       APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      ANALYSIS_REPORT_QUEUE_URL: ${ANALYSIS_REPORT_QUEUE_URL}
